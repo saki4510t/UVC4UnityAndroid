@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class UVCController : MonoBehaviour
@@ -11,6 +12,8 @@ public class UVCController : MonoBehaviour
 	private const int DEFAULT_HEIGHT = 720;
 
 	private string activeDeviceName;
+	private Int32 activeCameraId;
+	private Texture2D activeTexture;
 
 	// Start is called before the first frame update
 	void Start()
@@ -20,18 +23,14 @@ public class UVCController : MonoBehaviour
 
 	void OnDestroy()
 	{
-		if (!String.IsNullOrEmpty(activeDeviceName))
-		{
-			CloseCamera(activeDeviceName);
-			activeDeviceName = null;
-		}
+		CloseCamera(activeDeviceName);
 	}
 
 	// Update is called once per frame
 	void Update()
     {
-        
-    }
+	
+	}
 
 	//================================================================================
 	// Java側からのイベントコールバック
@@ -63,11 +62,13 @@ public class UVCController : MonoBehaviour
 	public void OnEventDisconnect(string args)
 	{
 		Debug.Log("OnEventDisconnect(" + args + ")");
+		CloseCamera(activeDeviceName);
 	}
 
 	public void OnEventDetach(string args)
 	{
 		Debug.Log("OnEventDetach(" + args + ")");
+		CloseCamera(activeDeviceName);
 	}
 
 	//================================================================================
@@ -93,33 +94,57 @@ public class UVCController : MonoBehaviour
 	{
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
-			clazz.CallStatic("openDevice",
+			activeCameraId = clazz.CallStatic<Int32>("openDevice",
 				GetCurrentActivity(), deviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		}
 	}
 
 	void CloseCamera(string deviceName)
 	{
-		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+		if (!String.IsNullOrEmpty(deviceName))
 		{
-			clazz.CallStatic("closeDevice",
-				GetCurrentActivity(), deviceName);
+			activeCameraId = 0;
+			activeDeviceName = null;
+			activeTexture = null;
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				clazz.CallStatic("closeDevice",
+					GetCurrentActivity(), deviceName);
+			}
 		}
 	}
 
 	void SetupTexture(string deviceName, int width, int height)
 	{
-		var tex = new Texture2D(
+		activeTexture = new Texture2D(
 					width, height,
 					TextureFormat.ARGB32,
 					false, /* mipmap */
 					true /* linear */);
-		GetComponent<Renderer>().material.mainTexture = tex;
+		GetComponent<Renderer>().material.mainTexture = activeTexture;
+
+		var nativeTexPtr = activeTexture.GetNativeTexturePtr();
+		Debug.Log("SetupTexture:tex=" + nativeTexPtr);
 
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
 			clazz.CallStatic("setPreviewTexture",
-				GetCurrentActivity(), deviceName, tex.GetNativeTexturePtr().ToInt32());
+				GetCurrentActivity(), deviceName,
+				nativeTexPtr.ToInt32(), width, height);
+		}
+
+		StartCoroutine(OnRender());
+	}
+
+	[DllImport("uvc-plugin")]
+	private static extern IntPtr GetRenderEventFunc();
+
+	IEnumerator OnRender()
+	{
+		for ( ; ; )
+		{
+			yield return new WaitForEndOfFrame();
+			GL.IssuePluginEvent(GetRenderEventFunc(), activeCameraId);
 		}
 	}
 }
