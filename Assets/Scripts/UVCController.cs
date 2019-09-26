@@ -71,6 +71,26 @@ public class UVCController : MonoBehaviour
 		CloseCamera(activeDeviceName);
 	}
 
+	public void OnStartPreview(string args)
+	{
+		Debug.Log("OnStartPreview(" + args + ")");
+	}
+
+	public void OnStopPreview(string args)
+	{
+		Debug.Log("OnStopPreview(" + args + ")");
+	}
+
+	public void OnReceiveStatus(string args)
+	{
+		Debug.Log("OnReceiveStatus(" + args + ")");
+	}
+
+	public void OnButtonEvent(string args)
+	{
+		Debug.Log("OnButtonEvent(" + args + ")");
+	}
+
 	//================================================================================
 
 	public AndroidJavaObject GetCurrentActivity()
