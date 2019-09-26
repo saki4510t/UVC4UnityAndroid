@@ -92,10 +92,13 @@ public class UVCController : MonoBehaviour
 
 	void OpenCamera(string deviceName)
 	{
-		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+		if (!String.IsNullOrEmpty(deviceName))
 		{
-			activeCameraId = clazz.CallStatic<Int32>("openDevice",
-				GetCurrentActivity(), deviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				activeCameraId = clazz.CallStatic<Int32>("openDevice",
+					GetCurrentActivity(), deviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			}
 		}
 	}
 
@@ -111,11 +114,15 @@ public class UVCController : MonoBehaviour
 				clazz.CallStatic("closeDevice",
 					GetCurrentActivity(), deviceName);
 			}
+
+			StopCoroutine(OnRender());
 		}
 	}
 
 	void SetupTexture(string deviceName, int width, int height)
 	{
+		StopCoroutine(OnRender());
+	
 		activeTexture = new Texture2D(
 					width, height,
 					TextureFormat.ARGB32,
