@@ -11,9 +11,14 @@ public class UVCController : MonoBehaviour
 	private const int DEFAULT_WIDTH = 1280;
 	private const int DEFAULT_HEIGHT = 720;
 
+	/**
+	 * 使用中のUVCカメラ識別文字列
+	 */
 	private string activeDeviceName;
+	/**
+	 * プレビュー中のUVCカメラ識別子, レンダーイベント用
+	 */
 	private Int32 activeCameraId;
-	private Texture2D activeTexture;
 
 	// Start is called before the first frame update
 	void Start()
@@ -35,11 +40,17 @@ public class UVCController : MonoBehaviour
 	//================================================================================
 	// Java側からのイベントコールバック
 
+	/**
+	 * UVC機器が接続された
+	 */
 	public void OnEventAttach(string args)
 	{
 		Debug.Log("OnEventAttach(" + args + ")");
 	}
 
+	/**
+	 * UVC機器へのアクセスのためのパーミッションを取得できた
+	 */
 	public void OnEventPermission(string args)
 	{
 		Debug.Log("OnEventPermission(" + args + ")");
@@ -49,50 +60,73 @@ public class UVCController : MonoBehaviour
 		}
 	}
 
+	/**
+	 * UVC機器をオープンした
+	 */
 	public void OnEventConnect(string args)
 	{
 		Debug.Log("OnEventConnect(" + args + ")");
 		activeDeviceName = args;
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceNameのはず
-			SetupTexture(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		}
 	}
 
+	/**
+	 * UVC機器をクローズした
+	 */
 	public void OnEventDisconnect(string args)
 	{
 		Debug.Log("OnEventDisconnect(" + args + ")");
 		CloseCamera(activeDeviceName);
 	}
 
+	/**
+	 * UVC機器が取り外された
+	 */
 	public void OnEventDetach(string args)
 	{
 		Debug.Log("OnEventDetach(" + args + ")");
 		CloseCamera(activeDeviceName);
 	}
 
+	/**
+	 * UVC機器からの映像取得を開始した
+	 */
 	public void OnStartPreview(string args)
 	{
 		Debug.Log("OnStartPreview(" + args + ")");
 	}
 
+	/**
+	 * UVC機器からの映像取得を終了した
+	 */
 	public void OnStopPreview(string args)
 	{
 		Debug.Log("OnStopPreview(" + args + ")");
 	}
 
+	/**
+	 * UVC機器からのステータスイベントを受信した
+	 */
 	public void OnReceiveStatus(string args)
 	{
 		Debug.Log("OnReceiveStatus(" + args + ")");
 	}
 
+	/**
+	 * UVC機器からのボタンイベントを受信した
+	 */
 	public void OnButtonEvent(string args)
 	{
 		Debug.Log("OnButtonEvent(" + args + ")");
 	}
 
 	//================================================================================
-
+	/**
+	 * UnityPlayerActivityを取得
+	 */
 	public AndroidJavaObject GetCurrentActivity()
 	{
 		using (AndroidJavaClass playerClass = new AndroidJavaClass(FQCN_UNITY_PLAYER))
@@ -101,6 +135,9 @@ public class UVCController : MonoBehaviour
 		}
 	}
 
+	/**
+	 * プラグインを初期化
+	 */
 	void InitPlugin()
 	{
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -110,6 +147,9 @@ public class UVCController : MonoBehaviour
 		}
 	}
 
+	/**
+	 * 指定したUVC機器をオープン要求する
+	 */
 	void OpenCamera(string deviceName)
 	{
 		if (!String.IsNullOrEmpty(deviceName))
@@ -122,13 +162,15 @@ public class UVCController : MonoBehaviour
 		}
 	}
 
+	/**
+	 * 指定したUVC機器をクローズ要求する
+	 */
 	void CloseCamera(string deviceName)
 	{
 		if (!String.IsNullOrEmpty(deviceName))
 		{
 			activeCameraId = 0;
 			activeDeviceName = null;
-			activeTexture = null;
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
 				clazz.CallStatic("closeDevice",
@@ -139,19 +181,22 @@ public class UVCController : MonoBehaviour
 		}
 	}
 
-	void SetupTexture(string deviceName, int width, int height)
+	/**
+	 * UVC機器からの映像受け取り開始要求をする
+	 */
+	void StartPreview(string deviceName, int width, int height)
 	{
 		StopCoroutine(OnRender());
 	
-		activeTexture = new Texture2D(
+		var tex = new Texture2D(
 					width, height,
 					TextureFormat.ARGB32,
 					false, /* mipmap */
 					true /* linear */);
-		GetComponent<Renderer>().material.mainTexture = activeTexture;
+		GetComponent<Renderer>().material.mainTexture = tex;
 
-		var nativeTexPtr = activeTexture.GetNativeTexturePtr();
-		Debug.Log("SetupTexture:tex=" + nativeTexPtr);
+		var nativeTexPtr = tex.GetNativeTexturePtr();
+		Debug.Log("StartPreview:tex=" + nativeTexPtr);
 
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
@@ -163,9 +208,15 @@ public class UVCController : MonoBehaviour
 		StartCoroutine(OnRender());
 	}
 
+	/**
+	 * プラグインでのレンダーイベント取得用native(c/c++)関数
+	 */
 	[DllImport("uvc-plugin")]
 	private static extern IntPtr GetRenderEventFunc();
 
+	/**
+	 * レンダーイベント処理用
+	 */
 	IEnumerator OnRender()
 	{
 		for ( ; ; )
