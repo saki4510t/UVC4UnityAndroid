@@ -219,10 +219,11 @@ public class UVCController : MonoBehaviour
 	 */
 	IEnumerator OnRender()
 	{
+		var renderEventFunc = GetRenderEventFunc();
 		for ( ; ; )
 		{
 			yield return new WaitForEndOfFrame();
-			GL.IssuePluginEvent(GetRenderEventFunc(), activeCameraId);
+			GL.IssuePluginEvent(renderEventFunc, activeCameraId);
 		}
 	}
 }
