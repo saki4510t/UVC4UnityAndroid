@@ -55,6 +55,12 @@ public class UVCController : MonoBehaviour
 	 * 動的パーミッション要求中かどうか
 	 */
 	private bool isPermissionRequesting;
+	/**
+	 * オリジナルのテクスチャ
+	 * UVCカメラ映像受け取り用テクスチャをセットする前に
+	 * GetComponent<Renderer>().material.mainTextureに設定されていた値
+	 */
+	private Texture savedTexture;
 
 	// Start is called before the first frame update
 	IEnumerator Start()
@@ -193,8 +199,9 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
+		// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
+		// 年のためにCloseCameraを呼んでおく
 		CloseCamera(activeDeviceName);
-		attachedDeviceName = null;
 	}
 
 	/**
@@ -206,8 +213,12 @@ public class UVCController : MonoBehaviour
 		Console.WriteLine($"OnEventDetach:({args})");
 #endif
 		CloseCamera(activeDeviceName);
+		attachedDeviceName = null;
 	}
 
+	/**
+	 * 映像を受け取れるようになった
+	 */
 	public void OnEventReady(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -239,6 +250,9 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"OnStopPreview:({args})");
 #endif
+		// このイベントはUnity側からstop/close要求したとき以外にも
+		// 発生する可能性がある
+		HandleOnStopPreview(args);
 	}
 
 	/**
@@ -365,7 +379,7 @@ public class UVCController : MonoBehaviour
 					GetCurrentActivity(), deviceName);
 			}
 
-			StopCoroutine(OnRender());
+			HandleOnStopPreview(deviceName);
 		}
 	}
 
@@ -377,8 +391,7 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"StartPreview:{deviceName}");
 #endif
-
-		StopCoroutine(OnRender());
+		HandleOnStopPreview(deviceName);
 
 		if (!String.IsNullOrEmpty(deviceName))
 		{
@@ -387,6 +400,7 @@ public class UVCController : MonoBehaviour
 					TextureFormat.ARGB32,
 					false, /* mipmap */
 					true /* linear */);
+			savedTexture = GetComponent<Renderer>().material.mainTexture;
 			GetComponent<Renderer>().material.mainTexture = tex;
 
 			var nativeTexPtr = tex.GetNativeTexturePtr();
@@ -416,7 +430,7 @@ public class UVCController : MonoBehaviour
 		Console.WriteLine($"StopPreview:{deviceName}");
 #endif
 
-		StopCoroutine(OnRender());
+		HandleOnStopPreview(deviceName);
 
 		if (!String.IsNullOrEmpty(deviceName))
 		{
@@ -426,9 +440,21 @@ public class UVCController : MonoBehaviour
 					GetCurrentActivity(), deviceName);
 			}
 		}
-		else
+	}
+
+	/**
+	 * 映像取得が終了したときのUnity側の処理
+	 */
+	private void HandleOnStopPreview(string deviceName)
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"HandleOnStopPreview:{deviceName}");
+#endif
+		StopCoroutine(OnRender());
+		if (savedTexture != null)
 		{
-			throw new ArgumentException("device name is empty/null");
+			GetComponent<Renderer>().material.mainTexture = savedTexture;
+			savedTexture = null;
 		}
 	}
 
