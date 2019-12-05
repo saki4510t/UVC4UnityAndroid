@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ENABLE_LOG
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -90,11 +92,12 @@ public class UVCController : MonoBehaviour
 
 	private IEnumerator OnResume()
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnResume,attachedDeviceName=" + attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
+#endif
 		if (!String.IsNullOrEmpty(attachedDeviceName)
 			&& String.IsNullOrEmpty(activeDeviceName))
 		{
-			Debug.Log("call RequestUsbPermission");
 			// アタッチされた機器があるけどオープンされていないとき
 			yield return RequestUsbPermission(attachedDeviceName);
 		}
@@ -102,7 +105,9 @@ public class UVCController : MonoBehaviour
 
 	private void OnPause()
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnPause");
+#endif
 	}
 
 	//================================================================================
@@ -113,9 +118,14 @@ public class UVCController : MonoBehaviour
 	 */
 	public IEnumerator OnEventAttach(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventAttach(" + args + ")");
-		attachedDeviceName = args;
-		yield return RequestUsbPermission(args);
+#endif
+		if (!String.IsNullOrEmpty(args))
+		{   // argsはdeviceName
+			attachedDeviceName = args;
+			yield return RequestUsbPermission(args);
+		}
 	}
 
 	/**
@@ -123,9 +133,11 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnEventPermission(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventPermission(" + args + ")");
+#endif
 		if (!String.IsNullOrEmpty(args))
-		{   // argsはdeviceNameのはず
+		{   // argsはdeviceName
 			isPermissionRequesting = false;
 			OpenCamera(args);
 		}
@@ -136,7 +148,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnEventConnect(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventConnect(" + args + ")");
+#endif
 	}
 
 	/**
@@ -144,7 +158,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnEventDisconnect(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventDisconnect(" + args + ")");
+#endif
 		CloseCamera(activeDeviceName);
 		attachedDeviceName = null;
 	}
@@ -154,16 +170,20 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnEventDetach(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventDetach(" + args + ")");
+#endif
 		CloseCamera(activeDeviceName);
 	}
 
 	public void OnEventReady(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnEventReady(" + args + ")");
+#endif
 		activeDeviceName = args;
 		if (!String.IsNullOrEmpty(args))
-		{   // argsはdeviceNameのはず
+		{   // argsはdeviceName
 			Debug.Log("OnEventReady:supported=" + GetSupportedVideoSize(args));
 			StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		}
@@ -174,7 +194,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnStartPreview(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnStartPreview(" + args + ")");
+#endif
 	}
 
 	/**
@@ -182,7 +204,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnStopPreview(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnStopPreview(" + args + ")");
+#endif
 	}
 
 	/**
@@ -190,7 +214,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnReceiveStatus(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnReceiveStatus(" + args + ")");
+#endif
 	}
 
 	/**
@@ -198,7 +224,9 @@ public class UVCController : MonoBehaviour
 	 */
 	public void OnButtonEvent(string args)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("OnButtonEvent(" + args + ")");
+#endif
 	}
 
 	//================================================================================
@@ -207,7 +235,9 @@ public class UVCController : MonoBehaviour
 	 */
 	void InitPlugin()
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("InitPlugin");
+#endif
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
 			clazz.CallStatic("initDeviceDetector",
@@ -237,7 +267,9 @@ public class UVCController : MonoBehaviour
 	 */
 	private IEnumerator RequestUsbPermission(string deviceName)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Debug.Log("RequestUsbPermission(" + deviceName + ")");
+#endif
 		isPermissionRequesting = true;
 
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
