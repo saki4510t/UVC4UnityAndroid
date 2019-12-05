@@ -58,21 +58,29 @@ public class UVCController : MonoBehaviour
 
 	// Start is called before the first frame update
 	IEnumerator Start()
-    {
-		if (CheckAndroidVersion(28)) {
+	{
+		if (CheckAndroidVersion(28))
+		{
 			// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
-			if (!HasPermission(PERMISSION_CAMERA)) {
+			if (!HasPermission(PERMISSION_CAMERA))
+			{
 				// Android 9以降でカメラパーミッションがないので要求する
 				yield return RequestPermission(PERMISSION_CAMERA);
 			}
-			if (HasPermission(PERMISSION_CAMERA)) {
+			if (HasPermission(PERMISSION_CAMERA))
+			{
 				// カメラパーミッションを取得できた
 				InitPlugin();
-			} else if (ShouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
+			}
+			else
+			if (ShouldShowRequestPermissionRationale(PERMISSION_CAMERA))
+			{
 				// カメラパーミッションを取得できなかった
 				// FIXME 説明用のダイアログ等を表示しないといけない
 			}
-		} else {
+		}
+		else
+		{
 			// Android 9 未満ではパーミッション要求処理は不要
 			InitPlugin();
 		}
@@ -97,15 +105,18 @@ public class UVCController : MonoBehaviour
 
 	// Update is called once per frame
 	void Update()
-    {
-	
+	{
+
 	}
 
+	//--------------------------------------------------------------------------------
 	private IEnumerator OnResume()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnResume,attachedDeviceName=" + attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
+		Console.WriteLine("OnResume:attachedDeviceName="
+			+ attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
 #endif
+		isPermissionRequesting = false;
 		if (!String.IsNullOrEmpty(attachedDeviceName)
 			&& String.IsNullOrEmpty(activeDeviceName))
 		{
@@ -117,7 +128,7 @@ public class UVCController : MonoBehaviour
 	private void OnPause()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnPause");
+		Console.WriteLine("OnPause:");
 #endif
 	}
 
@@ -130,13 +141,24 @@ public class UVCController : MonoBehaviour
 	public IEnumerator OnEventAttach(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventAttach(" + args + ")");
+		Console.WriteLine($"OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
 			attachedDeviceName = args;
-			yield return RequestUsbPermission(args);
+			// RequestUsbPermissionをyield returnで直接呼び出すと
+			// OnPasue/OnResumeをまたいでフォーカスが戻ってくるまで
+			// 関数を抜けない
+			// 一方MoveNextを使うとOnPauseの時点で関数を抜ける
+			yield return RequestUsbPermission(attachedDeviceName);
+			//var v = RequestUsbPermission(args);
+			//while (v.MoveNext())
+			//{
+			//}
 		}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"OnEventAttach[{Time.frameCount}]:finished");
+#endif
 	}
 
 	/**
@@ -145,7 +167,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventPermission(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventPermission(" + args + ")");
+		Console.WriteLine("OnEventPermission:(" + args + ")");
 #endif
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
@@ -160,7 +182,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventConnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventConnect(" + args + ")");
+		Console.WriteLine("OnEventConnect:(" + args + ")");
 #endif
 	}
 
@@ -170,7 +192,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDisconnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventDisconnect(" + args + ")");
+		Console.WriteLine("OnEventDisconnect:(" + args + ")");
 #endif
 		CloseCamera(activeDeviceName);
 		attachedDeviceName = null;
@@ -182,7 +204,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDetach(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventDetach(" + args + ")");
+		Console.WriteLine("OnEventDetach:(" + args + ")");
 #endif
 		CloseCamera(activeDeviceName);
 	}
@@ -190,7 +212,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventReady(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventReady(" + args + ")");
+		Console.WriteLine("OnEventReady:(" + args + ")");
 #endif
 		activeDeviceName = args;
 		if (!String.IsNullOrEmpty(args))
@@ -206,7 +228,7 @@ public class UVCController : MonoBehaviour
 	public void OnStartPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnStartPreview(" + args + ")");
+		Console.WriteLine("OnStartPreview:(" + args + ")");
 #endif
 	}
 
@@ -216,7 +238,7 @@ public class UVCController : MonoBehaviour
 	public void OnStopPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnStopPreview(" + args + ")");
+		Console.WriteLine("OnStopPreview:(" + args + ")");
 #endif
 	}
 
@@ -226,7 +248,7 @@ public class UVCController : MonoBehaviour
 	public void OnReceiveStatus(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnReceiveStatus(" + args + ")");
+		Console.WriteLine("OnReceiveStatus:(" + args + ")");
 #endif
 	}
 
@@ -236,7 +258,7 @@ public class UVCController : MonoBehaviour
 	public void OnButtonEvent(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnButtonEvent(" + args + ")");
+		Console.WriteLine("OnButtonEvent:(" + args + ")");
 #endif
 	}
 
@@ -244,10 +266,10 @@ public class UVCController : MonoBehaviour
 	/**
 	 * プラグインを初期化
 	 */
-	void InitPlugin()
+	private void InitPlugin()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("InitPlugin");
+		Console.WriteLine("InitPlugin:");
 #endif
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
@@ -255,11 +277,12 @@ public class UVCController : MonoBehaviour
 				GetCurrentActivity(), gameObject.name);
 		}
 	}
-	
+
 	/**
 	 * 指定したUSB機器をアクセスするパーミッションを持っているかどうかを取得
 	 */
-	bool HasUsbPermission(string deviceName) {
+	private bool HasUsbPermission(string deviceName)
+	{
 		if (!String.IsNullOrEmpty(deviceName))
 		{
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -268,7 +291,8 @@ public class UVCController : MonoBehaviour
 					GetCurrentActivity(), deviceName);
 			}
 		}
-		else {
+		else
+		{
 			return false;
 		}
 	}
@@ -279,7 +303,7 @@ public class UVCController : MonoBehaviour
 	private IEnumerator RequestUsbPermission(string deviceName)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("RequestUsbPermission(" + deviceName + ")");
+		Console.WriteLine($"RequestUsbPermission[{Time.frameCount}]:({deviceName})");
 #endif
 		if (!String.IsNullOrEmpty(deviceName))
 		{
@@ -290,32 +314,22 @@ public class UVCController : MonoBehaviour
 				clazz.CallStatic("requestPermission",
 					GetCurrentActivity(), deviceName);
 			}
-
 			// アプリにフォーカスが戻るまで待機する
-			float timeElapsed = 0;
-			while (isPermissionRequesting)
-			{
-				if (timeElapsed > 0.5f)
-				{
-					isPermissionRequesting = false;
-					yield break;
-				}
-				timeElapsed += Time.deltaTime;
-
-				yield return null;
-			}
-			yield break;
+			yield return WaitPermissionWithTimeout(1.0f);
 		}
 		else
 		{
 			throw new ArgumentException("device name is empty/null");
 		}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"RequestUsbPermission[{Time.frameCount}]:finsihed");
+#endif
 	}
 
 	/**
 	 * 指定したUVC機器をオープン要求する
 	 */
-	void OpenCamera(string deviceName)
+	private void OpenCamera(string deviceName)
 	{
 		if (!String.IsNullOrEmpty(deviceName))
 		{
@@ -334,7 +348,7 @@ public class UVCController : MonoBehaviour
 	/**
 	 * 指定したUVC機器をクローズ要求する
 	 */
-	void CloseCamera(string deviceName)
+	private void CloseCamera(string deviceName)
 	{
 		if (!String.IsNullOrEmpty(deviceName))
 		{
@@ -347,7 +361,9 @@ public class UVCController : MonoBehaviour
 			}
 
 			StopCoroutine(OnRender());
-		} else {
+		}
+		else
+		{
 			throw new ArgumentException("device name is empty/null");
 		}
 	}
@@ -355,17 +371,17 @@ public class UVCController : MonoBehaviour
 	/**
 	 * UVC機器からの映像受け取り開始要求をする
 	 */
-	void StartPreview(string deviceName, int width, int height)
+	private void StartPreview(string deviceName, int width, int height)
 	{
 		StopCoroutine(OnRender());
 
 		if (!String.IsNullOrEmpty(deviceName))
 		{
-				var tex = new Texture2D(
-						width, height,
-						TextureFormat.ARGB32,
-						false, /* mipmap */
-						true /* linear */);
+			var tex = new Texture2D(
+					width, height,
+					TextureFormat.ARGB32,
+					false, /* mipmap */
+					true /* linear */);
 			GetComponent<Renderer>().material.mainTexture = tex;
 
 			var nativeTexPtr = tex.GetNativeTexturePtr();
@@ -379,7 +395,9 @@ public class UVCController : MonoBehaviour
 			}
 
 			StartCoroutine(OnRender());
-		} else {
+		}
+		else
+		{
 			throw new ArgumentException("device name is empty/null");
 		}
 	}
@@ -387,11 +405,11 @@ public class UVCController : MonoBehaviour
 	/**
 	 * 指定したUVC機器の対応解像度をjson文字列として取得する
 	 */
-	string GetSupportedVideoSize(string deviceName)
+	private string GetSupportedVideoSize(string deviceName)
 	{
 		if (!String.IsNullOrEmpty(deviceName))
 		{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
 				return clazz.CallStatic<string>("getSupportedVideoSize",
 					GetCurrentActivity(), deviceName);
@@ -415,7 +433,7 @@ public class UVCController : MonoBehaviour
 	IEnumerator OnRender()
 	{
 		var renderEventFunc = GetRenderEventFunc();
-		for ( ; ; )
+		for (; ; )
 		{
 			yield return new WaitForEndOfFrame();
 			GL.IssuePluginEvent(renderEventFunc, activeCameraId);
@@ -486,6 +504,9 @@ public class UVCController : MonoBehaviour
 	 */
 	private IEnumerator RequestPermission(string permission)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"RequestPermission[{Time.frameCount}]:");
+#endif
 		if (CheckAndroidVersion(23))
 		{
 			isPermissionRequesting = true;
@@ -498,21 +519,38 @@ public class UVCController : MonoBehaviour
 			}
 #endif
 			// アプリにフォーカスが戻るまで待機する
-			float timeElapsed = 0;
-			while (isPermissionRequesting)
-			{
-				if (timeElapsed > 0.5f)
-				{
-					isPermissionRequesting = false;
-					yield break;
-				}
-				timeElapsed += Time.deltaTime;
-
-				yield return null;
-			}
-			yield break;
-		} else {
-			yield break;
+			yield return WaitPermissionWithTimeout(0.5f);
 		}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"RequestPermission[{Time.frameCount}]:finished");
+#endif
+		yield break;
+	}
+
+	/**
+	 * isPermissionRequestingが落ちるか指定時間経過するまで待機する
+	 * @param timeoutSecs 待機する最大時間[秒]
+	 */
+	private IEnumerator WaitPermissionWithTimeout(float timeoutSecs)
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:");
+#endif
+		float timeElapsed = 0;
+		while (isPermissionRequesting)
+		{
+			if (timeElapsed > timeoutSecs)
+			{
+				isPermissionRequesting = false;
+				yield break;
+			}
+			timeElapsed += Time.deltaTime;
+
+			yield return null;
+		}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:finished");
+#endif
+		yield break;
 	}
 }
