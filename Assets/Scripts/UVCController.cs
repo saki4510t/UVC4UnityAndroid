@@ -93,7 +93,7 @@ public class UVCController : MonoBehaviour
 	private IEnumerator OnResume()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnResume,attachedDeviceName=" + attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
+		Console.WriteLine("OnResume,attachedDeviceName=" + attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
 #endif
 		if (!String.IsNullOrEmpty(attachedDeviceName)
 			&& String.IsNullOrEmpty(activeDeviceName))
@@ -106,7 +106,7 @@ public class UVCController : MonoBehaviour
 	private void OnPause()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnPause");
+		Console.WriteLine("OnPause");
 #endif
 	}
 
@@ -119,7 +119,7 @@ public class UVCController : MonoBehaviour
 	public IEnumerator OnEventAttach(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventAttach(" + args + ")");
+		Console.WriteLine("OnEventAttach(" + args + ")");
 #endif
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
@@ -134,7 +134,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventPermission(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventPermission(" + args + ")");
+		Console.WriteLine("OnEventPermission(" + args + ")");
 #endif
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
@@ -149,7 +149,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventConnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventConnect(" + args + ")");
+		Console.WriteLine("OnEventConnect(" + args + ")");
 #endif
 	}
 
@@ -159,7 +159,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDisconnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventDisconnect(" + args + ")");
+		Console.WriteLine("OnEventDisconnect(" + args + ")");
 #endif
 		CloseCamera(activeDeviceName);
 		attachedDeviceName = null;
@@ -171,7 +171,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDetach(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventDetach(" + args + ")");
+		Console.WriteLine("OnEventDetach(" + args + ")");
 #endif
 		CloseCamera(activeDeviceName);
 	}
@@ -179,12 +179,12 @@ public class UVCController : MonoBehaviour
 	public void OnEventReady(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnEventReady(" + args + ")");
+		Console.WriteLine("OnEventReady(" + args + ")");
 #endif
 		activeDeviceName = args;
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
-			Debug.Log("OnEventReady:supported=" + GetSupportedVideoSize(args));
+			Console.WriteLine("OnEventReady:supported=" + GetSupportedVideoSize(args));
 			StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		}
 	}
@@ -195,7 +195,7 @@ public class UVCController : MonoBehaviour
 	public void OnStartPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnStartPreview(" + args + ")");
+		Console.WriteLine("OnStartPreview(" + args + ")");
 #endif
 	}
 
@@ -205,7 +205,7 @@ public class UVCController : MonoBehaviour
 	public void OnStopPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnStopPreview(" + args + ")");
+		Console.WriteLine("OnStopPreview(" + args + ")");
 #endif
 	}
 
@@ -215,7 +215,7 @@ public class UVCController : MonoBehaviour
 	public void OnReceiveStatus(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnReceiveStatus(" + args + ")");
+		Console.WriteLine("OnReceiveStatus(" + args + ")");
 #endif
 	}
 
@@ -225,7 +225,7 @@ public class UVCController : MonoBehaviour
 	public void OnButtonEvent(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("OnButtonEvent(" + args + ")");
+		Console.WriteLine("OnButtonEvent(" + args + ")");
 #endif
 	}
 
@@ -236,7 +236,7 @@ public class UVCController : MonoBehaviour
 	void InitPlugin()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("InitPlugin");
+		Console.WriteLine("InitPlugin");
 #endif
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
@@ -268,7 +268,7 @@ public class UVCController : MonoBehaviour
 	private IEnumerator RequestUsbPermission(string deviceName)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Debug.Log("RequestUsbPermission(" + deviceName + ")");
+		Console.WriteLine("RequestUsbPermission(" + deviceName + ")");
 #endif
 		isPermissionRequesting = true;
 
@@ -343,7 +343,7 @@ public class UVCController : MonoBehaviour
 		GetComponent<Renderer>().material.mainTexture = tex;
 
 		var nativeTexPtr = tex.GetNativeTexturePtr();
-		Debug.Log("StartPreview:tex=" + nativeTexPtr);
+		Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
 
 		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 		{
