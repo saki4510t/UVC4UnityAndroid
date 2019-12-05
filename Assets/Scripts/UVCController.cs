@@ -270,28 +270,35 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine("RequestUsbPermission(" + deviceName + ")");
 #endif
-		isPermissionRequesting = true;
-
-		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+		if (!String.IsNullOrEmpty(deviceName))
 		{
-			clazz.CallStatic("requestPermission",
-				GetCurrentActivity(), deviceName);
-		}
+			isPermissionRequesting = true;
 
-		// アプリにフォーカスが戻るまで待機する
-		float timeElapsed = 0;
-		while (isPermissionRequesting)
-		{
-			if (timeElapsed > 0.5f)
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
-				isPermissionRequesting = false;
-				yield break;
+				clazz.CallStatic("requestPermission",
+					GetCurrentActivity(), deviceName);
 			}
-			timeElapsed += Time.deltaTime;
 
-			yield return null;
+			// アプリにフォーカスが戻るまで待機する
+			float timeElapsed = 0;
+			while (isPermissionRequesting)
+			{
+				if (timeElapsed > 0.5f)
+				{
+					isPermissionRequesting = false;
+					yield break;
+				}
+				timeElapsed += Time.deltaTime;
+
+				yield return null;
+			}
+			yield break;
 		}
-		yield break;
+		else
+		{
+			throw new ArgumentException("device name is empty/null");
+		}
 	}
 
 	/**
@@ -306,6 +313,10 @@ public class UVCController : MonoBehaviour
 				activeCameraId = clazz.CallStatic<Int32>("openDevice",
 					GetCurrentActivity(), deviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 			}
+		}
+		else
+		{
+			throw new ArgumentException("device name is empty/null");
 		}
 	}
 
@@ -325,6 +336,8 @@ public class UVCController : MonoBehaviour
 			}
 
 			StopCoroutine(OnRender());
+		} else {
+			throw new ArgumentException("device name is empty/null");
 		}
 	}
 
@@ -334,25 +347,30 @@ public class UVCController : MonoBehaviour
 	void StartPreview(string deviceName, int width, int height)
 	{
 		StopCoroutine(OnRender());
-	
-		var tex = new Texture2D(
-					width, height,
-					TextureFormat.ARGB32,
-					false, /* mipmap */
-					true /* linear */);
-		GetComponent<Renderer>().material.mainTexture = tex;
 
-		var nativeTexPtr = tex.GetNativeTexturePtr();
-		Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
-
-		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+		if (!String.IsNullOrEmpty(deviceName))
 		{
-			clazz.CallStatic("setPreviewTexture",
-				GetCurrentActivity(), deviceName,
-				nativeTexPtr.ToInt32(), width, height);
-		}
+				var tex = new Texture2D(
+						width, height,
+						TextureFormat.ARGB32,
+						false, /* mipmap */
+						true /* linear */);
+			GetComponent<Renderer>().material.mainTexture = tex;
 
-		StartCoroutine(OnRender());
+			var nativeTexPtr = tex.GetNativeTexturePtr();
+			Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
+
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				clazz.CallStatic("setPreviewTexture",
+					GetCurrentActivity(), deviceName,
+					nativeTexPtr.ToInt32(), width, height);
+			}
+
+			StartCoroutine(OnRender());
+		} else {
+			throw new ArgumentException("device name is empty/null");
+		}
 	}
 
 	/**
@@ -360,12 +378,18 @@ public class UVCController : MonoBehaviour
 	 */
 	string GetSupportedVideoSize(string deviceName)
 	{
-		using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+		if (!String.IsNullOrEmpty(deviceName))
 		{
-			return clazz.CallStatic<string>("getSupportedVideoSize",
-				GetCurrentActivity(), deviceName);
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				return clazz.CallStatic<string>("getSupportedVideoSize",
+					GetCurrentActivity(), deviceName);
+			}
 		}
-
+		else
+		{
+			throw new ArgumentException("device name is empty/null");
+		}
 	}
 
 	/**
