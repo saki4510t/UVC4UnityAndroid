@@ -367,10 +367,6 @@ public class UVCController : MonoBehaviour
 
 			StopCoroutine(OnRender());
 		}
-		else
-		{
-			throw new ArgumentException("device name is empty/null");
-		}
 	}
 
 	/**
