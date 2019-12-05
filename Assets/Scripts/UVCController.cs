@@ -412,6 +412,31 @@ public class UVCController : MonoBehaviour
 	}
 
 	/**
+	 * UVC機器からの映像受けり終了要求をする
+	 */
+	private void StopPreview(string deviceName)
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"StopPreview:{deviceName}");
+#endif
+
+		StopCoroutine(OnRender());
+
+		if (!String.IsNullOrEmpty(deviceName))
+		{
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				clazz.CallStatic("stopPreview",
+					GetCurrentActivity(), deviceName);
+			}
+		}
+		else
+		{
+			throw new ArgumentException("device name is empty/null");
+		}
+	}
+
+	/**
 	 * 指定したUVC機器の対応解像度をjson文字列として取得する
 	 */
 	private string GetSupportedVideoSize(string deviceName)
