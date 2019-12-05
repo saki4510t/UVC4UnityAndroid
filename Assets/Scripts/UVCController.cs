@@ -113,8 +113,7 @@ public class UVCController : MonoBehaviour
 	private IEnumerator OnResume()
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnResume:attachedDeviceName="
-			+ attachedDeviceName + ",activeDeviceName=" + activeDeviceName);
+		Console.WriteLine($"OnResume:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
 #endif
 		isPermissionRequesting = false;
 		if (!String.IsNullOrEmpty(attachedDeviceName)
@@ -167,7 +166,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventPermission(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventPermission:(" + args + ")");
+		Console.WriteLine($"OnEventPermission:({args})");
 #endif
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
@@ -182,7 +181,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventConnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventConnect:(" + args + ")");
+		Console.WriteLine($"OnEventConnect:({args})");
 #endif
 	}
 
@@ -192,7 +191,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDisconnect(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventDisconnect:(" + args + ")");
+		Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
 		CloseCamera(activeDeviceName);
 		attachedDeviceName = null;
@@ -204,7 +203,7 @@ public class UVCController : MonoBehaviour
 	public void OnEventDetach(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventDetach:(" + args + ")");
+		Console.WriteLine($"OnEventDetach:({args})");
 #endif
 		CloseCamera(activeDeviceName);
 	}
@@ -212,12 +211,12 @@ public class UVCController : MonoBehaviour
 	public void OnEventReady(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnEventReady:(" + args + ")");
+		Console.WriteLine($"OnEventReady:({args})");
 #endif
 		activeDeviceName = args;
 		if (!String.IsNullOrEmpty(args))
 		{   // argsはdeviceName
-			Console.WriteLine("OnEventReady:supported=" + GetSupportedVideoSize(args));
+			Console.WriteLine($"OnEventReady:supported={GetSupportedVideoSize(args)}");
 			StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		}
 	}
@@ -228,7 +227,7 @@ public class UVCController : MonoBehaviour
 	public void OnStartPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnStartPreview:(" + args + ")");
+		Console.WriteLine($"OnStartPreview:({args})");
 #endif
 	}
 
@@ -238,7 +237,7 @@ public class UVCController : MonoBehaviour
 	public void OnStopPreview(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnStopPreview:(" + args + ")");
+		Console.WriteLine($"OnStopPreview:({args})");
 #endif
 	}
 
@@ -248,7 +247,7 @@ public class UVCController : MonoBehaviour
 	public void OnReceiveStatus(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnReceiveStatus:(" + args + ")");
+		Console.WriteLine($"OnReceiveStatus:({args})");
 #endif
 	}
 
@@ -258,7 +257,7 @@ public class UVCController : MonoBehaviour
 	public void OnButtonEvent(string args)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnButtonEvent:(" + args + ")");
+		Console.WriteLine($"OnButtonEvent:({args})");
 #endif
 	}
 
@@ -331,6 +330,9 @@ public class UVCController : MonoBehaviour
 	 */
 	private void OpenCamera(string deviceName)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"OpenCamera:{deviceName}");
+#endif
 		if (!String.IsNullOrEmpty(deviceName))
 		{
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -350,6 +352,9 @@ public class UVCController : MonoBehaviour
 	 */
 	private void CloseCamera(string deviceName)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"CloseCamera:{deviceName}");
+#endif
 		if (!String.IsNullOrEmpty(deviceName))
 		{
 			activeCameraId = 0;
@@ -373,6 +378,10 @@ public class UVCController : MonoBehaviour
 	 */
 	private void StartPreview(string deviceName, int width, int height)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"StartPreview:{deviceName}");
+#endif
+
 		StopCoroutine(OnRender());
 
 		if (!String.IsNullOrEmpty(deviceName))
@@ -407,6 +416,10 @@ public class UVCController : MonoBehaviour
 	 */
 	private string GetSupportedVideoSize(string deviceName)
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"GetSupportedVideoSize:{deviceName}");
+#endif
+
 		if (!String.IsNullOrEmpty(deviceName))
 		{
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
