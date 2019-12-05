@@ -7,6 +7,17 @@ using UnityEngine;
 using UnityEngine.Android;
 #endif
 
+/*
+ * uvc-plugin-unity aar内で永続的パーミッションを保持するためのActivityを
+ * AndroidManifest.xmlへ設定してあります。
+ * もし永続的パーミッションを保持する必要がなければ、
+ * 作成中のアプリのAndroidManifest.xmlへ
+ * 次の行を追加してください。
+ * 
+ * <activity android:name="com.serenegiant.uvcplugin.UsbPermissionActivity" tools:node="remove"/>
+ * 
+ */
+
 public class UVCController : MonoBehaviour
 {
 	private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
