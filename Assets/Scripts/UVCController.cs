@@ -65,6 +65,9 @@ public class UVCController : MonoBehaviour
 	// Start is called before the first frame update
 	IEnumerator Start()
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine("Start:");
+#endif
 		if (CheckAndroidVersion(28))
 		{
 			// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
@@ -94,47 +97,19 @@ public class UVCController : MonoBehaviour
 
 	void OnApplicationPause(bool pauseStatus)
 	{
-		if (pauseStatus)
-		{
-			OnPause();
-		}
-		else
-		{
-			OnResume();
-		}
-	}
+	#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"OnApplicationPause:{pauseStatus}");
+#endif
+}
 
 	void OnDestroy()
 	{
-		CloseCamera(activeDeviceName);
+		HandleDetach(activeDeviceName);
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-
-	}
-
-	//--------------------------------------------------------------------------------
-	private IEnumerator OnResume()
-	{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine($"OnResume:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
-#endif
-		isPermissionRequesting = false;
-		if (!String.IsNullOrEmpty(attachedDeviceName)
-			&& String.IsNullOrEmpty(activeDeviceName))
-		{
-			// アタッチされた機器があるけどオープンされていないとき
-			yield return RequestUsbPermission(attachedDeviceName);
-		}
-	}
-
-	private void OnPause()
-	{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-		Console.WriteLine("OnPause:");
-#endif
 	}
 
 	//================================================================================
@@ -212,8 +187,7 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"OnEventDetach:({args})");
 #endif
-		CloseCamera(activeDeviceName);
-		attachedDeviceName = null;
+		HandleDetach(args);
 	}
 
 	/**
@@ -273,6 +247,34 @@ public class UVCController : MonoBehaviour
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"OnButtonEvent:({args})");
 #endif
+	}
+
+	/**
+	 * onResumeイベント
+	 */
+	public IEnumerator OnResumeEvent()
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+#endif
+		if (!isPermissionRequesting
+			&& !String.IsNullOrEmpty(attachedDeviceName)
+			&& String.IsNullOrEmpty(activeDeviceName))
+		{
+			// アタッチされた機器があるけどオープンされていないとき
+			yield return RequestUsbPermission(attachedDeviceName);
+		}
+	}
+
+	/**
+	 * onPauseイベント
+	 */
+	public void OnPauseEvent()
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine("OnPauseEvent:");
+#endif
+		CloseCamera(activeDeviceName);
 	}
 
 	//================================================================================
@@ -440,6 +442,15 @@ public class UVCController : MonoBehaviour
 					GetCurrentActivity(), deviceName);
 			}
 		}
+	}
+
+	/**
+	 * カメラが取り外されたときの処理
+	 */
+	private void HandleDetach(string deviceName)
+	{
+		CloseCamera(activeDeviceName);
+		attachedDeviceName = null;
 	}
 
 	/**
