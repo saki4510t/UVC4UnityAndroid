@@ -97,19 +97,32 @@ public class UVCController : MonoBehaviour
 
 	void OnApplicationPause(bool pauseStatus)
 	{
-	#if (!NDEBUG && DEBUG && ENABLE_LOG)
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"OnApplicationPause:{pauseStatus}");
 #endif
-}
-
-	void OnDestroy()
-	{
-		HandleDetach(activeDeviceName);
 	}
+
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+	private int cnt;
+#endif
 
 	// Update is called once per frame
 	void Update()
 	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		if ((++cnt % 100) == 0)
+		{
+			Console.WriteLine($"Update:cnt={cnt}");
+		}
+#endif
+	}
+
+	void OnDestroy()
+	{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+		Console.WriteLine("OnDestroy:");
+#endif
+		HandleDetach(activeDeviceName);
 	}
 
 	//================================================================================
