@@ -377,8 +377,8 @@ namespace Serenegiant.UVC.Android {
 					clazz.CallStatic("requestPermission",
 						GetCurrentActivity(), deviceName);
 				}
-				//			// アプリにフォーカスが戻るまで待機する
-				//			yield return WaitPermissionWithTimeout(1.0f);
+//				// アプリにフォーカスが戻るまで待機する
+//				yield return WaitPermissionWithTimeout(1.0f);
 			}
 			else
 			{
@@ -592,10 +592,10 @@ namespace Serenegiant.UVC.Android {
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 				return Permission.HasUserAuthorizedPermission(permission);
 #else
-			using (var activity = GetCurrentActivity())
-			{
-				return activity.Call<int>("checkSelfPermission", permission) == 0;
-			}
+				using (var activity = GetCurrentActivity())
+				{
+					return activity.Call<int>("checkSelfPermission", permission) == 0;
+				}
 #endif
 			}
 			return true;
@@ -632,10 +632,10 @@ namespace Serenegiant.UVC.Android {
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 				Permission.RequestUserPermission(permission);
 #else
-			using (var activity = GetCurrentActivity())
-			{
-				activity.Call("requestPermissions", new string[] { permission }, 0);
-			}
+				using (var activity = GetCurrentActivity())
+				{
+					activity.Call("requestPermissions", new string[] { permission }, 0);
+				}
 #endif
 				// アプリにフォーカスが戻るまで待機する
 				yield return WaitPermissionWithTimeout(0.5f);
