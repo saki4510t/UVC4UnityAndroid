@@ -484,7 +484,9 @@ namespace Serenegiant.UVC.Android {
 					{
 						clazz.CallStatic("setPreviewTexture",
 							GetCurrentActivity(), deviceName,
-							nativeTexPtr.ToInt32(), -1, width, height);
+							nativeTexPtr.ToInt32(),
+							-1,	// PreviewMode, -1:自動選択
+							width, height);
 					}
 
 					StartCoroutine(OnRender());
