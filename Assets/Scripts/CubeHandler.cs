@@ -8,7 +8,7 @@ using UnityEngine;
 using Serenegiant.UVC.Android;
 
 namespace Serenegiant {
-	public class TouchHandler : MonoBehaviour
+	public class CubeHandler : MonoBehaviour
 	{
 		private TouchEventManager manager = new TouchEventManager();
 		private UVCController uvcController;
