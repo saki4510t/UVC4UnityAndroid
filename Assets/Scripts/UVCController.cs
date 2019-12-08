@@ -273,7 +273,7 @@ namespace Serenegiant.UVC.Android {
 #endif
 			// このイベントはUnity側からstop/close要求したとき以外にも
 			// 発生する可能性がある
-			//		HandleOnStopPreview(args);
+			HandleOnStopPreview(args);
 		}
 
 		/**
@@ -309,7 +309,6 @@ namespace Serenegiant.UVC.Android {
 				&& String.IsNullOrEmpty(activeDeviceName))
 			{
 				// アタッチされた機器があるけどオープンされていないとき
-				//			yield return RequestUsbPermission(attachedDeviceName);
 				RequestUsbPermission(attachedDeviceName);
 			}
 		}
@@ -322,7 +321,7 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			//		CloseCamera(activeDeviceName);
+			CloseCamera(activeDeviceName);
 		}
 
 		//================================================================================
@@ -515,7 +514,7 @@ namespace Serenegiant.UVC.Android {
 			StopCoroutine(OnRender());
 			if (savedTexture != null)
 			{
-				//			GetComponent<Renderer>().material.mainTexture = savedTexture;
+				GetComponent<Renderer>().material.mainTexture = savedTexture;
 				savedTexture = null;
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
