@@ -166,11 +166,13 @@ namespace Serenegiant.UVC.Android {
 			{	// UVC機器が接続されている
 				if (IsPreviewing())
 				{   // 映像取得中
-					CloseCamera(attachedDeviceName);
+//					CloseCamera(attachedDeviceName);
+					StopPreview(attachedDeviceName);
 				}
 				else
 				{   // 映像を取得していない
-					OpenCamera(attachedDeviceName);
+//					OpenCamera(attachedDeviceName);
+					StartPreview(attachedDeviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 				}
 			}
 		}
