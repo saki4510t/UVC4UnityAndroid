@@ -431,6 +431,9 @@ namespace Serenegiant.UVC.Android {
 
 				HandleOnStopPreview(deviceName);
 			}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("CloseCamera:finished");
+#endif
 		}
 
 		/**
@@ -515,6 +518,9 @@ namespace Serenegiant.UVC.Android {
 				//			GetComponent<Renderer>().material.mainTexture = savedTexture;
 				savedTexture = null;
 			}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("HandleOnStopPreview:finished");
+#endif
 		}
 
 		/**
