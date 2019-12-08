@@ -68,7 +68,9 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private Texture savedTexture;
 
-		// Start is called before the first frame update
+		/**
+		 * Start is called before the first frame update
+		 */
 		IEnumerator Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -116,7 +118,9 @@ namespace Serenegiant.UVC.Android {
 		private int cnt;
 #endif
 
-		// Update is called once per frame
+		/**
+		 * Update is called once per frame
+		 */
 		void Update()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -183,6 +187,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器が接続された
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventAttach(string args)
 		{
@@ -192,16 +197,7 @@ namespace Serenegiant.UVC.Android {
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				attachedDeviceName = args;
-				// RequestUsbPermissionをyield returnで直接呼び出すと
-				// OnPasue/OnResumeをまたいでフォーカスが戻ってくるまで
-				// 関数を抜けない
-				// 一方MoveNextを使うとOnPauseの時点で関数を抜ける
-				//			yield return RequestUsbPermission(attachedDeviceName);
 				RequestUsbPermission(attachedDeviceName);
-				//var v = RequestUsbPermission(args);
-				//while (v.MoveNext())
-				//{
-				//}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:finished");
@@ -210,6 +206,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器へのアクセスのためのパーミッションを取得できた
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventPermission(string args)
 		{
@@ -225,6 +222,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器をオープンした
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventConnect(string args)
 		{
@@ -235,6 +233,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器をクローズした
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventDisconnect(string args)
 		{
@@ -248,6 +247,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器が取り外された
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventDetach(string args)
 		{
@@ -259,6 +259,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 映像を受け取れるようになった
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnEventReady(string args)
 		{
@@ -274,6 +275,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からの映像取得を開始した
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnStartPreview(string args)
 		{
@@ -284,6 +286,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からの映像取得を終了した
+		 * @param args UVC機器の識別文字列
 		 */
 		public void OnStopPreview(string args)
 		{
@@ -297,6 +300,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からのステータスイベントを受信した
+		 * @param args UVC機器の識別文字列+ステータス
 		 */
 		public void OnReceiveStatus(string args)
 		{
@@ -307,6 +311,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からのボタンイベントを受信した
+		 * @param args UVC機器の識別文字列＋ボタンイベント
 		 */
 		public void OnButtonEvent(string args)
 		{
@@ -361,6 +366,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したUSB機器をアクセスするパーミッションを持っているかどうかを取得
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private bool HasUsbPermission(string deviceName)
 		{
@@ -380,6 +386,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * USB機器アクセスのパーミッション要求
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void RequestUsbPermission(string deviceName)
 		{
@@ -396,6 +403,7 @@ namespace Serenegiant.UVC.Android {
 						GetCurrentActivity(), deviceName);
 				}
 //				// アプリにフォーカスが戻るまで待機する
+//				// これを有効にするとアプリからUSBパーミッションダイアログを表示できなくなる
 //				yield return WaitPermissionWithTimeout(1.0f);
 			}
 			else
@@ -409,6 +417,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したUVC機器をオープン要求する
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void OpenCamera(string deviceName)
 		{
@@ -431,6 +440,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したUVC機器をクローズ要求する
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void CloseCamera(string deviceName)
 		{
@@ -456,6 +466,9 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からの映像受け取り開始要求をする
+		 * @param deviceName UVC機器の識別文字列
+		 * @param width
+		 * @param height
 		 */
 		private void StartPreview(string deviceName, int width, int height)
 		{
@@ -517,7 +530,8 @@ namespace Serenegiant.UVC.Android {
 		}
 
 		/**
-		 * UVC機器からの映像受けり終了要求をする
+		 * UVC機器からの映像受けとりを終了要求をする
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void StopPreview(string deviceName)
 		{
@@ -538,7 +552,8 @@ namespace Serenegiant.UVC.Android {
 		}
 
 		/**
-		 * カメラが取り外されたときの処理
+		 * UVC機器が取り外されたときの処理
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void HandleDetach(string deviceName)
 		{
@@ -548,6 +563,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 映像取得が終了したときのUnity側の処理
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private void HandleOnStopPreview(string deviceName)
 		{
@@ -568,6 +584,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したUVC機器の対応解像度をjson文字列として取得する
+		 * @param deviceName UVC機器の識別文字列
 		 */
 		private string GetSupportedVideoSize(string deviceName)
 		{
@@ -589,6 +606,7 @@ namespace Serenegiant.UVC.Android {
 			}
 		}
 
+		//================================================================================
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
 		 */
@@ -622,6 +640,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したバージョン以降かどうかを確認
+		 * @param apiLevel
 		 */
 		private static bool CheckAndroidVersion(int apiLevel)
 		{
@@ -633,6 +652,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * パーミッションを持っているかどうかを調べる
+		 * @param permission
 		 */
 		private static bool HasPermission(string permission)
 		{
@@ -652,6 +672,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * 指定したパーミッションの説明を表示する必要があるかどうかを取得
+		 * @param permission
 		 */
 		private static bool ShouldShowRequestPermissionRationale(string permission)
 		{
@@ -669,6 +690,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * パーミッション要求
+		 * @param permission
 		 */
 		private IEnumerator RequestPermission(string permission)
 		{
