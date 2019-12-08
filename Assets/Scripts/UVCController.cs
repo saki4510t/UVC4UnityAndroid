@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using UnityEngine;
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
@@ -267,7 +268,24 @@ namespace Serenegiant.UVC.Android {
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				Console.WriteLine($"OnEventReady:supported={GetSupportedVideoSize(args)}");
+				var jsonString = GetSupportedVideoSize(args);
+				try
+				{
+					SupportedFormats formats = SupportedFormats.parse(jsonString);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"OnEventReady:supported={formats}");
+#endif
+					if (formats.Find(DEFAULT_WIDTH, DEFAULT_HEIGHT) != null)
+					{
+						Console.WriteLine($"OnEventReady:{DEFAULT_WIDTH}x{DEFAULT_HEIGHT} is supported.");
+					} else {
+						Console.WriteLine($"OnEventReady:{DEFAULT_WIDTH}x{DEFAULT_HEIGHT} is NOT supported.");
+					}
+				}
+				catch (JsonException e)
+				{
+					Debug.Log("OnEventReady:" + e);
+				}
 				StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 			}
 		}
