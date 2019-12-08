@@ -53,6 +53,10 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private Int32 activeCameraId;
 		/**
+		 * プレビュー中フラグ
+		 */
+		private bool isPreviewing;
+		/**
 		 * 動的パーミッション要求中かどうか
 		 */
 		private bool isPermissionRequesting;
@@ -130,11 +134,20 @@ namespace Serenegiant.UVC.Android {
 		// 他のコンポーネントからの操作用
 
 		/**
+		 * カメラをopenしているか
+		 * 映像取得中かどうかはIsPreviewingを使うこと
+		 */
+		public bool IsOpen()
+		{
+			return activeDeviceName != null;
+		}
+
+		/**
 		 * 映像取得中かどうか
 		 */
 		public bool IsPreviewing()
 		{
-			return activeDeviceName != null;
+			return activeDeviceName != null && isPreviewing;
 		}
 	
 		/**
@@ -443,33 +456,37 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"StartPreview:{deviceName}");
 #endif
-			HandleOnStopPreview(deviceName);
-
-			if (!String.IsNullOrEmpty(deviceName))
+			if (!IsPreviewing())
 			{
-				var tex = new Texture2D(
-						width, height,
-						TextureFormat.ARGB32,
-						false, /* mipmap */
-						true /* linear */);
-				savedTexture = GetComponent<Renderer>().material.mainTexture;
-				GetComponent<Renderer>().material.mainTexture = tex;
+				HandleOnStopPreview(deviceName);
 
-				var nativeTexPtr = tex.GetNativeTexturePtr();
-				Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
-
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				if (!String.IsNullOrEmpty(deviceName))
 				{
-					clazz.CallStatic("setPreviewTexture",
-						GetCurrentActivity(), deviceName,
-						nativeTexPtr.ToInt32(), width, height);
-				}
+					isPreviewing = true;
+					var tex = new Texture2D(
+							width, height,
+							TextureFormat.ARGB32,
+							false, /* mipmap */
+							true /* linear */);
+					savedTexture = GetComponent<Renderer>().material.mainTexture;
+					GetComponent<Renderer>().material.mainTexture = tex;
 
-				StartCoroutine(OnRender());
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
+					var nativeTexPtr = tex.GetNativeTexturePtr();
+					Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
+
+					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+					{
+						clazz.CallStatic("setPreviewTexture",
+							GetCurrentActivity(), deviceName,
+							nativeTexPtr.ToInt32(), width, height);
+					}
+
+					StartCoroutine(OnRender());
+				}
+				else
+				{
+					throw new ArgumentException("device name is empty/null");
+				}
 			}
 		}
 
@@ -511,6 +528,7 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
+			isPreviewing = false;
 			StopCoroutine(OnRender());
 			if (savedTexture != null)
 			{
