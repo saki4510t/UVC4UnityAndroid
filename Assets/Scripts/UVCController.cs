@@ -198,7 +198,7 @@ namespace Serenegiant.UVC.Android {
 			Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
 			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
-			// 年のためにCloseCameraを呼んでおく
+			// 念のためにCloseCameraを呼んでおく
 			CloseCamera(activeDeviceName);
 		}
 
