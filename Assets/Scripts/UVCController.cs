@@ -105,6 +105,10 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnApplicationPause:{pauseStatus}");
 #endif
+			if (pauseStatus)
+			{
+				OnPauseEvent();
+			}
 		}
 
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
