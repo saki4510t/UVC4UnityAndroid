@@ -268,24 +268,6 @@ namespace Serenegiant.UVC.Android {
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				var jsonString = GetSupportedVideoSize(args);
-				try
-				{
-					SupportedFormats formats = SupportedFormats.parse(jsonString);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"OnEventReady:supported={formats}");
-#endif
-					if (formats.Find(DEFAULT_WIDTH, DEFAULT_HEIGHT) != null)
-					{
-						Console.WriteLine($"OnEventReady:{DEFAULT_WIDTH}x{DEFAULT_HEIGHT} is supported.");
-					} else {
-						Console.WriteLine($"OnEventReady:{DEFAULT_WIDTH}x{DEFAULT_HEIGHT} is NOT supported.");
-					}
-				}
-				catch (JsonException e)
-				{
-					Debug.Log("OnEventReady:" + e);
-				}
 				StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 			}
 		}
@@ -483,6 +465,24 @@ namespace Serenegiant.UVC.Android {
 			if (!IsPreviewing())
 			{
 				HandleOnStopPreview(deviceName);
+
+				// 対応解像度のチェック
+				var jsonString = GetSupportedVideoSize(deviceName);
+				try
+				{
+					var formats = SupportedFormats.parse(jsonString);
+					if (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+					{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+						Console.WriteLine($"OnEventReady:{width}x{height} is NOT supported.");
+#endif
+						throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+					}
+				}
+				catch (JsonException e)
+				{
+					throw new ArgumentException(e.ToString());
+				}
 
 				if (!String.IsNullOrEmpty(deviceName))
 				{

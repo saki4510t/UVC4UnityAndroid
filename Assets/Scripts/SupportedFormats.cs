@@ -137,9 +137,6 @@ namespace Serenegiant.UVC
 #endif
 			SupportedFormats result = JsonSerializer.Deserialize<SupportedFormats>(jsonString);
 
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"SupportedFormats:({result.formats.Length})");
-#endif
 			return result;
 		}
 
