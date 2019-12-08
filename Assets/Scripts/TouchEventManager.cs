@@ -6,11 +6,24 @@ using UnityEngine;
 
 public class TouchEventManager
 {
+	public enum TouchState {
+		// タッチ無し
+		None = -1,
+		// タッチ開始
+		Began = TouchPhase.Began,
+		// タッチ移動
+		Moved = TouchPhase.Moved,
+		// タッチ静止
+		Stationary = TouchPhase.Stationary,
+		// タッチ終了
+		Ended = TouchPhase.Ended,
+		// タッチキャンセル
+		Canceled = TouchPhase.Canceled,
+	}
 
 	public class TouchEvent {
-		public bool touched;
-		public Vector2 touch_position;
-		public TouchPhase touch_phase;
+		public Vector2 position;
+		public TouchState state;
 
 		/**
 		 * コンストラクタ
@@ -18,18 +31,17 @@ public class TouchEventManager
 		 * @param position
 		 * @param phase
 		 */
-		public TouchEvent(bool touched = false, Vector2? position = null, TouchPhase phase = TouchPhase.Began)
+		public TouchEvent(Vector2? position = null, TouchState state = TouchState.Began)
 		{
-			this.touched = touched;
 			if (position == null)
 			{
-				this.touch_position = new Vector2(0, 0);
+				this.position = new Vector2(0, 0);
 			}
 			else
 			{
-				this.touch_position = (Vector2)position;
+				this.position = (Vector2)position;
 			}
-			this.touch_phase = phase;
+			this.state = state;
 		}
 
 		/**
@@ -38,13 +50,12 @@ public class TouchEventManager
 		 */
 		public TouchEvent(TouchEvent other)
 		{
-			this.touched = other.touched;
-			this.touch_position = new Vector2(other.touch_position.x, other.touch_position.y);
-			this.touch_phase = other.touch_phase;
+			this.position = new Vector2(other.position.x, other.position.y);
+			this.state = other.state;
 		}
 	}
 
-	public TouchEvent touchEvent = new TouchEvent();
+	private TouchEvent touchEvent = new TouchEvent();
 
 	/**
 	 * デフォルトコンストラクタ
@@ -59,14 +70,13 @@ public class TouchEventManager
 	 */
 	public void Update()
     {
-		touchEvent.touched = false;
+		touchEvent.state = TouchState.None;
 
 		if (Application.isEditor)
 		{	// エディタで実行中…マウスの状態でタッチイベントをシミュレートする
 			if (Input.GetMouseButtonDown(0))
 			{   // タッチしたとき
-				touchEvent.touched = true;
-				touchEvent.touch_phase = TouchPhase.Began;
+				touchEvent.state = TouchState.Began;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine("タッチした:");
 #endif
@@ -74,8 +84,7 @@ public class TouchEventManager
 
 			if (Input.GetMouseButtonUp(0))
 			{   // 離したとき
-				touchEvent.touched = true;
-				touchEvent.touch_phase = TouchPhase.Ended;
+				touchEvent.state = TouchState.Ended;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine("タッチした:");
 #endif
@@ -83,16 +92,15 @@ public class TouchEventManager
 
 			if (Input.GetMouseButton(0))
 			{   // 押し続けているとき
-				touchEvent.touched = true;
-				touchEvent.touch_phase = TouchPhase.Moved;
+				touchEvent.state = TouchState.Moved;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine("押し続けている");
 #endif
 			}
 
-			if (touchEvent.touched)
+			if (touchEvent.state != TouchState.None)
 			{	// タッチイベントがあるときは座標を取得
-				touchEvent.touch_position = Input.mousePosition;
+				touchEvent.position = Input.mousePosition;
 			}
 		}
 		else
@@ -100,9 +108,8 @@ public class TouchEventManager
 			if (Input.touchCount > 0)
 			{
 				Touch touch = Input.GetTouch(0);
-				touchEvent.touch_position = touch.position;
-				touchEvent.touch_phase = touch.phase;
-				touchEvent.touched = true;
+				touchEvent.position = touch.position;
+				touchEvent.state = (TouchState)touch.phase;
 			}
 		}
 	}
