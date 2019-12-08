@@ -5,27 +5,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TouchHandler : MonoBehaviour
-{
-	private TouchEventManager manager = new TouchEventManager();
+using Serenegiant.UVC.Android;
 
-	// Start is called before the first frame update
-	void Start()
-    {
-        
-    }
+namespace Serenegiant {
+	public class TouchHandler : MonoBehaviour
+	{
+		private TouchEventManager manager = new TouchEventManager();
+		private UVCController uvcController;
 
-    // Update is called once per frame
-    void Update()
-    {
-		manager.Update();
+		// Start is called before the first frame update
+		void Start()
+		{
+			uvcController = gameObject.GetComponent<UVCController>();
+		}
 
-		TouchEventManager.TouchEvent touch = manager.GetTouch();
-		if (touch.state == TouchEventManager.TouchState.Began)
-		{   // タッチした時
+		// Update is called once per frame
+		void Update()
+		{
+			manager.Update();
+
+			TouchEventManager.TouchEvent touch = manager.GetTouch();
+			if (touch.state == TouchEventManager.TouchState.Began)
+			{   // タッチした時
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("タッチした:");
+				Console.WriteLine("タッチした:");
 #endif
+			}
 		}
 	}
-}
+} // namespace Serenegiant
