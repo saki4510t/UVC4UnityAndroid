@@ -421,6 +421,7 @@ namespace Serenegiant.UVC.Android {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
+				HandleOnStopPreview(deviceName);
 				activeCameraId = 0;
 				activeDeviceName = null;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -429,7 +430,6 @@ namespace Serenegiant.UVC.Android {
 						GetCurrentActivity(), deviceName);
 				}
 
-				HandleOnStopPreview(deviceName);
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("CloseCamera:finished");
