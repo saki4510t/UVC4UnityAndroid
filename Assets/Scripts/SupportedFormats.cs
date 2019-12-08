@@ -59,6 +59,8 @@ namespace Serenegiant.UVC
 	{
 		public class FrameFormat
 		{
+			[JsonPropertyName("frame_type")]
+			public int frameType { get; set; }
 			[JsonPropertyName("default")]
 			public int defaultIndex { get; set; }
 			[JsonPropertyName("size")]
