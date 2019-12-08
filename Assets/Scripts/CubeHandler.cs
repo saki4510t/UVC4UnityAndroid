@@ -1,8 +1,6 @@
 ﻿#define ENABLE_LOG
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 using Serenegiant.UVC.Android;
@@ -12,11 +10,13 @@ namespace Serenegiant {
 	{
 		private TouchEventManager manager = new TouchEventManager();
 		private UVCController uvcController;
+		private Transform targetTransform;
 
 		// Start is called before the first frame update
 		void Start()
 		{
 			uvcController = gameObject.GetComponent<UVCController>();
+			targetTransform = gameObject.transform;
 		}
 
 		// Update is called once per frame
@@ -35,6 +35,12 @@ namespace Serenegiant {
 					uvcController.Toggle();
 				}
 			}
+
+		}
+
+		void FixedUpdate()
+		{
+			targetTransform.Rotate(-0.2f, 0.1f, 0.05f);
 		}
 	}
 } // namespace Serenegiant
