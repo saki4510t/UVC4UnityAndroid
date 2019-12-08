@@ -30,6 +30,10 @@ namespace Serenegiant {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine("タッチした:");
 #endif
+				if (uvcController != null)
+				{
+					uvcController.Toggle();
+				}
 			}
 		}
 	}

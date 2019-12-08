@@ -129,9 +129,33 @@ namespace Serenegiant.UVC.Android {
 		//================================================================================
 		// 他のコンポーネントからの操作用
 
+		/**
+		 * 映像取得中かどうか
+		 */
+		public bool IsPreviewing()
+		{
+			return activeDeviceName != null;
+		}
+	
+		/**
+		 * 映像取得のON/OFF
+		 */
 		public void Toggle()
 		{
-
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Toggle:{IsPreviewing()}");
+#endif
+			if (!String.IsNullOrEmpty(attachedDeviceName))
+			{	// UVC機器が接続されている
+				if (IsPreviewing())
+				{   // 映像取得中
+					CloseCamera(attachedDeviceName);
+				}
+				else
+				{   // 映像を取得していない
+					OpenCamera(attachedDeviceName);
+				}
+			}
 		}
 
 		//================================================================================
