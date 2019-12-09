@@ -39,6 +39,7 @@ namespace Serenegiant.UVC.Android {
 		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
 		private const int DEFAULT_WIDTH = 1280;
 		private const int DEFAULT_HEIGHT = 720;
+		private const bool PREFER_H264 = true;
 
 		private Material targetMaterial;
 	
@@ -436,7 +437,8 @@ namespace Serenegiant.UVC.Android {
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
-						GetCurrentActivity(), deviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+						GetCurrentActivity(), deviceName,
+						DEFAULT_WIDTH, DEFAULT_HEIGHT, PREFER_H264);
 				}
 			}
 			else
