@@ -480,7 +480,7 @@ namespace Serenegiant.UVC.Android {
 				// 対応解像度のチェック
 				var jsonString = GetSupportedVideoSize(deviceName);
 				var formats = SupportedFormats.parse(jsonString);
-				if (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+				if ((formats == null) || (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null))
 				{   // 指定した解像度に対応していない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 					Console.WriteLine($"OnEventReady:{width}x{height} is NOT supported.");
