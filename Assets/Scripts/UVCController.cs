@@ -31,6 +31,8 @@ using UnityEngine.Android;
  */
 
 namespace Serenegiant.UVC.Android {
+
+	[RequireComponent(typeof(Renderer))]
 	public class UVCController : MonoBehaviour
 	{
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
