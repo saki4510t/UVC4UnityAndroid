@@ -37,14 +37,13 @@ namespace Serenegiant.UVC.Android {
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
-		// THETA VのH.264映像
-		private const int DEFAULT_WIDTH = 3840;
-		private const int DEFAULT_HEIGHT = 1920;
-		private const bool PREFER_H264 = true;
-		// 普通のUVC機器
-		//private const int DEFAULT_WIDTH = 1280;
-		//private const int DEFAULT_HEIGHT = 720;
-		//private const bool PREFER_H264 = false;
+
+		// THETA VのH.264映像: 3840x1920@30fps, H.264
+		// 普通のUVC機器: 1280x720/1920x1080 MJPEG
+
+		public int VideoWidth = 3840;
+		public int VideoHeight = 1920;
+		public bool PreferH264 = true;
 
 		private Material targetMaterial;
 	
@@ -190,7 +189,7 @@ namespace Serenegiant.UVC.Android {
 				else
 				{   // 映像を取得していない
 //					OpenCamera(attachedDeviceName);
-					StartPreview(attachedDeviceName, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+					StartPreview(attachedDeviceName, VideoWidth, VideoHeight);
 				}
 			}
 		}
@@ -282,7 +281,7 @@ namespace Serenegiant.UVC.Android {
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				StartPreview(args, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+				StartPreview(args, VideoWidth, VideoHeight);
 			}
 		}
 
@@ -443,7 +442,7 @@ namespace Serenegiant.UVC.Android {
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
 						GetCurrentActivity(), deviceName,
-						DEFAULT_WIDTH, DEFAULT_HEIGHT, PREFER_H264);
+						VideoWidth, VideoHeight, PreferH264);
 				}
 			}
 			else
