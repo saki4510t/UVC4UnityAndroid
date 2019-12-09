@@ -3,7 +3,6 @@
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using UnityEngine;
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
@@ -480,20 +479,13 @@ namespace Serenegiant.UVC.Android {
 
 				// 対応解像度のチェック
 				var jsonString = GetSupportedVideoSize(deviceName);
-				try
-				{
-					var formats = SupportedFormats.parse(jsonString);
-					if (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
-					{   // 指定した解像度に対応していない
+				var formats = SupportedFormats.parse(jsonString);
+				if (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+				{   // 指定した解像度に対応していない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-						Console.WriteLine($"OnEventReady:{width}x{height} is NOT supported.");
+					Console.WriteLine($"OnEventReady:{width}x{height} is NOT supported.");
 #endif
-						throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
-					}
-				}
-				catch (JsonException e)
-				{
-					throw new ArgumentException(e.ToString());
+					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
 				}
 
 				if (!String.IsNullOrEmpty(deviceName))

@@ -60,7 +60,7 @@ namespace Serenegiant.UVC
 		public class FrameFormat
 		{
 			[JsonPropertyName("frame_type")]
-			public int frameType { get; set; }
+			public int frame_type { get; set; }
 			[JsonPropertyName("default")]
 			public int defaultIndex { get; set; }
 			[JsonPropertyName("size")]
@@ -135,7 +135,15 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"SupportedFormats:{jsonString}");
 #endif
-			SupportedFormats result = JsonSerializer.Deserialize<SupportedFormats>(jsonString);
+			SupportedFormats result;
+			try
+			{
+				result = JsonSerializer.Deserialize<SupportedFormats>(jsonString);
+			}
+			catch (JsonException e)
+			{
+				throw new ArgumentException(e.ToString());
+			}
 
 			return result;
 		}
