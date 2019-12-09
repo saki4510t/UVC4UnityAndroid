@@ -27,13 +27,7 @@ namespace Serenegiant {
 			TouchEventManager.TouchEvent touch = manager.GetTouch();
 			if (touch.state == TouchEventManager.TouchState.Began)
 			{   // タッチした時
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine("タッチした:");
-#endif
-				if (uvcController != null)
-				{
-					uvcController.Toggle();
-				}
+				OnClick();
 			}
 
 		}
@@ -41,6 +35,17 @@ namespace Serenegiant {
 		void FixedUpdate()
 		{
 			targetTransform.Rotate(-0.2f, 0.1f, 0.05f);
+		}
+
+		public void OnClick()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnClick:");
+#endif
+			if (uvcController != null)
+			{
+				uvcController.Toggle();
+			}
 		}
 	}
 } // namespace Serenegiant
