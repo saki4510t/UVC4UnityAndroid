@@ -2,11 +2,12 @@
 
 using System;
 using UnityEngine;
-using System.Linq;
 
 using Serenegiant.UVC.Android;
+using UnityEngine.EventSystems;
 
-public class CubeHandler : MonoBehaviour
+public class CubeHandler : MonoBehaviour,
+	IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
 	private UVCController uvcController;
 	private Transform taregtTransform;
@@ -25,25 +26,7 @@ public class CubeHandler : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		// タッチ数取得
-		int touchCount = Input.touches
-			.Count(t => t.phase != TouchPhase.Ended && t.phase != TouchPhase.Canceled);
 
-		if (touchCount == 1)
-		{
-			Touch t = Input.touches.First();
-			switch (t.phase)
-			{
-				case TouchPhase.Moved:
-					// 移動量に応じて角度計算
-					float xAngle = t.deltaPosition.y * FACTOR;
-					float yAngle = -t.deltaPosition.x * FACTOR;
-
-					force += new Vector3(xAngle, yAngle, 0.0f);
-					break;
-			}
-
-		}
 	}
 
 	void FixedUpdate()
@@ -54,10 +37,24 @@ public class CubeHandler : MonoBehaviour
 		force *= DECAY_RATE;
 	}
 
-	/**
-		* オブジェクトにタッチしたときの処理
-		*/
-	public void OnClick()
+	public void OnBeginDrag(PointerEventData eventData)
+	{
+	}
+
+	public void OnDrag(PointerEventData eventData)
+	{
+		// 移動量に応じて角度計算
+		float xAngle = eventData.delta.y * FACTOR;
+		float yAngle = -eventData.delta.x * FACTOR;
+
+		force += new Vector3(xAngle, yAngle, 0.0f);
+	}
+
+	public void OnEndDrag(PointerEventData eventData)
+	{
+	}
+
+	public void OnPointerClick(PointerEventData eventData)
 	{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine("OnClick:");
