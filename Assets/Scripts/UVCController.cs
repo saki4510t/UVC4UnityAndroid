@@ -37,9 +37,14 @@ namespace Serenegiant.UVC.Android {
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
-		private const int DEFAULT_WIDTH = 1280;
-		private const int DEFAULT_HEIGHT = 720;
+		// THETA VのH.264映像
+		private const int DEFAULT_WIDTH = 3840;
+		private const int DEFAULT_HEIGHT = 1920;
 		private const bool PREFER_H264 = true;
+		// 普通のUVC機器
+		//private const int DEFAULT_WIDTH = 1280;
+		//private const int DEFAULT_HEIGHT = 720;
+		//private const bool PREFER_H264 = false;
 
 		private Material targetMaterial;
 	
@@ -748,7 +753,7 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * テクスチャとして映像を描画するMaterialを取得する
-		 * このスクリプトを割当てたのと同じGameObjectにSkyboxかRendererが無いとだめ
+		 * このスクリプトを割当てたのと同じGameObjectにSkybox/Renderer/Materialが無いとだめ
 		 */
 		Material GetTargetMaterial()
 		{
@@ -761,6 +766,11 @@ namespace Serenegiant.UVC.Android {
 			if (renderer != null)
 			{
 				return renderer.material;
+			}
+			var material = GetComponent<Material>();
+			if (renderer != null)
+			{
+				return material;
 			}
 			return null;
 		}
