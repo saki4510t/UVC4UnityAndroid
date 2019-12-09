@@ -73,16 +73,22 @@ namespace Serenegiant.UVC
 			 */
 			public int GetNumSize()
 			{
-				return Math.Min(size.Length, frameRate.Length);
+				return Math.Min(
+					size != null ? size.Length : 0,
+					frameRate != null ? frameRate.Length : 0);
 			}
 
 			/**
 			 * 指定したインデックスの解像度のフレームレートが指定範囲内かどうかをチェック
+			 * @param ix
+			 * @param minFps
+			 * @param maxFps
 			 */
-			private bool IsSupported(int ix, float minFps = 0.1f, float maxFps = 121.0f)
+			private bool IsSupported(int ix, float minFps, float maxFps)
 			{
 				bool result = false;
-		
+
+				// XXX 呼び出し元でサイズチェックしているのこっちではnullチェックしない
 				foreach (float val in frameRate[ix])
 				{
 					if ((val >= minFps) && (val <= maxFps))
@@ -106,21 +112,25 @@ namespace Serenegiant.UVC
 			{
 				var str = $"{width}x{height}";
 				bool result = false;
-				var numframeRates = frameRate.Length;
-				int i = 0;
 
-				foreach (string item in this.size)
+				if (GetNumSize() > 0)	// ヌルポ避け
 				{
-					if (i >= numframeRates)
+					var numframeRates = frameRate.Length;
+					int i = 0;
+
+					foreach (string item in this.size)
 					{
-						break;	
+						if (i >= numframeRates)
+						{
+							break;
+						}
+						if ((item == str) && IsSupported(i, minFps, maxFps))
+						{
+							result = true;
+							break;
+						}
+						i++;
 					}
-					if ((item == str) && IsSupported(i, minFps, maxFps))
-					{
-						result = true;
-						break;
-					}
-					i++;
 				}
 
 				return result;
@@ -170,12 +180,15 @@ namespace Serenegiant.UVC
 		{
 			FrameFormat result = null;
 
-			foreach (FrameFormat format in formats)
+			if (formats != null)
 			{
-				if (format.IsSupported(width, height, minFps, maxFps))
+				foreach (FrameFormat format in formats)
 				{
-					result = format;
-					break;
+					if (format.IsSupported(width, height, minFps, maxFps))
+					{
+						result = format;
+						break;
+					}
 				}
 			}
 
