@@ -32,7 +32,6 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC.Android {
 
-	[RequireComponent(typeof(Renderer))]
 	public class UVCController : MonoBehaviour
 	{
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
@@ -41,6 +40,8 @@ namespace Serenegiant.UVC.Android {
 		private const int DEFAULT_WIDTH = 1280;
 		private const int DEFAULT_HEIGHT = 720;
 
+		private Material targetMaterial;
+	
 		/**
 		 * 接続中のカメラの識別文字列
 		 */
@@ -76,6 +77,12 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
+			targetMaterial = GetTargetMaterial();
+			if (targetMaterial == null)
+			{
+				throw new UnityException("no Renderer/Skybox components found.");
+			}
+		
 			if (CheckAndroidVersion(28))
 			{
 				// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
@@ -498,8 +505,8 @@ namespace Serenegiant.UVC.Android {
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					savedTexture = GetComponent<Renderer>().material.mainTexture;
-					GetComponent<Renderer>().material.mainTexture = tex;
+					savedTexture = targetMaterial.mainTexture;
+					targetMaterial.mainTexture = tex;
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
 					Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
@@ -567,7 +574,7 @@ namespace Serenegiant.UVC.Android {
 			StopCoroutine(OnRender());
 			if (savedTexture != null)
 			{
-				GetComponent<Renderer>().material.mainTexture = savedTexture;
+				targetMaterial.mainTexture = savedTexture;
 				savedTexture = null;
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -736,6 +743,26 @@ namespace Serenegiant.UVC.Android {
 #endif
 			yield break;
 		}
-	}
+
+		/**
+		 * テクスチャとして映像を描画するMaterialを取得する
+		 * このスクリプトを割当てたのと同じGameObjectにSkyboxかRendererが無いとだめ
+		 */
+		Material GetTargetMaterial()
+		{
+			var skybox = GetComponent<Skybox>();
+			if (skybox != null)
+			{
+				return skybox.material;
+			}
+			var renderer = GetComponent<Renderer>();
+			if (renderer != null)
+			{
+				return renderer.material;
+			}
+			return null;
+		}
+
+	} // UVCController
 
 }   // namespace Serenegiant.UVC.Android
