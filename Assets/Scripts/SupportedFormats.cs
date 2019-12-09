@@ -1,4 +1,4 @@
-﻿#define ENABLE_LOG
+﻿//#define ENABLE_LOG
 
 using System;
 using System.Text.Json;
@@ -66,14 +66,14 @@ namespace Serenegiant.UVC
 			[JsonPropertyName("size")]
 			public string[] size { get; set; }
 			[JsonPropertyName("frameRate")]
-			public float[][] frameRates { get; set; }
+			public float[][] frameRate { get; set; }
 
 			/**
 			 * 対応解像度の個数を取得
 			 */
 			public int GetNumSize()
 			{
-				return Math.Min(size.Length, frameRates.Length);
+				return Math.Min(size.Length, frameRate.Length);
 			}
 
 			/**
@@ -83,7 +83,7 @@ namespace Serenegiant.UVC
 			{
 				bool result = false;
 		
-				foreach (float val in frameRates[ix])
+				foreach (float val in frameRate[ix])
 				{
 					if ((val >= minFps) && (val <= maxFps))
 					{
@@ -106,7 +106,7 @@ namespace Serenegiant.UVC
 			{
 				var str = $"{width}x{height}";
 				bool result = false;
-				var numframeRates = frameRates.Length;
+				var numframeRates = frameRate.Length;
 				int i = 0;
 
 				foreach (string item in this.size)
@@ -130,6 +130,11 @@ namespace Serenegiant.UVC
 		[JsonPropertyName("formats")]
 		public FrameFormat[] formats { get; set; }
 
+		/**
+		 * JSON文字列として引き渡された対応解像度をパースしてSupportedFormatsとして返す
+		 * @param jsonString
+		 * @throws ArgumentException
+		 */
 		public static SupportedFormats parse(string jsonString)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -145,6 +150,10 @@ namespace Serenegiant.UVC
 				throw new ArgumentException(e.ToString());
 			}
 
+			if (result == null)
+			{
+				throw new ArgumentException($"failed to parse ({jsonString})");
+			}
 			return result;
 		}
 
@@ -172,6 +181,5 @@ namespace Serenegiant.UVC
 
 			return result;
 		}
-	}
-
-}
+	}   // class SupportedFormats
+}   // namespace Serenegiant.UVC
