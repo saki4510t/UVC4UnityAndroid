@@ -898,17 +898,16 @@ namespace Serenegiant.UVC.Android {
 		 */
 		IUVCSelector GetUVCSelector()
 		{
-			if (UVCSelector == null)
+			if (UVCSelector != null)
 			{
 				return UVCSelector;
-
 			}
-			var selector = TargetGameObject.GetComponent<IUVCSelector>();
+			var selector = TargetGameObject.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
 			if (selector != null)
 			{
 				return selector;
 			}
-			selector = GetComponent<IUVCSelector>();
+			selector = GetComponent(typeof(IUVCSelector)) as IUVCSelector;
 			if (selector != null)
 			{
 				return selector;
