@@ -274,7 +274,7 @@ namespace Serenegiant.UVC
 		 * @param maxFps(default=121.0f)
 		 * @return
 		 */
-		public FrameFormat Find(int width, int height, float minFps = 0.1f, float maxFps = 121.0f)
+		public FrameFormat IsSupported(int width, int height, float minFps = 0.1f, float maxFps = 121.0f)
 		{
 			FrameFormat result = null;
 
@@ -292,5 +292,40 @@ namespace Serenegiant.UVC
 
 			return result;
 		}
+
+		/**
+		 * 指定した解像度に対応しているSizeを返す
+		 * 対応していなければnullを返す
+		 * FIXME 今はフレームレートは無視する
+		 * @param width
+		 * @param height
+		 * @param minFps(default=0.1f)
+		 * @param maxFps(default=121.0f)
+		 * @return
+		 */
+		public Size Find(int width, int height, float minFps = 0.1f, float maxFps = 121.0f)
+		{
+			Size result = null;
+
+			if (formats != null)
+			{
+				foreach (FrameFormat format in formats)
+				{
+					var items = format.GetEnumerator();
+					while (items.MoveNext())
+					{
+						Size sz = items.Current;
+						if ((sz.Width == width) && (sz.Height == height))
+						{
+							result = sz;
+							break;
+						}
+					}
+				}
+			}
+
+			return result;
+		}
+	
 	}   // class SupportedFormats
 }   // namespace Serenegiant.UVC
