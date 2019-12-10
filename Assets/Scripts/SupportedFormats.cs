@@ -73,6 +73,11 @@ namespace Serenegiant.UVC
 				Height = height;
 				FrameRate = frameRate;
 			}
+
+			public override string ToString()
+			{
+				return $"{base.ToString()}(FrameType={FrameType},size=({Width}x{Height}),FrameRate=[{string.Join(",", FrameRate)}]";
+			}
 		}
 
 //		public class FrameFormat : IEnumerable
