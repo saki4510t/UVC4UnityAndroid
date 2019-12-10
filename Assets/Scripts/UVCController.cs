@@ -228,6 +228,8 @@ namespace Serenegiant.UVC.Android {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
+				var info = UVCInfo.Parse(GetInfo(args));
+				Console.WriteLine("Info=" + info);
 				attachedDeviceName = args;
 				RequestUsbPermission(attachedDeviceName);
 			}
