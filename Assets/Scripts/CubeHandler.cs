@@ -13,7 +13,7 @@ public class CubeHandler : MonoBehaviour,
 	 * このスクリプトで操作するGameObject
 	 * 未割り当ての場合はこのスクリプトがセットされているGameObjectを使う
 	 */
-	public GameObject TargetObject;
+	public GameObject TargetObject { get; set; } = null;
 
 	private Transform taregtTransform;
 	private Vector3 force = new Vector3();
