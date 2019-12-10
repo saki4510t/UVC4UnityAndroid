@@ -662,9 +662,9 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private UVCInfo GetInfo(string deviceName)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetInfo:{deviceName}");
-#endif
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//			Console.WriteLine($"GetInfo:{deviceName}");
+//#endif
 
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -688,9 +688,9 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetSupportedVideoSize:{deviceName}");
-#endif
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//			Console.WriteLine($"GetSupportedVideoSize:{deviceName}");
+//#endif
 
 			if (!String.IsNullOrEmpty(deviceName))
 			{
