@@ -62,6 +62,11 @@ namespace Serenegiant.UVC.Android {
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
 		public Material TargetMaterial;
+
+		/**
+		 * UVC機器とその解像度を選択するためのインターフェース
+		 */
+		public IUVCSelector UVCSelector;
 	
 		/**
 		 * 接続中のカメラの識別文字列
@@ -226,10 +231,9 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
-			if (!String.IsNullOrEmpty(args))
+			if (!String.IsNullOrEmpty(args)
+				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
-				var info = GetInfo(args);
-				Console.WriteLine("Info=" + info);
 				attachedDeviceName = args;
 				RequestUsbPermission(attachedDeviceName);
 			}
