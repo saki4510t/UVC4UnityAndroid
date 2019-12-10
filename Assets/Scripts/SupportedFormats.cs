@@ -1,6 +1,7 @@
 ﻿//#define ENABLE_LOG
 
 using System;
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -57,7 +58,21 @@ namespace Serenegiant.UVC
 
 	public class SupportedFormats
 	{
-		public class FrameFormat
+		public class Size
+		{
+			public int Width;
+			public int Height;
+			public float[] FrameRate;
+
+			public Size(int width, int height, float[]frameRate)
+			{
+				Width = width;
+				Height = height;
+				FrameRate = frameRate;
+			}
+		}
+
+		public class FrameFormat : IEnumerable
 		{
 			[JsonPropertyName("frame_type")]
 			public int frame_type { get; set; }
@@ -76,6 +91,22 @@ namespace Serenegiant.UVC
 				return Math.Min(
 					size != null ? size.Length : 0,
 					frameRate != null ? frameRate.Length : 0);
+			}
+
+			/**
+			 * Sizeの反復取得用の列挙子を取得
+			 */
+			IEnumerator IEnumerable.GetEnumerator()
+			{
+				return (IEnumerator)GetEnumerator();
+			}
+
+			/**
+			 * Sizeの反復取得用の列挙子を取得
+			 */
+			public SizeEnumerator GetEnumerator()
+			{
+				return new SizeEnumerator(this);
 			}
 
 			/**
@@ -134,6 +165,70 @@ namespace Serenegiant.UVC
 				}
 
 				return result;
+			}
+		}
+
+		/**
+		 * Size用の列挙子
+		 */
+		public class SizeEnumerator : IEnumerator
+		{
+			private Size[] sizes;
+			private int position = -1;
+
+			public SizeEnumerator(FrameFormat format)
+			{
+				int n = format.GetNumSize();
+				sizes = new Size[n];
+				if (n > 0)
+				{
+					var numframeRates = format.frameRate.Length;
+					int i = 0;
+
+					foreach (string item in format.size)
+					{
+						if (i >= numframeRates)
+						{
+							break;
+						}
+						string[] sz = item.Split('x');
+						sizes[i] = new Size(int.Parse(sz[0]), int.Parse(sz[1]), format.frameRate[i]);
+						i++;
+					}
+				}
+			}
+	
+			public bool MoveNext()
+			{
+				position++;
+				return (position < sizes.Length);
+			}
+
+			public void Reset()
+			{
+				position = -1;
+			}
+
+			object IEnumerator.Current
+			{
+				get
+				{
+					return Current;
+				}
+			}
+			public Size Current
+			{
+				get
+				{
+					try
+					{
+						return sizes[position];
+					}
+					catch (IndexOutOfRangeException)
+					{
+						throw new InvalidOperationException();
+					}
+				}
 			}
 		}
 

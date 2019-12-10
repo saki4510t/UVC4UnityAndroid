@@ -17,7 +17,7 @@ namespace Serenegiant.UVC
 		/**
 		 * 指定したUVC機器で使用する解像度を取得
 		 */
-		SupportedFormats.FrameFormat SelectFrameFormat(UVCInfo info, SupportedFormats formats);
+		SupportedFormats.Size SelectSize(UVCInfo info, SupportedFormats formats);
 
 	} // IUVCSelector
 
