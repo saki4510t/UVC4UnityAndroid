@@ -213,8 +213,8 @@ namespace Serenegiant.UVC.Android {
 				}
 				else
 				{   // 映像を取得していない
-//					OpenCamera(attachedDeviceName);
-					RequestStartPreview(attachedDeviceName, VideoWidth, VideoHeight);
+					//					OpenCamera(attachedDeviceName);
+					StartPreview(attachedDeviceName);
 				}
 			}
 		}
@@ -307,7 +307,7 @@ namespace Serenegiant.UVC.Android {
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				RequestStartPreview(args, VideoWidth, VideoHeight);
+				StartPreview(args);
 			}
 		}
 
@@ -505,6 +505,49 @@ namespace Serenegiant.UVC.Android {
 
 		/**
 		 * UVC機器からの映像受け取り開始要求をする
+		 * UVCSelectorが設定されているときはUVCSelector#SelectSizeから映像サイズの取得を試みる
+		 * UVCSelectorが設定されていないかUVCSelector#SelectSizeがnullを返したときは
+		 * スクリプトに設定されているVideoWidth,VideoHeightを使う
+		 * @param deviceName UVC機器の識別文字列
+		 */
+		private void StartPreview(string deviceName)
+		{
+			int width = VideoWidth;
+			int height = VideoHeight;
+
+			var supportedVideoSize = GetSupportedVideoSize(deviceName);
+			if (supportedVideoSize == null)
+			{
+				throw new ArgumentException("fauled to get supported video size");
+			}
+
+			if (UVCSelector != null)
+			{
+				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
+				if (size != null)
+				{
+					width = size.Width;
+					height = size.Height;
+				}
+			}
+
+			// 対応解像度のチェック
+			if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+			{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"StartPreview:{width}x{height} is NOT supported.");
+#endif
+				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+			}
+
+			RequestStartPreview(deviceName, width, height);
+		}
+
+		/**
+		 * UVC機器からの映像受け取り開始要求をする
+		 * この関数では指定したサイズに対応しているかどうかのチェックをしないので
+		 * 呼び出し元でチェックすること
+		 * 通常はStartPreview(string deviceName)経由で呼び出す
 		 * @param deviceName UVC機器の識別文字列
 		 * @param width
 		 * @param height
@@ -517,16 +560,6 @@ namespace Serenegiant.UVC.Android {
 			if (!IsPreviewing())
 			{
 				HandleOnStopPreview(deviceName);
-
-				// 対応解像度のチェック
-				var formats = GetSupportedVideoSize(deviceName);
-				if ((formats == null) || (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null))
-				{   // 指定した解像度に対応していない
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"OnEventReady:{width}x{height} is NOT supported.");
-#endif
-					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
-				}
 
 				if (!String.IsNullOrEmpty(deviceName))
 				{
