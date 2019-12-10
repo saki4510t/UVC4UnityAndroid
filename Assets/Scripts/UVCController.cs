@@ -228,7 +228,7 @@ namespace Serenegiant.UVC.Android {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				var info = UVCInfo.Parse(GetInfo(args));
+				var info = GetInfo(args);
 				Console.WriteLine("Info=" + info);
 				attachedDeviceName = args;
 				RequestUsbPermission(attachedDeviceName);
@@ -614,7 +614,7 @@ namespace Serenegiant.UVC.Android {
 		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private string GetInfo(string deviceName)
+		private UVCInfo GetInfo(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"GetInfo:{deviceName}");
@@ -624,8 +624,8 @@ namespace Serenegiant.UVC.Android {
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return clazz.CallStatic<string>("getInfo",
-						GetCurrentActivity(), deviceName);
+					return UVCInfo.Parse(clazz.CallStatic<string>("getInfo",
+						GetCurrentActivity(), deviceName));
 				}
 			}
 			else
