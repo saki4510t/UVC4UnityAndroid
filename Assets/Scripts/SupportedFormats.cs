@@ -145,7 +145,7 @@ namespace Serenegiant.UVC
 		 * @param jsonString
 		 * @throws ArgumentException
 		 */
-		public static SupportedFormats parse(string jsonString)
+		public static SupportedFormats Parse(string jsonString)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"SupportedFormats:{jsonString}");
