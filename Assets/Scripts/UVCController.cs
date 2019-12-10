@@ -41,9 +41,9 @@ namespace Serenegiant.UVC.Android {
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
 		// 普通のUVC機器: 1280x720/1920x1080 MJPEG
 
-		public int VideoWidth { get; set; } = 3840;
-		public int VideoHeight { get; set; } = 1920;
-		public bool PreferH264 { get; set; } = true;
+		public int VideoWidth = 3840;
+		public int VideoHeight = 1920;
+		public bool PreferH264 = true;
 
 		/**
 		 * UVC機器からの映像の描画先Material
@@ -53,7 +53,7 @@ namespace Serenegiant.UVC.Android {
 		 * 優先順位：Editorでの設定 > Skybox > Renderer > Material
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
-		public Material TargetMaterial { get; set; } = null;
+		public Material TargetMaterial;
 	
 		/**
 		 * 接続中のカメラの識別文字列
