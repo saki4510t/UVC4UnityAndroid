@@ -515,8 +515,7 @@ namespace Serenegiant.UVC.Android {
 				HandleOnStopPreview(deviceName);
 
 				// 対応解像度のチェック
-				var jsonString = GetSupportedVideoSize(deviceName);
-				var formats = SupportedFormats.Parse(jsonString);
+				var formats = GetSupportedVideoSize(deviceName);
 				if ((formats == null) || (formats.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null))
 				{   // 指定した解像度に対応していない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -624,8 +623,9 @@ namespace Serenegiant.UVC.Android {
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return UVCInfo.Parse(clazz.CallStatic<string>("getInfo",
-						GetCurrentActivity(), deviceName));
+					return UVCInfo.Parse(
+						clazz.CallStatic<string>("getInfo",
+							GetCurrentActivity(), deviceName));
 				}
 			}
 			else
@@ -639,7 +639,7 @@ namespace Serenegiant.UVC.Android {
 		 * 指定したUVC機器の対応解像度をjson文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private string GetSupportedVideoSize(string deviceName)
+		private SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"GetSupportedVideoSize:{deviceName}");
@@ -649,8 +649,9 @@ namespace Serenegiant.UVC.Android {
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return clazz.CallStatic<string>("getSupportedVideoSize",
-						GetCurrentActivity(), deviceName);
+					return SupportedFormats.Parse(
+						clazz.CallStatic<string>("getSupportedVideoSize",
+							GetCurrentActivity(), deviceName));
 				}
 			}
 			else
