@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 232926192}
   - component: {fileID: 232926191}
   - component: {fileID: 232926193}
+  - component: {fileID: 232926194}
   m_Layer: 0
   m_Name: UVCDrawer
   m_TagString: Untagged
@@ -242,6 +243,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 996b4661af0a98b4db1f62e55c5d43b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &232926194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 232926190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c32ee072b65f5346ac9f54c8bf3f80c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TargetCamera: {fileID: 1052051898}
 --- !u!1 &1052051898
 GameObject:
   m_ObjectHideFlags: 0
@@ -253,6 +267,7 @@ GameObject:
   - component: {fileID: 1052051901}
   - component: {fileID: 1052051900}
   - component: {fileID: 1052051899}
+  - component: {fileID: 1052051902}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -324,6 +339,15 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!45 &1052051902
+Skybox:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1052051898}
+  m_Enabled: 0
+  m_CustomSkybox: {fileID: 2100000, guid: f85e80e4bc2f51f4dae9574ea7e6a584, type: 2}
 --- !u!1001 &1109588832
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -407,19 +431,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1109588832}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1109588834
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109588833}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c32ee072b65f5346ac9f54c8bf3f80c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  TargetCamera: {fileID: 1052051898}
 --- !u!1 &1395363809
 GameObject:
   m_ObjectHideFlags: 0
