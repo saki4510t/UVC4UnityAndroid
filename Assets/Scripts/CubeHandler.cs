@@ -3,7 +3,6 @@
 using System;
 using UnityEngine;
 
-using Serenegiant.UVC.Android;
 using UnityEngine.EventSystems;
 
 public class CubeHandler : MonoBehaviour,
