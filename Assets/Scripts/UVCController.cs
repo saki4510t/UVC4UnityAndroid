@@ -528,6 +528,9 @@ namespace Serenegiant.UVC.Android {
 			if (UVCSelector != null)
 			{
 				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"StartPreview:selected{size}");
+#endif
 				if (size != null)
 				{
 					width = size.Width;
