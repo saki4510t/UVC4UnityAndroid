@@ -46,11 +46,19 @@ namespace Serenegiant.UVC.Android {
 		public bool PreferH264 = true;
 
 		/**
+		 * UVC機器からの映像の描画先Materialを保持しているGameObject
+		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
+		 */
+		public GameObject TargetGameObject = null;
+
+		/**
 		 * UVC機器からの映像の描画先Material
-		 * 設定していない場合はこのスクリプトを
-		 * 割当てたのと同じGameObjectのSkybox/Renderer/Materialから
-		 * 取得する。
-		 * 優先順位：Editorでの設定 > Skybox > Renderer > Material
+		 * TargetGameObjectから取得する
+		 * 優先順位：
+		 *	Editorでの設定
+		 *	 > TargetGameObjectのSkybox
+		 *	 > TargetGameObjectのRenderer
+		 *	 > TargetGameObjectのMaterial
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
 		public Material TargetMaterial;
@@ -90,6 +98,10 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
+			if (TargetGameObject == null)
+			{
+				TargetGameObject = gameObject;
+			}
 			TargetMaterial = GetTargetMaterial();
 			if (TargetMaterial == null)
 			{
@@ -794,17 +806,17 @@ namespace Serenegiant.UVC.Android {
 			{
 				return TargetMaterial;
 			}
-			var skybox = GetComponent<Skybox>();
+			var skybox = TargetGameObject.GetComponent<Skybox>();
 			if (skybox != null)
 			{
 				return skybox.material;
 			}
-			var renderer = GetComponent<Renderer>();
+			var renderer = TargetGameObject.GetComponent<Renderer>();
 			if (renderer != null)
 			{
 				return renderer.material;
 			}
-			var material = GetComponent<Material>();
+			var material = TargetGameObject.GetComponent<Material>();
 			if (renderer != null)
 			{
 				return material;
