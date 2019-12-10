@@ -155,21 +155,21 @@ namespace Serenegiant.UVC.Android {
 			}
 		}
 
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-		private int cnt;
-#endif
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//		private int cnt;
+//#endif
 
 		/**
 		 * Update is called once per frame
 		 */
 		void Update()
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			if ((++cnt % 100) == 0)
-			{
-				Console.WriteLine($"Update:cnt={cnt}");
-			}
-#endif
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//			if ((++cnt % 100) == 0)
+//			{
+//				Console.WriteLine($"Update:cnt={cnt}");
+//			}
+//#endif
 		}
 
 		void OnDestroy()
