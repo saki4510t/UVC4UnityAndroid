@@ -20,7 +20,12 @@ public class UVCSelector : MonoBehaviour, IUVCSelector
 
 	public bool CanSelect(UVCInfo info)
 	{
-		return true;
+		if (IsRicoh(info))
+		{
+			return IsTHETA_S(info) || (IsTHETA_V(info));
+		} else {
+			return true;
+		}
 	}
 
 	public SupportedFormats.Size SelectSize(UVCInfo info, SupportedFormats formats)
@@ -45,11 +50,28 @@ public class UVCSelector : MonoBehaviour, IUVCSelector
 		}
 	}
 
+	/**
+	 * Ricohの製品かどうか
+	 * @param info
+	 */
+	private bool IsRicoh(UVCInfo info)
+	{
+		return (info.vid == 1482);
+	}
+
+	/**
+	 * THETA Sかどうか
+	 * @param info
+	 */
 	private bool IsTHETA_S(UVCInfo info)
 	{
 		return (info.vid == 1482) && (info.pid == 10001);
 	}
 
+	/**
+	 * THETA Vかどうか
+	 * @param info
+	 */
 	private bool IsTHETA_V(UVCInfo info)
 	{
 		// THETA Vからのpid=872は動かない
