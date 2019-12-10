@@ -61,12 +61,14 @@ namespace Serenegiant.UVC
 	{
 		public class Size
 		{
+			public int FrameType;
 			public int Width;
 			public int Height;
 			public float[] FrameRate;
 
-			public Size(int width, int height, float[]frameRate)
+			public Size(int frame_type, int width, int height, float[]frameRate)
 			{
+				FrameType = frame_type;
 				Width = width;
 				Height = height;
 				FrameRate = frameRate;
@@ -194,7 +196,7 @@ namespace Serenegiant.UVC
 							break;
 						}
 						string[] sz = item.Split('x');
-						sizes[i] = new Size(int.Parse(sz[0]), int.Parse(sz[1]), format.frameRate[i]);
+						sizes[i] = new Size(format.frame_type, int.Parse(sz[0]), int.Parse(sz[1]), format.frameRate[i]);
 						i++;
 					}
 				}
