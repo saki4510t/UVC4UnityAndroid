@@ -589,6 +589,32 @@ namespace Serenegiant.UVC.Android {
 		}
 
 		/**
+		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
+		 * @param deviceName UVC機器の識別文字列
+		 */
+		private string GetInfo(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"GetInfo:{deviceName}");
+#endif
+
+			if (!String.IsNullOrEmpty(deviceName))
+			{
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					return clazz.CallStatic<string>("getInfo",
+						GetCurrentActivity(), deviceName);
+				}
+			}
+			else
+			{
+				throw new ArgumentException("device name is empty/null");
+			}
+
+		}
+
+
+		/**
 		 * 指定したUVC機器の対応解像度をjson文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
