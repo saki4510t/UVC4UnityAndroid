@@ -525,6 +525,7 @@ namespace Serenegiant.UVC.Android {
 				throw new ArgumentException("fauled to get supported video size");
 			}
 
+			// 解像度の選択処理
 			if (UVCSelector != null)
 			{
 				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
