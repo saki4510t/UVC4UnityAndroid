@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using UnityEngine;
 
 /*
 {
@@ -72,7 +73,8 @@ namespace Serenegiant.UVC
 			}
 		}
 
-		public class FrameFormat : IEnumerable
+//		public class FrameFormat : IEnumerable
+		public class FrameFormat
 		{
 			[JsonPropertyName("frame_type")]
 			public int frame_type { get; set; }
@@ -93,13 +95,13 @@ namespace Serenegiant.UVC
 					frameRate != null ? frameRate.Length : 0);
 			}
 
-			/**
-			 * Sizeの反復取得用の列挙子を取得
-			 */
-			IEnumerator IEnumerable.GetEnumerator()
-			{
-				return (IEnumerator)GetEnumerator();
-			}
+//			/**
+//			 * Sizeの反復取得用の列挙子を取得
+//			 */
+//			IEnumerator IEnumerable.GetEnumerator()
+//			{
+//				return (IEnumerator)GetEnumerator();
+//			}
 
 			/**
 			 * Sizeの反復取得用の列挙子を取得
@@ -252,7 +254,8 @@ namespace Serenegiant.UVC
 			}
 			catch (JsonException e)
 			{
-				throw new ArgumentException(e.ToString());
+				result = null;
+				Debug.LogError(e.ToString());
 			}
 
 			if (result == null)
