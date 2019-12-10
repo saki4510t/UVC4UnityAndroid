@@ -214,7 +214,7 @@ namespace Serenegiant.UVC.Android {
 				else
 				{   // 映像を取得していない
 //					OpenCamera(attachedDeviceName);
-					StartPreview(attachedDeviceName, VideoWidth, VideoHeight);
+					RequestStartPreview(attachedDeviceName, VideoWidth, VideoHeight);
 				}
 			}
 		}
@@ -307,7 +307,7 @@ namespace Serenegiant.UVC.Android {
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				StartPreview(args, VideoWidth, VideoHeight);
+				RequestStartPreview(args, VideoWidth, VideoHeight);
 			}
 		}
 
@@ -509,7 +509,7 @@ namespace Serenegiant.UVC.Android {
 		 * @param width
 		 * @param height
 		 */
-		private void StartPreview(string deviceName, int width, int height)
+		private void RequestStartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"StartPreview:{deviceName}");
