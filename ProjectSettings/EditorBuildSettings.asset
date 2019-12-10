@@ -8,10 +8,10 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/UVCScene.unity
     guid: 534dbb7308777da4688d42c039024ab4
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/ThetaScene.unity
     guid: 56d6f47cb8dc67a47b8db91aac678bf6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SphereScene.unity
     guid: 8912afb67f655ac448848e33282d23f6
   m_configObjects: {}

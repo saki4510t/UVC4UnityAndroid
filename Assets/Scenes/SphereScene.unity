@@ -211,8 +211,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e3fa0f7bdc68444abad301469f7cf7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  VideoWidth: 3840
-  VideoHeight: 1920
+  VideoWidth: 1280
+  VideoHeight: 720
   PreferH264: 1
   TargetGameObject: {fileID: 1109588833}
   TargetMaterial: {fileID: 0}

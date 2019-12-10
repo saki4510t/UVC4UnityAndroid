@@ -41,8 +41,8 @@ namespace Serenegiant.UVC.Android {
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
 		// 普通のUVC機器: 1280x720/1920x1080 MJPEG
 
-		public int VideoWidth = 3840;
-		public int VideoHeight = 1920;
+		public int VideoWidth = 1280;
+		public int VideoHeight = 720;
 		public bool PreferH264 = true;
 
 		/**
