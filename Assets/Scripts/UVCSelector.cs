@@ -1,7 +1,8 @@
-﻿using Serenegiant.UVC;
-using System.Collections;
-using System.Collections.Generic;
+﻿//#define ENABLE_LOG
+
+using System;
 using UnityEngine;
+using Serenegiant.UVC;
 
 public class UVCSelector : MonoBehaviour, IUVCSelector
 {
@@ -26,11 +27,20 @@ public class UVCSelector : MonoBehaviour, IUVCSelector
 	{
 		if (IsTHETA_V(info))
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("SelectSize:THETA V");
+#endif
 			return FindSize(formats, 3840, 1920);
 		} else if (IsTHETA_S(info))
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("SelectSize:THETA S");
+#endif
 			return FindSize(formats, 1920, 1080);
 		} else {
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"SelectSize:other UVC device,{info}");
+#endif
 			return null;
 		}
 	}
@@ -42,7 +52,8 @@ public class UVCSelector : MonoBehaviour, IUVCSelector
 
 	private bool IsTHETA_V(UVCInfo info)
 	{
-		return (info.vid == 1482) && (info.pid == 872);
+		// THETA Vからのpid=872は動かない
+		return (info.vid == 1482) && (info.pid == 10002);
 	}
 
 	private SupportedFormats.Size FindSize(SupportedFormats formats, int width, int height)
