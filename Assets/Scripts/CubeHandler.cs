@@ -9,6 +9,12 @@ using UnityEngine.EventSystems;
 public class CubeHandler : MonoBehaviour,
 	IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
+	/**
+	 * このスクリプトで操作するGameObject
+	 * 未割り当ての場合はこのスクリプトがセットされているGameObjectを使う
+	 */
+	public GameObject TargetObject;
+
 	private Transform taregtTransform;
 	private Vector3 force = new Vector3();
 
@@ -18,7 +24,12 @@ public class CubeHandler : MonoBehaviour,
 	// Start is called before the first frame update
 	void Start()
 	{	
-		taregtTransform = gameObject.transform;
+		if (TargetObject == null)
+		{   // TargetObjectが割り当てられていないときは
+			// このスクリプトがセットされているゲームオブジェクトを使う
+			TargetObject = gameObject;
+		}
+		taregtTransform = TargetObject.transform;
 	}
 
 	// Update is called once per frame
