@@ -312,8 +312,6 @@ namespace Serenegiant.UVC
 		 */
 		public Size Find(int width, int height, float minFps = 0.1f, float maxFps = 121.0f)
 		{
-			Size result = null;
-
 			if (formats != null)
 			{
 				foreach (FrameFormat format in formats)
@@ -324,14 +322,19 @@ namespace Serenegiant.UVC
 						Size sz = items.Current;
 						if ((sz.Width == width) && (sz.Height == height))
 						{
-							result = sz;
-							break;
+							foreach (float val in sz.FrameRate)
+							{
+								if ((val >= minFps) && (val <= maxFps))
+								{
+									return sz;
+								}
+							}
 						}
 					}
 				}
 			}
 
-			return result;
+			return null;
 		}
 	
 	}   // class SupportedFormats
