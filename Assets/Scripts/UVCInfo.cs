@@ -51,6 +51,34 @@ namespace Serenegiant.UVC
 			return $"{base.ToString()}(vid={vid},pid={pid})";
 		}
 
+
+		/**
+		 * Ricohの製品かどうか
+		 * @param info
+		 */
+		public bool IsRicoh()
+		{
+			return (vid == 1482);
+		}
+
+		/**
+		 * THETA Sかどうか
+		 * @param info
+		 */
+		public bool IsTHETA_S()
+		{
+			return (vid == 1482) && (pid == 10001);
+		}
+
+		/**
+		 * THETA Vかどうか
+		 * @param info
+		 */
+		public bool IsTHETA_V()
+		{
+			// THETA Vからのpid=872は動かない
+			return (vid == 1482) && (pid == 10002);
+		}
 	} // UVCInfo
 
 } // namespace Serenegiant.UVC
