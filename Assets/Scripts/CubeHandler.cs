@@ -9,7 +9,6 @@ using UnityEngine.EventSystems;
 public class CubeHandler : MonoBehaviour,
 	IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
-	private UVCController uvcController;
 	private Transform taregtTransform;
 	private Vector3 force = new Vector3();
 
@@ -19,7 +18,6 @@ public class CubeHandler : MonoBehaviour,
 	// Start is called before the first frame update
 	void Start()
 	{	
-		uvcController = gameObject.GetComponent<UVCController>();
 		taregtTransform = gameObject.transform;
 	}
 
@@ -59,9 +57,5 @@ public class CubeHandler : MonoBehaviour,
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine("OnClick:");
 #endif
-		//if (uvcController != null)
-		//{
-		//	uvcController.Toggle();
-		//}
 	}
 }
