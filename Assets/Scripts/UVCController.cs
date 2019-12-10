@@ -107,6 +107,10 @@ namespace Serenegiant.UVC.Android {
 			{
 				TargetGameObject = gameObject;
 			}
+			UVCSelector = GetUVCSelector();
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Start:UVCSelector={UVCSelector}");
+#endif
 			TargetMaterial = GetTargetMaterial();
 			if (TargetMaterial == null)
 			{
@@ -882,6 +886,33 @@ namespace Serenegiant.UVC.Android {
 			return null;
 		}
 
+		/**
+		 * IUVCSelectorを取得する
+		 * UVCSelectorが設定されていればそれを返す
+		 * UVCSelectorが見つからないときはTargetGameObjectから取得を試みる
+		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
+		 * @return 見つからなければnull
+		 */
+		IUVCSelector GetUVCSelector()
+		{
+			if (UVCSelector == null)
+			{
+				return UVCSelector;
+
+			}
+			var selector = TargetGameObject.GetComponent<IUVCSelector>();
+			if (selector != null)
+			{
+				return selector;
+			}
+			selector = GetComponent<IUVCSelector>();
+			if (selector != null)
+			{
+				return selector;
+			}
+			return null;
+		}
+	
 	} // UVCController
 
 }   // namespace Serenegiant.UVC.Android
