@@ -862,6 +862,23 @@ namespace Serenegiant.UVC.Android {
 			{
 				return material;
 			}
+			// TargetGameObjectから取得できなかったときは
+			// このスクリプトがaddされているゲームオブジェクトから取得を試みる
+			skybox = GetComponent<Skybox>();
+			if (skybox != null)
+			{
+				return skybox.material;
+			}
+			renderer = GetComponent<Renderer>();
+			if (renderer != null)
+			{
+				return renderer.material;
+			}
+			material = GetComponent<Material>();
+			if (renderer != null)
+			{
+				return material;
+			}
 			return null;
 		}
 
