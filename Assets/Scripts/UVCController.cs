@@ -564,7 +564,7 @@ namespace Serenegiant.UVC.Android {
 		private void RequestStartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StartPreview:{deviceName}");
+			Console.WriteLine($"RequestStartPreview:{deviceName}");
 #endif
 			if (!IsPreviewing())
 			{
@@ -582,7 +582,7 @@ namespace Serenegiant.UVC.Android {
 					TargetMaterial.mainTexture = tex;
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
-					Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
+					Console.WriteLine("RequestStartPreview:tex=" + nativeTexPtr);
 
 					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 					{
