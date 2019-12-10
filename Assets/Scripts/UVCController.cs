@@ -536,6 +536,8 @@ namespace Serenegiant.UVC.Android {
 			{   // 指定した解像度に対応していない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"StartPreview:{width}x{height} is NOT supported.");
+				Console.WriteLine($"Info={GetInfo(deviceName)}");
+				Console.WriteLine($"supportedVideoSize={supportedVideoSize}");
 #endif
 				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
 			}
