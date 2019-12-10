@@ -45,7 +45,15 @@ namespace Serenegiant.UVC.Android {
 		public int VideoHeight = 1920;
 		public bool PreferH264 = true;
 
-		private Material targetMaterial;
+		/**
+		 * UVC機器からの映像の描画先Material
+		 * 設定していない場合はこのスクリプトを
+		 * 割当てたのと同じGameObjectのSkybox/Renderer/Materialから
+		 * 取得する。
+		 * 優先順位：Editorでの設定 > Skybox > Renderer > Material
+		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
+		 */
+		public Material TargetMaterial;
 	
 		/**
 		 * 接続中のカメラの識別文字列
@@ -82,10 +90,10 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
-			targetMaterial = GetTargetMaterial();
-			if (targetMaterial == null)
+			TargetMaterial = GetTargetMaterial();
+			if (TargetMaterial == null)
 			{
-				throw new UnityException("no Renderer/Skybox components found.");
+				throw new UnityException("no target material found.");
 			}
 		
 			if (CheckAndroidVersion(28))
@@ -511,8 +519,8 @@ namespace Serenegiant.UVC.Android {
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					savedTexture = targetMaterial.mainTexture;
-					targetMaterial.mainTexture = tex;
+					savedTexture = TargetMaterial.mainTexture;
+					TargetMaterial.mainTexture = tex;
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
 					Console.WriteLine("StartPreview:tex=" + nativeTexPtr);
@@ -580,7 +588,7 @@ namespace Serenegiant.UVC.Android {
 			StopCoroutine(OnRender());
 			if (savedTexture != null)
 			{
-				targetMaterial.mainTexture = savedTexture;
+				TargetMaterial.mainTexture = savedTexture;
 				savedTexture = null;
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -782,6 +790,10 @@ namespace Serenegiant.UVC.Android {
 		 */
 		Material GetTargetMaterial()
 		{
+			if (TargetMaterial != null)
+			{
+				return TargetMaterial;
+			}
 			var skybox = GetComponent<Skybox>();
 			if (skybox != null)
 			{
