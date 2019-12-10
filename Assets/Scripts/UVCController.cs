@@ -103,19 +103,7 @@ namespace Serenegiant.UVC.Android {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
-			if (TargetGameObject == null)
-			{
-				TargetGameObject = gameObject;
-			}
-			UVCSelector = GetUVCSelector();
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Start:UVCSelector={UVCSelector}");
-#endif
-			TargetMaterial = GetTargetMaterial();
-			if (TargetMaterial == null)
-			{
-				throw new UnityException("no target material found.");
-			}
+			UpdateTarget();
 		
 			if (CheckAndroidVersion(28))
 			{
@@ -220,6 +208,23 @@ namespace Serenegiant.UVC.Android {
 					//					OpenCamera(attachedDeviceName);
 					StartPreview(attachedDeviceName);
 				}
+			}
+		}
+
+		/**
+		 * 映像描画先のMaterialを再取得する
+		 */
+		public void ResetMaterial()
+		{
+			bool prev = IsPreviewing();
+			if (prev)
+			{
+				StopPreview(activeDeviceName);
+			}
+			UpdateTarget();
+			if (prev)
+			{
+				StartPreview(activeDeviceName);
 			}
 		}
 
@@ -843,6 +848,26 @@ namespace Serenegiant.UVC.Android {
 			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:finished");
 #endif
 			yield break;
+		}
+
+		/**
+		 * 描画先を更新
+		 */
+		private void UpdateTarget()
+		{
+			if (TargetGameObject == null)
+			{
+				TargetGameObject = gameObject;
+			}
+			UVCSelector = GetUVCSelector();
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Start:UVCSelector={UVCSelector}");
+#endif
+			TargetMaterial = GetTargetMaterial();
+			if (TargetMaterial == null)
+			{
+				throw new UnityException("no target material found.");
+			}
 		}
 
 		/**
