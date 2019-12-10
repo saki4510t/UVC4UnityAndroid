@@ -633,7 +633,6 @@ namespace Serenegiant.UVC.Android {
 
 		}
 
-
 		/**
 		 * 指定したUVC機器の対応解像度をjson文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
