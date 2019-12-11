@@ -861,7 +861,7 @@ namespace Serenegiant.UVC.Android {
 			}
 			UVCSelector = GetUVCSelector();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Start:UVCSelector={UVCSelector}");
+			Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
 #endif
 			TargetMaterial = GetTargetMaterial();
 			if (TargetMaterial == null)
