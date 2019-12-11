@@ -883,15 +883,29 @@ namespace Serenegiant.UVC.Android {
 			{
 				return TargetMaterial;
 			}
-			var skybox = TargetGameObject.GetComponent<Skybox>();
-			if ((skybox != null) && skybox.isActiveAndEnabled)
+			var skyboxs = TargetGameObject.GetComponents<Skybox>();
+			if (skyboxs != null)
 			{
-				return skybox.material;
+				foreach (var skybox in skyboxs)
+				{
+					if (skybox.isActiveAndEnabled)
+					{
+						RenderSettings.skybox = skybox.material;
+						return skybox.material;
+					}
+				}
 			}
-			var renderer = TargetGameObject.GetComponent<Renderer>();
-			if ((renderer != null) && renderer.enabled)
+			var renderers = TargetGameObject.GetComponents<Renderer>();
+			if (renderers != null)
 			{
-				return renderer.material;
+				foreach (var renderer in renderers)
+				{
+					if (renderer.enabled)
+					{
+						return renderer.material;
+					}
+
+				}
 			}
 			var material = TargetGameObject.GetComponent<Material>();
 			if (material != null)
@@ -900,15 +914,29 @@ namespace Serenegiant.UVC.Android {
 			}
 			// TargetGameObjectから取得できなかったときは
 			// このスクリプトがaddされているゲームオブジェクトから取得を試みる
-			skybox = GetComponent<Skybox>();
-			if ((skybox != null) && skybox.isActiveAndEnabled)
+			skyboxs = GetComponents<Skybox>();
+			if (skyboxs != null)
 			{
-				return skybox.material;
+				foreach (var skybox in skyboxs)
+				{
+					if (skybox.isActiveAndEnabled)
+					{
+						RenderSettings.skybox = skybox.material;
+						return skybox.material;
+					}
+				}
 			}
-			renderer = GetComponent<Renderer>();
-			if ((renderer != null) && renderer.enabled)
+			renderers = GetComponents<Renderer>();
+			if (renderers != null)
 			{
-				return renderer.material;
+				foreach (var renderer in renderers)
+				{
+					if (renderer.enabled)
+					{
+						return renderer.material;
+					}
+
+				}
 			}
 			material = GetComponent<Material>();
 			if (material != null)
