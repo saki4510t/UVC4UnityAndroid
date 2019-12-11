@@ -864,6 +864,9 @@ namespace Serenegiant.UVC.Android {
 			Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
 #endif
 			TargetMaterial = GetTargetMaterial();
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"UpdateTarget:TargetMaterial={TargetMaterial}");
+#endif
 			if (TargetMaterial == null)
 			{
 				throw new UnityException("no target material found.");
