@@ -8,8 +8,8 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ThetaRealtimeEquirectanguler (Both)
-  m_Shader: {fileID: 4800000, guid: 91b8677abe2e60d48a8941053cf517ff, type: 3}
-  m_ShaderKeywords: _DRAW_BOTH
+  m_Shader: {fileID: 4800000, guid: 06f66ba0ee817c7498728c90f485ec21, type: 3}
+  m_ShaderKeywords: _DRAW_BOTH _MODE_THETA_S
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
