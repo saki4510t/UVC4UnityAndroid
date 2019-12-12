@@ -13,7 +13,6 @@ Shader "Theta/RealtimeEquirectangular1080p"
 		_UVOffset("UVOffset(Forward UV / Backward UV)", Vector) = (0.0, 0.0, 0.0, 0.0)
 
 		[KeywordEnum(Theta S 1080p, Theta S, Theta, Insta360 Air)] _Mode("Mode", Int) = 0
-		[KeywordEnum(Both, Forward, Backward)] _Draw("Draw", Int) = 0
 	}
 
 	SubShader
@@ -31,7 +30,6 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile _MODE_THETA_S_1080P  _MODE_THETA_S _MODE_THETA _MODE_INSTA360_AIR
-			#pragma multi_compile _DRAW_BOTH _DRAW_FORWARD _DRAW_BACKWARD
 
 			#include "UnityCG.cginc"
 
@@ -50,6 +48,7 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			sampler2D _MainTex;
 			float4 _UVOffset;
 
+			#define ALPHA_RANGE 0.001
 			#if defined(_MODE_THETA_S_1080P)
 				#define _RADIUS 0.445
 				#define _TEXTURE_Y_OFFSET 0
@@ -168,7 +167,7 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				return mul(float3(st.x, st.y, 1), backward_matrix3()).xy;
 			}
 
-			half4 frag(v2f i) : SV_Target
+			float4 frag(v2f i) : SV_Target
 			{
 //				float2 revUV = i.uv;
 				float2 revUV = float2(i.uv.x, 1.0 - i.uv.y);	// THETAの画像そのままだと上下が入れ替わってしまうので対策
@@ -192,33 +191,51 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				st *= r / sqrt(1.0 - p.z * p.z);
 				st *= _RADIUS;
 
+				// 前後のテクスチャの混合比
+				float x = i.uv.x;
+				float blend = 1.0;
+				if ((x < 0.5 - ALPHA_RANGE) || (x > 0.5 + ALPHA_RANGE)) {
+					blend = 0.0;
+				}
+				else if (x < 0.5 + ALPHA_RANGE) {
+					blend = (x - 0.5) / (2.0 * ALPHA_RANGE);
+				}
+				else if (x > 0.5 - ALPHA_RANGE) {
+					blend = 1.0 - ((x - 0.5) / (2.0 * ALPHA_RANGE));
+				}
+
 				// stは (0,0)を中心としたFisheye座標
+				bool forward_or_back = (i.uv.x <= 0.5);
 
-				bool forward_or_back;
-				#if defined(_DRAW_FORWARD)
-					forward_or_back = true;
-				#elif defined(_DRAW_BACKWARD)
-					forward_or_back = false;
-				#else
-					forward_or_back = (i.uv.x <= 0.5);
-				#endif
-
-				if (forward_or_back) {
+				float4 col;
+				if (blend < 0.5 - ALPHA_RANGE) {
 					st = convert_for_backward(st);
+					#if !defined(SHADER_API_OPENGL)
+					col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
+					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
+					col = tex2D(_MainTex, st);
+					#endif
+				} else if (blend > 0.5 + ALPHA_RANGE) {
+					st = convert_for_forward(st);
+					#if !defined(SHADER_API_OPENGL)
+					col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
+					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
+					col = tex2D(_MainTex, st);
+					#endif
 				}
 				else {
-					st = convert_for_forward(st);
+					float2 st_b = convert_for_backward(st);
+					float2 st_f = convert_for_forward(st);
+					#if !defined(SHADER_API_OPENGL)
+						float4 col_b = tex2Dlod(_MainTex, float4(st_b, 0.0, 0.0));
+						float4 col_f = tex2Dlod(_MainTex, float4(st_f, 0.0, 0.0));
+					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
+						float4 col_b = tex2D(_MainTex, st_b);
+						float4 col_f = tex2D(_MainTex, st_f);
+					#endif
+					col = lerp(col_b, col_f, blend);
 				}
 
-				#if defined(_DRAW_BOTH)
-				#if !defined(SHADER_API_OPENGL)
-				half4 col = tex2Dlod(_MainTex, float4(st,0.0,0.0));
-				#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
-				half4 col = tex2D(_MainTex, st);
-				#endif
-				#else
-				half4 col = tex2D(_MainTex, st);
-				#endif
 				return col;
 			}
 			ENDCG
