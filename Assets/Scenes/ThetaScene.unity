@@ -215,7 +215,7 @@ MonoBehaviour:
   VideoWidth: 1280
   VideoHeight: 720
   PreferH264: 1
-  TargetGameObject: {fileID: 1109588833}
+  TargetGameObject: {fileID: 1098241171}
   TargetMaterial: {fileID: 0}
 --- !u!4 &232926192
 Transform:
@@ -267,7 +267,6 @@ GameObject:
   - component: {fileID: 1052051901}
   - component: {fileID: 1052051900}
   - component: {fileID: 1052051899}
-  - component: {fileID: 1052051902}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -339,15 +338,12 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!45 &1052051902
-Skybox:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+--- !u!1 &1098241171 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 368d458452cb14c439840c35167fa7b4,
+    type: 3}
+  m_PrefabInstance: {fileID: 1109588832}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1052051898}
-  m_Enabled: 0
-  m_CustomSkybox: {fileID: 2100000, guid: f85e80e4bc2f51f4dae9574ea7e6a584, type: 2}
 --- !u!1001 &1109588832
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -389,11 +385,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
       propertyPath: m_RootOrder
@@ -409,7 +405,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
       propertyPath: m_LocalScale.x
@@ -429,12 +425,6 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 07c806f4a3eb403418fed4fe84d32115, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
---- !u!1 &1109588833 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100000, guid: 368d458452cb14c439840c35167fa7b4,
-    type: 3}
-  m_PrefabInstance: {fileID: 1109588832}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1395363809
 GameObject:
   m_ObjectHideFlags: 0
