@@ -78,6 +78,8 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			v2f vert (appdata v)
 			{
 				v2f o;
+				// MVP行列を掛ける
+				// mul(UNITY_MATRIX_MVP, v.vertex)と同じ処理だけどパフォーマンス良いらしい
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = v.uv;
 				return o;
