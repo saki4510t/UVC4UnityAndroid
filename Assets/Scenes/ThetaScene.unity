@@ -423,6 +423,22 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 07c806f4a3eb403418fed4fe84d32115, type: 2}
+    - target: {fileID: 2300000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
+      propertyPath: m_ReflectionProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 368d458452cb14c439840c35167fa7b4, type: 3}
 --- !u!1 &1395363809
