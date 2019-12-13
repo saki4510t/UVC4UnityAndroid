@@ -27,7 +27,7 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			#pragma multi_compile _MODE_THETA_S_1080P  _MODE_THETA_S _MODE_THETA _MODE_INSTA360_AIR
+			#pragma multi_compile _MODE_THETA_S_1080P _MODE_THETA_S _MODE_THETA _MODE_INSTA360_AIR
 
 			#include "UnityCG.cginc"
 
@@ -169,14 +169,12 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			{
 //				float2 revUV = i.uv;
 				float2 revUV = float2(i.uv.x, 1.0 - i.uv.y);	// THETAの画像そのままだと上下が入れ替わってしまうので対策
-				#if defined(_DRAW_BOTH)
 				if (i.uv.x <= 0.5) {
 					revUV.x = 1.0 - revUV.x * 2.0;
 				}
 				else {
 					revUV.x = 1.0 - (revUV.x - 0.5) * 2.0;
 				}
-				#endif
 
 				revUV *= UNITY_PI;
 
