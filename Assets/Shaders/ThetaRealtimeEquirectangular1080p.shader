@@ -47,6 +47,7 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			float4 _UVOffset;
 
 			#define ALPHA_RANGE 0.001
+			#define BLEND_LIMIT 0.05
 
 			#if defined(_MODE_THETA_S_1080P)
 				#define _RADIUS 0.445
@@ -206,30 +207,37 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				// stは (0,0)を中心としたFisheye座標
 
 				float4 col;
-				if (blend < 0.5 - ALPHA_RANGE) {
-					st = convert_for_backward(st);
-					#if !defined(SHADER_API_OPENGL)
-					col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
-					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
-					col = tex2D(_MainTex, st);
-					#endif
-				} else if (blend > 0.5 + ALPHA_RANGE) {
-					st = convert_for_forward(st);
-					#if !defined(SHADER_API_OPENGL)
-					col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
-					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
-					col = tex2D(_MainTex, st);
-					#endif
+				if ((blend < BLEND_LIMIT) || ((blend > 1.0 - BLEND_LIMIT)))
+				{	// アルファブレンドなしのとき
+					if (x <= 0.5)
+					{	// 後
+						st = convert_for_backward(st);
+						#if !defined(SHADER_API_OPENGL)
+						col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
+						#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
+						col = tex2D(_MainTex, st);
+						#endif
+					}
+					else {
+						// 前
+						st = convert_for_forward(st);
+						#if !defined(SHADER_API_OPENGL)
+						col = tex2Dlod(_MainTex, float4(st, 0.0, 0.0));
+						#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
+						col = tex2D(_MainTex, st);
+						#endif
+					}
 				}
 				else {
+					// アルファブレンドが必要なとき
 					float2 st_b = convert_for_backward(st);
 					float2 st_f = convert_for_forward(st);
 					#if !defined(SHADER_API_OPENGL)
-						float4 col_b = tex2Dlod(_MainTex, float4(st_b, 0.0, 0.0));
-						float4 col_f = tex2Dlod(_MainTex, float4(st_f, 0.0, 0.0));
+					float4 col_b = tex2Dlod(_MainTex, float4(st_b, 0.0, 0.0));
+					float4 col_f = tex2Dlod(_MainTex, float4(st_f, 0.0, 0.0));
 					#else // Memo: OpenGL not supported tex2Dlod.( Texture should be setting to generateMipMap = off. )
-						float4 col_b = tex2D(_MainTex, st_b);
-						float4 col_f = tex2D(_MainTex, st_f);
+					float4 col_b = tex2D(_MainTex, st_b);
+					float4 col_f = tex2D(_MainTex, st_f);
 					#endif
 					col = lerp(col_b, col_f, blend);
 				}
