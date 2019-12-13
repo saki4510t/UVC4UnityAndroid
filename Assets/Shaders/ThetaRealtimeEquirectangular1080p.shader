@@ -188,13 +188,9 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				st *= r / sqrt(1.0 - p.z * p.z);
 				st *= _RADIUS;
 
-				// 前後のテクスチャの混合比
-				float x = i.uv.x;
-
 				// stは (0,0)を中心としたFisheye座標
-
 				float4 col;
-				if (x <= 0.5)
+				if (i.uv.x <= 0.5)
 				{	// 後
 					st = convert_for_backward(st);
 					#if !defined(SHADER_API_OPENGL)
