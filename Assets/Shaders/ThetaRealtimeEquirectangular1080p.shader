@@ -80,6 +80,8 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				// mul(UNITY_MATRIX_MVP, v.vertex)と同じ処理だけどパフォーマンス良いらしい
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = v.uv;
+				// プラットフォームによる射影行列の違いを吸収
+				o.uv.y *= _ProjectionParams.x;
 				return o;
 			}
 
