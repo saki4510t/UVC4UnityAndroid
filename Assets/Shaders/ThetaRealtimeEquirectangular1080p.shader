@@ -47,6 +47,7 @@ Shader "Theta/RealtimeEquirectangular1080p"
 			float4 _UVOffset;
 
 			#define ALPHA_RANGE 0.001
+
 			#if defined(_MODE_THETA_S_1080P)
 				#define _RADIUS 0.445
 				#define _TEXTURE_Y_OFFSET 0
