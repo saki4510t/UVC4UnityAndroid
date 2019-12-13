@@ -204,7 +204,6 @@ Shader "Theta/RealtimeEquirectangular1080p"
 				}
 
 				// stは (0,0)を中心としたFisheye座標
-				bool forward_or_back = (i.uv.x <= 0.5);
 
 				float4 col;
 				if (blend < 0.5 - ALPHA_RANGE) {
