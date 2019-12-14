@@ -616,8 +616,9 @@ namespace Serenegiant.UVC.Android {
 					}
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
-					Console.WriteLine("RequestStartPreview:tex=" + nativeTexPtr);
-
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"RequestStartPreview:tex={nativeTexPtr}");
+#endif
 					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 					{
 						clazz.CallStatic("setPreviewTexture",
