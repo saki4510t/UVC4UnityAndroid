@@ -1,4 +1,4 @@
-﻿#define ENABLE_LOG
+﻿//#define ENABLE_LOG
 
 using System;
 using UnityEngine;
