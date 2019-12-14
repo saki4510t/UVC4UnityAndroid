@@ -55,13 +55,12 @@ namespace Serenegiant.UVC.Android {
 		 * UVC機器からの映像の描画先Material
 		 * TargetGameObjectから取得する
 		 * 優先順位：
-		 *	Editorでの設定
-		 *	 > TargetGameObjectのSkybox
+		 *	 TargetGameObjectのSkybox
 		 *	 > TargetGameObjectのRenderer
 		 *	 > TargetGameObjectのMaterial
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
-		public Material TargetMaterial;
+		private Material TargetMaterial;
 
 		/**
 		 * UVC機器とその解像度を選択するためのインターフェース
