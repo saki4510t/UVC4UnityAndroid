@@ -12,6 +12,7 @@ using System.Text.Json.Serialization;
 namespace Serenegiant.UVC
 {
 
+	[Serializable]
 	public class UVCInfo
 	{
 		[JsonPropertyName("vid")]

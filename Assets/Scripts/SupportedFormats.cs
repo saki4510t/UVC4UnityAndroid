@@ -57,8 +57,10 @@ using UnityEngine;
 namespace Serenegiant.UVC
 {
 
+	[Serializable]
 	public class SupportedFormats
 	{
+		[Serializable]
 		public class Size
 		{
 			public int FrameType;
@@ -81,6 +83,7 @@ namespace Serenegiant.UVC
 		}
 
 //		public class FrameFormat : IEnumerable
+		[Serializable]
 		public class FrameFormat
 		{
 			[JsonPropertyName("frame_type")]
