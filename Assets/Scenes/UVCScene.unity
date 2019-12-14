@@ -325,8 +325,9 @@ MonoBehaviour:
   VideoWidth: 1280
   VideoHeight: 720
   PreferH264: 1
-  TargetGameObject: {fileID: 1922705223}
-  TargetMaterial: {fileID: 0}
+  RenderTargets:
+  - {fileID: 1922705223}
+  - {fileID: 800007506}
 --- !u!4 &623750394
 Transform:
   m_ObjectHideFlags: 0
@@ -441,7 +442,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 800007506}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 014ca2759692f8b4ca089b5b902a46f7, type: 3}
   m_Name: 

@@ -49,7 +49,7 @@ namespace Serenegiant.UVC.Android {
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
-		public GameObject TargetGameObject = null;
+		public GameObject[] RenderTargets;
 
 		/**
 		 * UVC機器からの映像の描画先Material
@@ -60,7 +60,7 @@ namespace Serenegiant.UVC.Android {
 		 *	 > TargetGameObjectのMaterial
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
-		private Material TargetMaterial;
+		private Material[] TargetMaterials;
 
 		/**
 		 * UVC機器とその解像度を選択するためのインターフェース
@@ -92,7 +92,7 @@ namespace Serenegiant.UVC.Android {
 		 * UVCカメラ映像受け取り用テクスチャをセットする前に
 		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
 		 */
-		private Texture savedTexture;
+		private Texture[] savedTextures;
 
 		/**
 		 * Start is called before the first frame update
@@ -583,8 +583,21 @@ namespace Serenegiant.UVC.Android {
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					savedTexture = TargetMaterial.mainTexture;
-					TargetMaterial.mainTexture = tex;
+					if ((TargetMaterials != null) && (TargetMaterials.Length > 0))
+					{
+						int i = 0;
+						savedTextures = new Texture[TargetMaterials.Length];
+						foreach (var material in TargetMaterials)
+						{
+							if (material != null)
+							{
+								savedTextures[i++] = material.mainTexture;
+								material.mainTexture = tex;
+							}
+						}
+					} else {
+						savedTextures = null;
+					}
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
 					Console.WriteLine("RequestStartPreview:tex=" + nativeTexPtr);
@@ -650,11 +663,19 @@ namespace Serenegiant.UVC.Android {
 #endif
 			isPreviewing = false;
 			StopCoroutine(OnRender());
-			if (savedTexture != null)
+			var n = Math.Min(
+				(TargetMaterials != null) ? TargetMaterials.Length : 0,
+				(savedTextures != null) ? savedTextures.Length : 0);
+			if (n > 0)
 			{
-				TargetMaterial.mainTexture = savedTexture;
-				savedTexture = null;
+				int i = 0;
+				foreach (var material in TargetMaterials)
+				{
+					material.mainTexture = savedTextures[i];
+					savedTextures[i++] = null;
+				}
 			}
+			savedTextures = null;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("HandleOnStopPreview:finished");
 #endif
@@ -854,19 +875,37 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private void UpdateTarget()
 		{
-			if (TargetGameObject == null)
+			bool found = false;
+			if ((RenderTargets != null) && (RenderTargets.Length > 0))
 			{
-				TargetGameObject = gameObject;
+				UVCSelector = GetUVCSelector(RenderTargets);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
+#endif
+
+				TargetMaterials = new Material[RenderTargets.Length];
+				int i = 0;
+				foreach (var target in RenderTargets)
+				{
+					if (target != null)
+					{
+						var material = TargetMaterials[i++] = GetTargetMaterial(target);
+						if (material != null)
+						{
+							found = true;
+						}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+						Console.WriteLine($"UpdateTarget:material={material}");
+#endif
+					}
+				}
+			} else {
+				TargetMaterials = new Material[1];
+				TargetMaterials[0] = GetTargetMaterial(gameObject);
+				found = TargetMaterials[0] != null;
 			}
-			UVCSelector = GetUVCSelector();
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
-#endif
-			TargetMaterial = GetTargetMaterial();
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"UpdateTarget:TargetMaterial={TargetMaterial}");
-#endif
-			if (TargetMaterial == null)
+	
+			if (!found)
 			{
 				throw new UnityException("no target material found.");
 			}
@@ -876,13 +915,9 @@ namespace Serenegiant.UVC.Android {
 		 * テクスチャとして映像を描画するMaterialを取得する
 		 * このスクリプトを割当てたのと同じGameObjectにSkybox/Renderer/Materialが無いとだめ
 		 */
-		Material GetTargetMaterial()
+		Material GetTargetMaterial(GameObject target)
 		{
-			if (TargetMaterial != null)
-			{
-				return TargetMaterial;
-			}
-			var skyboxs = TargetGameObject.GetComponents<Skybox>();
+			var skyboxs = target.GetComponents<Skybox>();
 			if (skyboxs != null)
 			{
 				foreach (var skybox in skyboxs)
@@ -894,7 +929,7 @@ namespace Serenegiant.UVC.Android {
 					}
 				}
 			}
-			var renderers = TargetGameObject.GetComponents<Renderer>();
+			var renderers = target.GetComponents<Renderer>();
 			if (renderers != null)
 			{
 				foreach (var renderer in renderers)
@@ -906,42 +941,42 @@ namespace Serenegiant.UVC.Android {
 
 				}
 			}
-			var material = TargetGameObject.GetComponent<Material>();
+			var material = target.GetComponent<Material>();
 			if (material != null)
 			{
 				return material;
 			}
-			// TargetGameObjectから取得できなかったときは
-			// このスクリプトがaddされているゲームオブジェクトから取得を試みる
-			skyboxs = GetComponents<Skybox>();
-			if (skyboxs != null)
-			{
-				foreach (var skybox in skyboxs)
-				{
-					if (skybox.isActiveAndEnabled)
-					{
-						RenderSettings.skybox = skybox.material;
-						return skybox.material;
-					}
-				}
-			}
-			renderers = GetComponents<Renderer>();
-			if (renderers != null)
-			{
-				foreach (var renderer in renderers)
-				{
-					if (renderer.enabled)
-					{
-						return renderer.material;
-					}
-
-				}
-			}
-			material = GetComponent<Material>();
-			if (material != null)
-			{
-				return material;
-			}
+//			// TargetGameObjectから取得できなかったときは
+//			// このスクリプトがaddされているゲームオブジェクトから取得を試みる
+//			skyboxs = GetComponents<Skybox>();
+//			if (skyboxs != null)
+//			{
+//				foreach (var skybox in skyboxs)
+//				{
+//					if (skybox.isActiveAndEnabled)
+//					{
+//						RenderSettings.skybox = skybox.material;
+//						return skybox.material;
+//					}
+//				}
+//			}
+//			renderers = GetComponents<Renderer>();
+//			if (renderers != null)
+//			{
+//				foreach (var renderer in renderers)
+//				{
+//					if (renderer.enabled)
+//					{
+//						return renderer.material;
+//					}
+//
+//				}
+//			}
+//			material = GetComponent<Material>();
+//			if (material != null)
+//			{
+//				return material;
+//			}
 			return null;
 		}
 
@@ -952,17 +987,23 @@ namespace Serenegiant.UVC.Android {
 		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
 		 * @return 見つからなければnull
 		 */
-		IUVCSelector GetUVCSelector()
+		IUVCSelector GetUVCSelector(GameObject[] targets)
 		{
 			if (UVCSelector != null)
 			{
 				return UVCSelector;
 			}
-			var selector = TargetGameObject.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-			if (selector != null)
+
+			IUVCSelector selector;
+			foreach (var target in targets)
 			{
-				return selector;
+				selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
+				if (selector != null)
+				{
+					return selector;
+				}
 			}
+
 			selector = GetComponent(typeof(IUVCSelector)) as IUVCSelector;
 			if (selector != null)
 			{
