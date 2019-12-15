@@ -49,7 +49,6 @@ MonoBehaviour:
   PreferH264: 1
   RenderTargets:
   - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &6465409448752295677
 MonoBehaviour:
   m_ObjectHideFlags: 0
