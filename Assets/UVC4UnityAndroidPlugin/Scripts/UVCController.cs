@@ -109,7 +109,7 @@ namespace Serenegiant.UVC {
 		 * Android実機の場合はUVC機器のデバイス名
 		 * エディタ・PCの場合はWebCamDevice#name
 		 */
-		private string activeDeviceName;
+		public string activeDeviceName { set; get; }
 
 #if UNITY_ANDROID
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
@@ -380,7 +380,7 @@ namespace Serenegiant.UVC {
 			yield break;
 		}
 
-		private void OpenCamera(string deviceName)
+		public void OpenCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OpenCamera:{deviceName}");
@@ -397,7 +397,7 @@ namespace Serenegiant.UVC {
 #endif
 		}
 
-		private void CloseCamera(string deviceName)
+		public void CloseCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OpenCamera:{deviceName}");
@@ -457,31 +457,13 @@ namespace Serenegiant.UVC {
 				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
 			}
 #if UNITY_ANDROID
-			RequestStartPreviewUVC(deviceName, width, height);
+			StartPreview(deviceName, width, height);
 #else
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
 				RequestStartPreviewWebCam(found, width, height);
 			}
-#endif
-		}
-
-		/**
-		 * UVC機器/カメラからの映像受けとりを終了要求をする
-		 * @param deviceName カメラの識別文字列
-		 */
-		private void StopPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StopPreview:{deviceName}");
-#endif
-
-			HandleOnStopPreview(deviceName);
-#if UNITY_ANDROID
-			RequestStopPreviewUVC(deviceName);
-#else
-			// FIXME 未実装
 #endif
 		}
 
@@ -508,6 +490,23 @@ namespace Serenegiant.UVC {
 			{
 				savedTextures = null;
 			}
+		}
+
+		/**
+		 * UVC機器/カメラからの映像受けとりを終了要求をする
+		 * @param deviceName カメラの識別文字列
+		 */
+		public void StopPreview(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"StopPreview:{deviceName}");
+#endif
+			HandleOnStopPreview(deviceName);
+#if UNITY_ANDROID
+			RequestStopPreviewUVC(deviceName);
+#else
+			// FIXME 未実装
+#endif
 		}
 
 		/**
@@ -871,7 +870,7 @@ namespace Serenegiant.UVC {
 		 * @param width
 		 * @param height
 		 */
-		private void RequestStartPreviewUVC(string deviceName, int width, int height)
+		public void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"RequestStartPreview:{deviceName}");
