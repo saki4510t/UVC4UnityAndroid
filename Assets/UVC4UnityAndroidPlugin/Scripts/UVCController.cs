@@ -106,6 +106,8 @@ namespace Serenegiant.UVC {
 		 */
 		private string activeDeviceName;
 
+		private WebCamTexture webCamTex;
+
 #if UNITY_ANDROID
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
@@ -133,10 +135,17 @@ namespace Serenegiant.UVC {
 			UpdateTarget();
 
 #if UNITY_ANDROID
-			yield return InitializeAndroid();
+			if (!Application.isEditor)
+			{
+				yield return InitializeAndroid();
+			}
+			else {
+				yield return InitializeWebCam();
+			}
 #else
 			yield return InitializeWebCam();
 #endif  // #if UNITY_ANDROID
+
 		}
 
 		void OnApplicationPause(bool pauseStatus)
