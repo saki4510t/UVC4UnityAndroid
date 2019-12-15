@@ -75,7 +75,7 @@ namespace Serenegiant.UVC {
 		 * WebCamDevice/WebCamTextureを使うときの機器名
 		 * 一致するか含んでいるカメラを選択する
 		 */
-		public string WebCameraDeviceName;
+		public string WebCameraDeviceKeyword;
 		//================================================================================
 		/**
 		 * UVC機器からの映像の描画先Material
@@ -110,8 +110,6 @@ namespace Serenegiant.UVC {
 		 * エディタ・PCの場合はWebCamDevice#name
 		 */
 		private string activeDeviceName;
-
-		private WebCamTexture webCamTex;
 
 #if UNITY_ANDROID
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
@@ -379,18 +377,41 @@ namespace Serenegiant.UVC {
 			Console.WriteLine("InitializeWebCam:");
 #endif
 			// FIXME 未実装
-
 			yield break;
 		}
 
 		private void OpenCamera(string deviceName)
 		{
-
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OpenCamera:{deviceName}");
+#endif
+#if UNITY_ANDROID
+			if (!Application.isEditor)
+			{
+				OpenUVCCamera(deviceName);
+			} else {
+				// FIXME 未実装
+			}
+#else
+				// FIXME 未実装
+#endif
 		}
 
 		private void CloseCamera(string deviceName)
 		{
-
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OpenCamera:{deviceName}");
+#endif
+#if UNITY_ANDROID
+			if (!Application.isEditor)
+			{
+				CloseUVCCamera(deviceName);
+			} else {
+				// FIXME 未実装
+			}
+#else
+				// FIXME 未実装
+#endif
 		}
 
 		/**
@@ -438,7 +459,11 @@ namespace Serenegiant.UVC {
 #if UNITY_ANDROID
 			RequestStartPreviewUVC(deviceName, width, height);
 #else
-			// FIXME 未実装
+			WebCamDevice found = new WebCamDevice();
+			if (FindWebCam(deviceName, ref found))
+			{
+				RequestStartPreviewWebCam(found, width, height);
+			}
 #endif
 		}
 
@@ -461,6 +486,31 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
+		 * 映像取得開始時の処理
+		 * @param tex 映像を受け取るテクスチャ
+		 */
+		private void HandleOnStartPreview(Texture tex)
+		{
+			if ((TargetMaterials != null) && (TargetMaterials.Length > 0))
+			{
+				int i = 0;
+				savedTextures = new Texture[TargetMaterials.Length];
+				foreach (var material in TargetMaterials)
+				{
+					if (material != null)
+					{
+						savedTextures[i++] = material.mainTexture;
+						material.mainTexture = tex;
+					}
+				}
+			}
+			else
+			{
+				savedTextures = null;
+			}
+		}
+
+		/**
 		 * 映像取得が終了したときのUnity側の処理
 		 * @param deviceName カメラの識別文字列
 		 */
@@ -470,8 +520,10 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
 			isPreviewing = false;
-			// 描画用のこールーチンを停止させる
+#if UNITY_ANDROID
+			// 描画用のコールーチンを停止させる
 			StopCoroutine(OnRender());
+#endif
 			// 描画先のテクスチャをもとに戻す
 			var n = Math.Min(
 				(TargetMaterials != null) ? TargetMaterials.Length : 0,
@@ -528,7 +580,7 @@ namespace Serenegiant.UVC {
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				isPermissionRequesting = false;
-				OpenUVCCamera(args);
+				OpenCamera(args);
 			}
 		}
 
@@ -554,7 +606,7 @@ namespace Serenegiant.UVC {
 #endif
 			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
 			// 念のためにCloseCameraを呼んでおく
-			CloseUVCCamera(activeDeviceName);
+			CloseCamera(activeDeviceName);
 		}
 
 		/**
@@ -657,7 +709,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			CloseUVCCamera(activeDeviceName);
+			CloseCamera(activeDeviceName);
 		}
 
 		//--------------------------------------------------------------------------------
@@ -836,21 +888,7 @@ namespace Serenegiant.UVC {
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					if ((TargetMaterials != null) && (TargetMaterials.Length > 0))
-					{
-						int i = 0;
-						savedTextures = new Texture[TargetMaterials.Length];
-						foreach (var material in TargetMaterials)
-						{
-							if (material != null)
-							{
-								savedTextures[i++] = material.mainTexture;
-								material.mainTexture = tex;
-							}
-						}
-					} else {
-						savedTextures = null;
-					}
+					HandleOnStartPreview(tex);
 
 					var nativeTexPtr = tex.GetNativeTexturePtr();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
