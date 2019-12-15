@@ -34,10 +34,6 @@ namespace Serenegiant.UVC.Android {
 
 	public class UVCController : MonoBehaviour
 	{
-		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
-		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
-		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
-
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
 		// THETA SのH.264映像: 1920x1080@30fps, H.264
 		// 普通のUVC機器: 1280x720/1920x1080 MJPEG
@@ -57,6 +53,7 @@ namespace Serenegiant.UVC.Android {
 		/**
 		 * UVC機器とのネゴシエーション時に
 		 * H.264を優先してネゴシエーションするかどうか
+		 * Android実機のみ有効
 		 * true:	H.264 > MJPEG > YUV
 		 * false:	MJPEG > H.264 > YUV
 		 */
@@ -74,7 +71,6 @@ namespace Serenegiant.UVC.Android {
 		public IUVCSelector UVCSelector;
 
 		//================================================================================
-
 		/**
 		 * UVC機器からの映像の描画先Material
 		 * TargetGameObjectから取得する
@@ -85,6 +81,22 @@ namespace Serenegiant.UVC.Android {
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
 		private Material[] TargetMaterials;
+		/**
+		 * オリジナルのテクスチャ
+		 * UVCカメラ映像受け取り用テクスチャをセットする前に
+		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
+		 */
+		private Texture[] savedTextures;
+		/**
+		 * プレビュー中フラグ
+		 */
+		private bool isPreviewing;
+
+#if UNITY_ANDROID
+		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
+		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
+		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
+
 		/**
 		 * 接続中のカメラの識別文字列
 		 */
@@ -98,55 +110,27 @@ namespace Serenegiant.UVC.Android {
 		 */
 		private Int32 activeCameraId;
 		/**
-		 * プレビュー中フラグ
-		 */
-		private bool isPreviewing;
-		/**
 		 * 動的パーミッション要求中かどうか
 		 */
 		private bool isPermissionRequesting;
-		/**
-		 * オリジナルのテクスチャ
-		 * UVCカメラ映像受け取り用テクスチャをセットする前に
-		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
-		 */
-		private Texture[] savedTextures;
+#endif
 
+		//================================================================================
 		/**
 		 * Start is called before the first frame update
 		 */
-		IEnumerator Start()
+		void Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
 			UpdateTarget();
-		
-			if (CheckAndroidVersion(28))
-			{
-				// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
-				if (!HasPermission(PERMISSION_CAMERA))
-				{
-					// Android 9以降でカメラパーミッションがないので要求する
-					yield return RequestPermission(PERMISSION_CAMERA);
-				}
-				if (HasPermission(PERMISSION_CAMERA))
-				{
-					// カメラパーミッションを取得できた
-					InitPlugin();
-				}
-				else
-				if (ShouldShowRequestPermissionRationale(PERMISSION_CAMERA))
-				{
-					// カメラパーミッションを取得できなかった
-					// FIXME 説明用のダイアログ等を表示しないといけない
-				}
-			}
-			else
-			{
-				// Android 9 未満ではパーミッション要求処理は不要
-				InitPlugin();
-			}
+
+#if UNITY_ANDROID
+			InitializeAndroid();
+#else
+			InitializeWebCam();
+#endif
 		}
 
 		void OnApplicationPause(bool pauseStatus)
@@ -243,6 +227,11 @@ namespace Serenegiant.UVC.Android {
 			{
 				StartPreview(activeDeviceName);
 			}
+		}
+
+		private void InitializeWebCam()
+		{
+			// FIXME 未実装
 		}
 
 		//================================================================================
@@ -413,6 +402,159 @@ namespace Serenegiant.UVC.Android {
 		}
 
 		//================================================================================
+		//--------------------------------------------------------------------------------
+		/**
+		 * 描画先を更新
+		 */
+		private void UpdateTarget()
+		{
+			bool found = false;
+			if ((RenderTargets != null) && (RenderTargets.Length > 0))
+			{
+				UVCSelector = GetUVCSelector(RenderTargets);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
+#endif
+
+				TargetMaterials = new Material[RenderTargets.Length];
+				int i = 0;
+				foreach (var target in RenderTargets)
+				{
+					if (target != null)
+					{
+						var material = TargetMaterials[i++] = GetTargetMaterial(target);
+						if (material != null)
+						{
+							found = true;
+						}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+						Console.WriteLine($"UpdateTarget:material={material}");
+#endif
+					}
+				}
+			}
+			if (!found)
+			{   // 描画先が1つも見つからなかったときはこのスクリプトが
+				// AddComponentされているGameObjectからの取得を試みる
+				// XXX RenderTargetsにgameObjectをセットする？
+				TargetMaterials = new Material[1];
+				TargetMaterials[0] = GetTargetMaterial(gameObject);
+				found = TargetMaterials[0] != null;
+			}
+
+			if (!found)
+			{
+				throw new UnityException("no target material found.");
+			}
+		}
+
+		/**
+		 * テクスチャとして映像を描画するMaterialを取得する
+		 * 指定したGameObjectにSkybox/Renderer/MaterialがあればそれからMaterialを取得する
+		 * それぞれが複数割り当てられている場合最初に見つかった使用可能ものを返す
+		 * 優先度: Skybox > Renderer > Material
+		 * @param target
+		 * @return 見つからなければnullを返す
+		 */
+		Material GetTargetMaterial(GameObject target/*NonNull*/)
+		{
+			// Skyboxの取得を試みる
+			var skyboxs = target.GetComponents<Skybox>();
+			if (skyboxs != null)
+			{
+				foreach (var skybox in skyboxs)
+				{
+					if (skybox.isActiveAndEnabled && (skybox.material != null))
+					{
+						RenderSettings.skybox = skybox.material;
+						return skybox.material;
+					}
+				}
+			}
+			// Skyboxが取得できなければRendererの取得を試みる
+			var renderers = target.GetComponents<Renderer>();
+			if (renderers != null)
+			{
+				foreach (var renderer in renderers)
+				{
+					if (renderer.enabled && (renderer.material != null))
+					{
+						return renderer.material;
+					}
+
+				}
+			}
+			// SkyboxもRendererもが取得できなければMaterialの取得を試みる
+			var material = target.GetComponent<Material>();
+			if (material != null)
+			{
+				return material;
+			}
+			return null;
+		}
+
+		/**
+		 * IUVCSelectorを取得する
+		 * UVCSelectorが設定されていればそれを返す
+		 * UVCSelectorが見つからないときはTargetGameObjectから取得を試みる
+		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
+		 * @return 見つからなければnull
+		 */
+		IUVCSelector GetUVCSelector(GameObject[] targets)
+		{
+			if (UVCSelector != null)
+			{
+				return UVCSelector;
+			}
+
+			IUVCSelector selector;
+			foreach (var target in targets)
+			{
+				if (target != null)
+				{
+					selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
+					if (selector != null)
+					{
+						return selector;
+					}
+				}
+			}
+
+			selector = GetComponent(typeof(IUVCSelector)) as IUVCSelector;
+			return selector;
+		}
+
+#if UNITY_ANDROID
+		private IEnumerator InitializeAndroid()
+		{
+			if (CheckAndroidVersion(28))
+			{
+				// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
+				if (!HasPermission(PERMISSION_CAMERA))
+				{
+					// Android 9以降でカメラパーミッションがないので要求する
+					yield return RequestPermission(PERMISSION_CAMERA);
+				}
+				if (HasPermission(PERMISSION_CAMERA))
+				{
+					// カメラパーミッションを取得できた
+					InitPlugin();
+				}
+				else
+				if (ShouldShowRequestPermissionRationale(PERMISSION_CAMERA))
+				{
+					// カメラパーミッションを取得できなかった
+					// FIXME 説明用のダイアログ等を表示しないといけない
+				}
+			}
+			else
+			{
+				// Android 9 未満ではパーミッション要求処理は不要
+				InitPlugin();
+			}
+
+		}
+
 		// uvc-plugin-unityへの処理要求
 		/**
 		 * プラグインを初期化
@@ -772,128 +914,6 @@ namespace Serenegiant.UVC.Android {
 			}
 		}
 
-		//--------------------------------------------------------------------------------
-		/**
-		 * 描画先を更新
-		 */
-		private void UpdateTarget()
-		{
-			bool found = false;
-			if ((RenderTargets != null) && (RenderTargets.Length > 0))
-			{
-				UVCSelector = GetUVCSelector(RenderTargets);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
-#endif
-
-				TargetMaterials = new Material[RenderTargets.Length];
-				int i = 0;
-				foreach (var target in RenderTargets)
-				{
-					if (target != null)
-					{
-						var material = TargetMaterials[i++] = GetTargetMaterial(target);
-						if (material != null)
-						{
-							found = true;
-						}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-						Console.WriteLine($"UpdateTarget:material={material}");
-#endif
-					}
-				}
-			}
-			if (!found)
-			{   // 描画先が1つも見つからなかったときはこのスクリプトが
-				// AddComponentされているGameObjectからの取得を試みる
-				// XXX RenderTargetsにgameObjectをセットする？
-				TargetMaterials = new Material[1];
-				TargetMaterials[0] = GetTargetMaterial(gameObject);
-				found = TargetMaterials[0] != null;
-			}
-
-			if (!found)
-			{
-				throw new UnityException("no target material found.");
-			}
-		}
-
-		/**
-		 * テクスチャとして映像を描画するMaterialを取得する
-		 * 指定したGameObjectにSkybox/Renderer/MaterialがあればそれからMaterialを取得する
-		 * それぞれが複数割り当てられている場合最初に見つかった使用可能ものを返す
-		 * 優先度: Skybox > Renderer > Material
-		 * @param target
-		 * @return 見つからなければnullを返す
-		 */
-		Material GetTargetMaterial(GameObject target/*NonNull*/)
-		{
-			// Skyboxの取得を試みる
-			var skyboxs = target.GetComponents<Skybox>();
-			if (skyboxs != null)
-			{
-				foreach (var skybox in skyboxs)
-				{
-					if (skybox.isActiveAndEnabled && (skybox.material != null))
-					{
-						RenderSettings.skybox = skybox.material;
-						return skybox.material;
-					}
-				}
-			}
-			// Skyboxが取得できなければRendererの取得を試みる
-			var renderers = target.GetComponents<Renderer>();
-			if (renderers != null)
-			{
-				foreach (var renderer in renderers)
-				{
-					if (renderer.enabled && (renderer.material != null))
-					{
-						return renderer.material;
-					}
-
-				}
-			}
-			// SkyboxもRendererもが取得できなければMaterialの取得を試みる
-			var material = target.GetComponent<Material>();
-			if (material != null)
-			{
-				return material;
-			}
-			return null;
-		}
-
-		/**
-		 * IUVCSelectorを取得する
-		 * UVCSelectorが設定されていればそれを返す
-		 * UVCSelectorが見つからないときはTargetGameObjectから取得を試みる
-		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
-		 * @return 見つからなければnull
-		 */
-		IUVCSelector GetUVCSelector(GameObject[] targets)
-		{
-			if (UVCSelector != null)
-			{
-				return UVCSelector;
-			}
-
-			IUVCSelector selector;
-			foreach (var target in targets)
-			{
-				if (target != null)
-				{
-					selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-					if (selector != null)
-					{
-						return selector;
-					}
-				}
-			}
-
-			selector = GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-			return selector;
-		}
-
 		//================================================================================
 		/**
 		 * UnityPlayerActivityを取得
@@ -1011,7 +1031,9 @@ namespace Serenegiant.UVC.Android {
 #endif
 			yield break;
 		}
-	
+
+#endif	// #if UNITY_ANDROID
+
 	} // UVCController
 
 }   // namespace Serenegiant.UVC.Android
