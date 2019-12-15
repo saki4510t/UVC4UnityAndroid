@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine;
+
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
 #endif
@@ -30,7 +31,7 @@ using UnityEngine.Android;
  * 
  */
 
-namespace Serenegiant.UVC.Android {
+namespace Serenegiant.UVC {
 
 	public class UVCController : MonoBehaviour
 	{
@@ -113,7 +114,7 @@ namespace Serenegiant.UVC.Android {
 		 * 動的パーミッション要求中かどうか
 		 */
 		private bool isPermissionRequesting;
-#endif
+#endif  // #if UNITY_ANDROID
 
 		//================================================================================
 		/**
@@ -130,7 +131,7 @@ namespace Serenegiant.UVC.Android {
 			InitializeAndroid();
 #else
 			InitializeWebCam();
-#endif
+#endif  // #if UNITY_ANDROID
 		}
 
 		void OnApplicationPause(bool pauseStatus)
@@ -402,7 +403,6 @@ namespace Serenegiant.UVC.Android {
 		}
 
 		//================================================================================
-		//--------------------------------------------------------------------------------
 		/**
 		 * 描画先を更新
 		 */
@@ -1036,4 +1036,4 @@ namespace Serenegiant.UVC.Android {
 
 	} // UVCController
 
-}   // namespace Serenegiant.UVC.Android
+}   // namespace Serenegiant.UVC
