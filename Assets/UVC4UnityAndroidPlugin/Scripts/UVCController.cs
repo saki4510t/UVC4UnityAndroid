@@ -93,19 +93,24 @@ namespace Serenegiant.UVC {
 		 */
 		private bool isPreviewing;
 
+		/**
+		 * 接続中のカメラの識別文字列
+		 * Android実機の場合はUVC機器のデバイス名
+		 * エディタ・PCの場合はWebCamDevice#name
+		 */
+		private string attachedDeviceName;
+		/**
+		 * 使用中のUVCカメラ識別文字列
+		 * Android実機の場合はUVC機器のデバイス名
+		 * エディタ・PCの場合はWebCamDevice#name
+		 */
+		private string activeDeviceName;
+
 #if UNITY_ANDROID
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
 
-		/**
-		 * 接続中のカメラの識別文字列
-		 */
-		private string attachedDeviceName;
-		/**
-		 * 使用中のUVCカメラ識別文字列
-		 */
-		private string activeDeviceName;
 		/**
 		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 		 */
