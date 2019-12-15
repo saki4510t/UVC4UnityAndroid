@@ -33,7 +33,7 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC {
 
-	public class UVCController : MonoBehaviour
+	public class UVCController : MonoBehaviour, IUVCEventHandler
 	{
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
 		// THETA SのH.264映像: 1920x1080@30fps, H.264
