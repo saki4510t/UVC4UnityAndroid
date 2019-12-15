@@ -141,7 +141,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (pauseStatus)
 			{
-				OnPauseEvent();
+				CloseCamera(activeDeviceName);
 			}
 		}
 
