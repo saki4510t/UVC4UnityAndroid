@@ -2,7 +2,6 @@
 
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 /*
  * THETA V
@@ -15,9 +14,7 @@ namespace Serenegiant.UVC
 	[Serializable]
 	public class UVCInfo
 	{
-		[JsonPropertyName("vid")]
 		public int vid { get; set; }
-		[JsonPropertyName("pid")]
 		public int pid { get; set; }
 
 		public static UVCInfo Parse(string jsonString)
@@ -28,7 +25,10 @@ namespace Serenegiant.UVC
 			UVCInfo result;
 			try
 			{
-				result = JsonSerializer.Deserialize<UVCInfo>(jsonString);
+				var element = JsonDocument.Parse(jsonString).RootElement;
+				result = new UVCInfo();
+				result.vid = element.GetProperty("vid").GetInt32();
+				result.vid = element.GetProperty("pid").GetInt32();
 			}
 			catch (JsonException e)
 			{

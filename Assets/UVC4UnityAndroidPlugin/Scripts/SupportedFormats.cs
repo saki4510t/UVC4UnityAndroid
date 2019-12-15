@@ -3,13 +3,13 @@
 using System;
 using System.Collections;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using UnityEngine;
 
 /*
 {
 	"formats":[
 		{
+			"frame_type":7,
 			"default":1,
 			"size":[
 				"640x480",
@@ -86,14 +86,41 @@ namespace Serenegiant.UVC
 		[Serializable]
 		public class FrameFormat
 		{
-			[JsonPropertyName("frame_type")]
 			public int frame_type { get; set; }
-			[JsonPropertyName("default")]
 			public int defaultIndex { get; set; }
-			[JsonPropertyName("size")]
 			public string[] size { get; set; }
-			[JsonPropertyName("frameRate")]
 			public float[][] frameRate { get; set; }
+
+			public FrameFormat(JsonElement element)
+			{
+				frame_type = element.GetProperty("frame_type").GetInt32();
+				defaultIndex = element.GetProperty("default").GetInt32();
+				var sizeArray = element.GetProperty("size");
+				var sizeNum = sizeArray.GetArrayLength();
+				size = new string[sizeNum];
+				if (sizeNum > 0)
+				{
+					int i = 0;
+					foreach (var item in sizeArray.EnumerateArray())
+					{
+						size[i++] = item.GetString();
+					}
+					var frameRateArray = element.GetProperty("frameRate");
+					frameRate = new float[sizeNum][];
+					i = 0;
+					foreach (var item in frameRateArray.EnumerateArray())
+					{
+						frameRate[i] = new float[item.GetArrayLength()];
+						int j = 0;
+						foreach (var value in item.EnumerateArray())
+						{
+							frameRate[i][j++] = value.GetSingle();
+						}
+						i++;
+					}
+				}
+
+			}
 
 			/**
 			 * 対応解像度の個数を取得
@@ -244,7 +271,6 @@ namespace Serenegiant.UVC
 			}
 		}
 
-		[JsonPropertyName("formats")]
 		public FrameFormat[] formats { get; set; }
 
 		/**
@@ -260,7 +286,17 @@ namespace Serenegiant.UVC
 			SupportedFormats result;
 			try
 			{
-				result = JsonSerializer.Deserialize<SupportedFormats>(jsonString);
+				var elements = JsonDocument.Parse(jsonString).RootElement.GetProperty("formats");
+				result = new SupportedFormats();
+				if (elements.GetArrayLength() > 0)
+				{
+					result.formats = new FrameFormat[elements.GetArrayLength()];
+					int i = 0;
+					foreach (var element in elements.EnumerateArray())
+					{
+						result.formats[i++] = new FrameFormat(element);
+					}
+				}
 			}
 			catch (JsonException e)
 			{
@@ -273,6 +309,11 @@ namespace Serenegiant.UVC
 				throw new ArgumentException($"failed to parse ({jsonString})");
 			}
 			return result;
+		}
+
+		public SupportedFormats()
+		{
+
 		}
 
 		/**
