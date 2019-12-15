@@ -71,6 +71,11 @@ namespace Serenegiant.UVC {
 		 */
 		public IUVCSelector UVCSelector;
 
+		/**
+		 * WebCamDevice/WebCamTextureを使うときの機器名
+		 * 一致するか含んでいるカメラを選択する
+		 */
+		public string WebCameraDeviceName;
 		//================================================================================
 		/**
 		 * UVC機器からの映像の描画先Material
@@ -136,13 +141,15 @@ namespace Serenegiant.UVC {
 
 #if UNITY_ANDROID
 			if (!Application.isEditor)
-			{
+			{	// Android実機のとき
 				yield return InitializeAndroid();
 			}
 			else {
+				// ターゲットプラットフォームはAndroidだけどエディタで実行中
 				yield return InitializeWebCam();
 			}
 #else
+			// ターゲットプラットフォームがPCのとき
 			yield return InitializeWebCam();
 #endif  // #if UNITY_ANDROID
 
@@ -155,7 +162,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (pauseStatus)
 			{
-				CloseCamera(activeDeviceName);
+				CloseUVCCamera(activeDeviceName);
 			}
 		}
 
@@ -372,7 +379,116 @@ namespace Serenegiant.UVC {
 			Console.WriteLine("InitializeWebCam:");
 #endif
 			// FIXME 未実装
+
 			yield break;
+		}
+
+		private void OpenCamera(string deviceName)
+		{
+
+		}
+
+		private void CloseCamera(string deviceName)
+		{
+
+		}
+
+		/**
+		 * UVC機器/カメラからの映像受け取り開始要求をする
+		 * IUVCSelectorが設定されているときはUVCSelector#SelectSizeから映像サイズの取得を試みる
+		 * IUVCSelectorが設定されていないかUVCSelector#SelectSizeがnullを返したときは
+		 * スクリプトに設定されているVideoWidth,VideoHeightを使う
+		 * @param deviceName カメラの識別文字列
+		 */
+		private void StartPreview(string deviceName)
+		{
+			int width = VideoWidth;
+			int height = VideoHeight;
+
+			var supportedVideoSize = GetSupportedVideoSize(deviceName);
+			if (supportedVideoSize == null)
+			{
+				throw new ArgumentException("fauled to get supported video size");
+			}
+
+			// 解像度の選択処理
+			if (UVCSelector != null)
+			{
+				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"StartPreview:selected={size}");
+#endif
+				if (size != null)
+				{
+					width = size.Width;
+					height = size.Height;
+				}
+			}
+
+			// 対応解像度のチェック
+			if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+			{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"StartPreview:{width}x{height} is NOT supported.");
+				Console.WriteLine($"Info={GetInfo(deviceName)}");
+				Console.WriteLine($"supportedVideoSize={supportedVideoSize}");
+#endif
+				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+			}
+#if UNITY_ANDROID
+			RequestStartPreviewUVC(deviceName, width, height);
+#else
+			// FIXME 未実装
+#endif
+		}
+
+		/**
+		 * UVC機器/カメラからの映像受けとりを終了要求をする
+		 * @param deviceName カメラの識別文字列
+		 */
+		private void StopPreview(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"StopPreview:{deviceName}");
+#endif
+
+			HandleOnStopPreview(deviceName);
+#if UNITY_ANDROID
+			RequestStopPreviewUVC(deviceName);
+#else
+			// FIXME 未実装
+#endif
+		}
+
+		/**
+		 * 映像取得が終了したときのUnity側の処理
+		 * @param deviceName カメラの識別文字列
+		 */
+		private void HandleOnStopPreview(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
+#endif
+			isPreviewing = false;
+			// 描画用のこールーチンを停止させる
+			StopCoroutine(OnRender());
+			// 描画先のテクスチャをもとに戻す
+			var n = Math.Min(
+				(TargetMaterials != null) ? TargetMaterials.Length : 0,
+				(savedTextures != null) ? savedTextures.Length : 0);
+			if (n > 0)
+			{
+				int i = 0;
+				foreach (var material in TargetMaterials)
+				{
+					material.mainTexture = savedTextures[i];
+					savedTextures[i++] = null;
+				}
+			}
+			savedTextures = null;
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("HandleOnStopPreview:finished");
+#endif
 		}
 
 		//================================================================================
@@ -412,7 +528,7 @@ namespace Serenegiant.UVC {
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				isPermissionRequesting = false;
-				OpenCamera(args);
+				OpenUVCCamera(args);
 			}
 		}
 
@@ -438,7 +554,7 @@ namespace Serenegiant.UVC {
 #endif
 			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
 			// 念のためにCloseCameraを呼んでおく
-			CloseCamera(activeDeviceName);
+			CloseUVCCamera(activeDeviceName);
 		}
 
 		/**
@@ -541,7 +657,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			CloseCamera(activeDeviceName);
+			CloseUVCCamera(activeDeviceName);
 		}
 
 		//--------------------------------------------------------------------------------
@@ -647,7 +763,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器をオープン要求する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private void OpenCamera(string deviceName)
+		private void OpenUVCCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OpenCamera:{deviceName}");
@@ -671,7 +787,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器をクローズ要求する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private void CloseCamera(string deviceName)
+		private void CloseUVCCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"CloseCamera:{deviceName}");
@@ -681,62 +797,17 @@ namespace Serenegiant.UVC {
 				HandleOnStopPreview(deviceName);
 				activeCameraId = 0;
 				activeDeviceName = null;
+#if UNITY_ANDROID
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("closeDevice",
 						GetCurrentActivity(), deviceName);
 				}
-
+#endif
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("CloseCamera:finished");
 #endif
-		}
-
-		/**
-		 * UVC機器からの映像受け取り開始要求をする
-		 * IUVCSelectorが設定されているときはUVCSelector#SelectSizeから映像サイズの取得を試みる
-		 * IUVCSelectorが設定されていないかUVCSelector#SelectSizeがnullを返したときは
-		 * スクリプトに設定されているVideoWidth,VideoHeightを使う
-		 * @param deviceName UVC機器の識別文字列
-		 */
-		private void StartPreview(string deviceName)
-		{
-			int width = VideoWidth;
-			int height = VideoHeight;
-
-			var supportedVideoSize = GetSupportedVideoSize(deviceName);
-			if (supportedVideoSize == null)
-			{
-				throw new ArgumentException("fauled to get supported video size");
-			}
-
-			// 解像度の選択処理
-			if (UVCSelector != null)
-			{
-				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"StartPreview:selected={size}");
-#endif
-				if (size != null)
-				{
-					width = size.Width;
-					height = size.Height;
-				}
-			}
-
-			// 対応解像度のチェック
-			if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
-			{   // 指定した解像度に対応していない
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"StartPreview:{width}x{height} is NOT supported.");
-				Console.WriteLine($"Info={GetInfo(deviceName)}");
-				Console.WriteLine($"supportedVideoSize={supportedVideoSize}");
-#endif
-				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
-			}
-
-			RequestStartPreview(deviceName, width, height);
 		}
 
 		/**
@@ -748,7 +819,7 @@ namespace Serenegiant.UVC {
 		 * @param width
 		 * @param height
 		 */
-		private void RequestStartPreview(string deviceName, int width, int height)
+		private void RequestStartPreviewUVC(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"RequestStartPreview:{deviceName}");
@@ -807,14 +878,11 @@ namespace Serenegiant.UVC {
 		 * UVC機器からの映像受けとりを終了要求をする
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private void StopPreview(string deviceName)
+		private void RequestStopPreviewUVC(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StopPreview:{deviceName}");
+			Console.WriteLine($"RequestStopPreviewUVC:{deviceName}");
 #endif
-
-			HandleOnStopPreview(deviceName);
-
 			if (!String.IsNullOrEmpty(deviceName))
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -831,39 +899,8 @@ namespace Serenegiant.UVC {
 		 */
 		private void HandleDetach(string deviceName)
 		{
-			CloseCamera(activeDeviceName);
+			CloseUVCCamera(activeDeviceName);
 			attachedDeviceName = null;
-		}
-
-		/**
-		 * 映像取得が終了したときのUnity側の処理
-		 * @param deviceName UVC機器の識別文字列
-		 */
-		private void HandleOnStopPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
-#endif
-			isPreviewing = false;
-			// 描画用のこールーチンを停止させる
-			StopCoroutine(OnRender());
-			// 描画先のテクスチャをもとに戻す
-			var n = Math.Min(
-				(TargetMaterials != null) ? TargetMaterials.Length : 0,
-				(savedTextures != null) ? savedTextures.Length : 0);
-			if (n > 0)
-			{
-				int i = 0;
-				foreach (var material in TargetMaterials)
-				{
-					material.mainTexture = savedTextures[i];
-					savedTextures[i++] = null;
-				}
-			}
-			savedTextures = null;
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("HandleOnStopPreview:finished");
-#endif
 		}
 
 		/**
