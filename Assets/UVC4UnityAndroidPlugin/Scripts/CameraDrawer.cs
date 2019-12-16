@@ -349,6 +349,67 @@ namespace Serenegiant.UVC
 			HandleOnStopPreview(args);
 		}
 
+		/**
+		 * UVC機器からのステータスイベントを受信した
+		 * @param args UVC機器の識別文字列+ステータス
+		 */
+		public void OnReceiveStatus(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnReceiveStatus:({args})");
+#endif
+#if UNITY_ANDROID
+			if (uvcController != null)
+			{
+				uvcController.OnReceiveStatus(args);
+			}
+#endif
+		}
+
+		/**
+		 * UVC機器からのボタンイベントを受信した
+		 * @param args UVC機器の識別文字列＋ボタンイベント
+		 */
+		public void OnButtonEvent(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnButtonEvent:({args})");
+#endif
+#if UNITY_ANDROID
+			if (uvcController != null)
+			{
+				uvcController.OnButtonEvent(args);
+			}
+#endif
+		}
+
+		/**
+		 * onResumeイベント
+		 */
+		public void OnResumeEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+#endif
+#if UNITY_ANDROID
+			if (uvcController != null)
+			{
+				uvcController.OnResumeEvent();
+			}
+#endif
+		}
+
+		/**
+		 * onPauseイベント
+		 */
+		public void OnPauseEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnPauseEvent:");
+#endif
+			Close(activeDeviceName);
+		}
+
 		//================================================================================
 		/**
 		 * 描画先を更新
