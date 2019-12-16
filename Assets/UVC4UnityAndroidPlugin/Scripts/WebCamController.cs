@@ -13,7 +13,8 @@ namespace Serenegiant
 
 	public class WebCamController
 	{
-		private GameObject parent;
+		private MonoBehaviour parent;
+		private GameObject target;
 		private int defaultWidth;
 		private int defaultHeight;
 
@@ -26,9 +27,10 @@ namespace Serenegiant
 		 * @param width デフォルトの解像度(幅)
 		 * @param height デフォルトの解像度(高さ)
 		 */
-		public WebCamController(GameObject parent, int width, int height)
+		public WebCamController(MonoBehaviour parent, GameObject target, int width, int height)
 		{
 			this.parent = parent;
+			this.target = target;
 			defaultWidth = width;
 			defaultHeight = height;
 		}
@@ -62,7 +64,7 @@ namespace Serenegiant
 #endif
 				// パーミッションを取得通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent,
+					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(activeDeviceName));
 			}
@@ -83,12 +85,12 @@ namespace Serenegiant
 				activeDeviceName = deviceName;
 				// カメラとの接続通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent,
+					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventConnect(deviceName));
 				// カメラからの映像取得の準備完了通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent,
+					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName));
 			}
@@ -107,7 +109,7 @@ namespace Serenegiant
 			activeDeviceName = null;
 			// カメラ切断通知
 			ExecuteEvents.Execute<IUVCEventHandler>(
-				target: parent,
+				target: target,
 				eventData: null,
 				functor: (recieveTarget, eventData) => recieveTarget.OnEventDisconnect(deviceName));
 		}
@@ -136,7 +138,7 @@ namespace Serenegiant
 				}
 				// 映像取得開始通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent,
+					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnStartPreview(activeDeviceName));
 			}
@@ -157,7 +159,7 @@ namespace Serenegiant
 				webCameraTexure = null;
 				// 映像取得終了通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent,
+					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnStopPreview(activeDeviceName));
 			}

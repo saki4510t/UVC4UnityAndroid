@@ -438,30 +438,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1481574680 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6465409448752295666, guid: ff17b3cd9f54c334da5368453f56b8e8,
-    type: 3}
-  m_PrefabInstance: {fileID: 6465409448301560325}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1481574681
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1481574680}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bda887b4b2b31454fb7dd4b9cf6982cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  DefaultWidth: 1280
-  DefaultHeight: 720
-  PreferH264: 1
-  RenderTargets:
-  - {fileID: 1922705223}
-  WebCameraDeviceKeyword: 
 --- !u!1 &1922705223
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,6 +567,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5777022740684865818, guid: ff17b3cd9f54c334da5368453f56b8e8,
+        type: 3}
+      propertyPath: RenderTargets.Array.data[0]
+      value: 
+      objectReference: {fileID: 1922705223}
     - target: {fileID: 6465409448752295666, guid: ff17b3cd9f54c334da5368453f56b8e8,
         type: 3}
       propertyPath: m_Name

@@ -102,22 +102,53 @@ namespace Serenegiant.UVC
 		//================================================================================
 
 		// Start is called before the first frame update
-		void Start()
+		IEnumerator Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("Start:");
 #endif
 			UpdateTarget();
 
-			webCamController = new WebCamController(gameObject, DefaultWidth, DefaultHeight);
+#if UNITY_ANDROID
+			if (!Application.isEditor)
+			{
+				uvcController = new UVCController(this, gameObject, DefaultWidth, DefaultHeight, PreferH264);
+				yield return uvcController.Initialize();
+			} else {
+				webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
+				webCamController.Initialize(WebCameraDeviceKeyword);
+			}
+#else
+			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
 			webCamController.Initialize(WebCameraDeviceKeyword);
+#endif
+			yield break;
 		}
 
-//		// Update is called once per frame
-//		void Update()
-//		{
-//
-//		}
+		//		// Update is called once per frame
+		//		void Update()
+		//		{
+		//
+		//		}
+
+		void OnApplicationPause(bool pauseStatus)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnApplicationPause:{pauseStatus}");
+#endif
+			if (pauseStatus)
+			{
+				Close(activeDeviceName);
+			}
+		}
+
+		void OnDestroy()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnDestroy:");
+#endif
+			Close(activeDeviceName);
+		}
 
 		//================================================================================
 		// 他のコンポーネントからの操作用
@@ -190,10 +221,15 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.OnEventAttach(args);
+			if (!String.IsNullOrEmpty(args)
+				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
+			{   // argsはdeviceName
+				attachedDeviceName = args;
+				if (uvcController != null)
+				{
+					uvcController.OnEventAttach(args);
 
+				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:finished");
