@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Serenegiant.UVC
 {
@@ -65,6 +66,7 @@ namespace Serenegiant.UVC
 		 * 優先順位：
 		 *	 TargetGameObjectのSkybox
 		 *	 > TargetGameObjectのRenderer
+		 *	 > TargetGameObjectのRawImage
 		 *	 > TargetGameObjectのMaterial
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
@@ -518,9 +520,9 @@ namespace Serenegiant.UVC
 
 		/**
 		 * テクスチャとして映像を描画するMaterialを取得する
-		 * 指定したGameObjectにSkybox/Renderer/MaterialがあればそれからMaterialを取得する
+		 * 指定したGameObjectにSkybox/Renderer/RawImage/MaterialがあればそれからMaterialを取得する
 		 * それぞれが複数割り当てられている場合最初に見つかった使用可能ものを返す
-		 * 優先度: Skybox > Renderer > Material
+		 * 優先度: Skybox > Renderer > RawImage > Material
 		 * @param target
 		 * @return 見つからなければnullを返す
 		 */
@@ -552,7 +554,20 @@ namespace Serenegiant.UVC
 
 				}
 			}
-			// SkyboxもRendererもが取得できなければMaterialの取得を試みる
+			// SkyboxもRendererも取得できなければRawImageの取得を試みる
+			var rawImages = target.GetComponents<RawImage>();
+			if (rawImages != null)
+			{
+				foreach (var rawImage in rawImages)
+				{
+					if (rawImage.enabled && (rawImage.material != null))
+					{
+						return rawImage.material;
+					}
+
+				}
+			}
+			// SkyboxもRendererもRawImageも取得できなければMaterialの取得を試みる
 			var material = target.GetComponent<Material>();
 			if (material != null)
 			{
