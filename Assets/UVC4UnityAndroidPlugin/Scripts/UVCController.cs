@@ -35,6 +35,8 @@ namespace Serenegiant.UVC {
 
 	public class UVCController : IUVCEventHandler
 	{
+		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
+
 		private MonoBehaviour parent;
 		private GameObject target;
 		private bool preferH264;
@@ -54,18 +56,11 @@ namespace Serenegiant.UVC {
 		 */
 		public string activeDeviceName { set; get; }
 
-		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
-		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
-		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
-
+		private AndroidUtils androidUtils = new AndroidUtils();
 		/**
 		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 		 */
 		private Int32 activeCameraId;
-		/**
-		 * 動的パーミッション要求中かどうか
-		 */
-		private bool isPermissionRequesting;
 
 		private bool isPreviewing;
 
@@ -114,11 +109,11 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				isPermissionRequesting = false;
+				androidUtils.isPermissionRequesting = false;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
-						GetCurrentActivity(), deviceName,
+						AndroidUtils.GetCurrentActivity(), deviceName,
 						defaultWidth, defaultHeight, preferH264);
 				}
 			}
@@ -140,7 +135,7 @@ namespace Serenegiant.UVC {
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("closeDevice",
-						GetCurrentActivity(), deviceName);
+						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -195,7 +190,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				isPermissionRequesting = false;
+				androidUtils.isPermissionRequesting = false;
 				Open(args);
 			}
 		}
@@ -300,7 +295,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
 #endif
-			if (!isPermissionRequesting
+			if (!androidUtils.isPermissionRequesting
 				&& !String.IsNullOrEmpty(attachedDeviceName)
 				&& String.IsNullOrEmpty(activeDeviceName))
 			{
@@ -324,27 +319,11 @@ namespace Serenegiant.UVC {
 		public IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("InitializeAndroid:");
+			Console.WriteLine("Initialize:");
 #endif
-			if (CheckAndroidVersion(28))
+			if (AndroidUtils.CheckAndroidVersion(28))
 			{
-				// Android 9 以降ではUVC機器へのアクセスにカメラパーミッションが必要
-				if (!HasPermission(PERMISSION_CAMERA))
-				{
-					// Android 9以降でカメラパーミッションがないので要求する
-					yield return RequestPermission(PERMISSION_CAMERA);
-				}
-				if (HasPermission(PERMISSION_CAMERA))
-				{
-					// カメラパーミッションを取得できた
-					InitPlugin();
-				}
-				else
-				if (ShouldShowRequestPermissionRationale(PERMISSION_CAMERA))
-				{
-					// カメラパーミッションを取得できなかった
-					// FIXME 説明用のダイアログ等を表示しないといけない
-				}
+				yield return androidUtils.GrantPermission(AndroidUtils.PERMISSION_CAMERA, OnPermission);
 			}
 			else
 			{
@@ -353,6 +332,30 @@ namespace Serenegiant.UVC {
 			}
 
 			yield break;
+		}
+
+		/**
+		 * カメラパーミッション要求結果のコールバック
+		 * @param permission
+		 * @param granted
+		 */
+		private void OnPermission(string permission, bool granted)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnPermission:{permission}={granted}");
+#endif
+			if (granted)
+			{
+				InitPlugin();
+			}
+			else {
+				if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
+				{
+					// パーミッションを取得できなかった
+					// FIXME 説明用のダイアログ等を表示しないといけない
+				}
+
+			} 
 		}
 
 		// uvc-plugin-unityへの処理要求
@@ -367,7 +370,7 @@ namespace Serenegiant.UVC {
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
 				clazz.CallStatic("initDeviceDetector",
-					GetCurrentActivity(), target.name);
+					AndroidUtils.GetCurrentActivity(), target.name);
 			}
 		}
 
@@ -382,7 +385,7 @@ namespace Serenegiant.UVC {
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					return clazz.CallStatic<bool>("hasUsbPermission",
-						GetCurrentActivity(), deviceName);
+						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
 			else
@@ -402,12 +405,12 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				isPermissionRequesting = true;
+				androidUtils.isPermissionRequesting = true;
 
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("requestPermission",
-						GetCurrentActivity(), deviceName);
+						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
 			else
@@ -452,7 +455,7 @@ namespace Serenegiant.UVC {
 					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 					{
 						clazz.CallStatic("setPreviewTexture",
-							GetCurrentActivity(), deviceName,
+							AndroidUtils.GetCurrentActivity(), deviceName,
 							nativeTexPtr.ToInt32(),
 							-1,	// PreviewMode, -1:自動選択(Open時に指定したPreferH264フラグが有効になる)
 							width, height);
@@ -481,7 +484,7 @@ namespace Serenegiant.UVC {
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("stopPreview",
-						GetCurrentActivity(), deviceName);
+						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
 		}
@@ -512,7 +515,7 @@ namespace Serenegiant.UVC {
 				{
 					return UVCInfo.Parse(
 						clazz.CallStatic<string>("getInfo",
-							GetCurrentActivity(), deviceName));
+							AndroidUtils.GetCurrentActivity(), deviceName));
 				}
 			}
 			else
@@ -538,7 +541,7 @@ namespace Serenegiant.UVC {
 				{
 					return SupportedFormats.Parse(
 						clazz.CallStatic<string>("getSupportedVideoSize",
-							GetCurrentActivity(), deviceName));
+							AndroidUtils.GetCurrentActivity(), deviceName));
 				}
 			}
 			else
@@ -568,123 +571,6 @@ namespace Serenegiant.UVC {
 			}
 		}
 
-		//--------------------------------------------------------------------------------
-		/**
-		 * UnityPlayerActivityを取得
-		 */
-		private static AndroidJavaObject GetCurrentActivity()
-		{
-			using (AndroidJavaClass playerClass = new AndroidJavaClass(FQCN_UNITY_PLAYER))
-			{
-				return playerClass.GetStatic<AndroidJavaObject>("currentActivity");
-			}
-		}
-
-		/**
-		 * 指定したバージョン以降かどうかを確認
-		 * @param apiLevel
-		 */
-		private static bool CheckAndroidVersion(int apiLevel)
-		{
-			using (var VERSION = new AndroidJavaClass("android.os.Build$VERSION"))
-			{
-				return VERSION.GetStatic<int>("SDK_INT") >= apiLevel;
-			}
-		}
-
-		/**
-		 * パーミッションを持っているかどうかを調べる
-		 * @param permission
-		 */
-		private static bool HasPermission(string permission)
-		{
-			if (CheckAndroidVersion(23))
-			{
-#if UNITY_2018_3_OR_NEWER
-				return Permission.HasUserAuthorizedPermission(permission);
-#else
-				using (var activity = GetCurrentActivity())
-				{
-					return activity.Call<int>("checkSelfPermission", permission) == 0;
-				}
-#endif
-			}
-			return true;
-		}
-
-		/**
-		 * 指定したパーミッションの説明を表示する必要があるかどうかを取得
-		 * @param permission
-		 */
-		private static bool ShouldShowRequestPermissionRationale(string permission)
-		{
-			if (CheckAndroidVersion(23))
-			{
-				using (var activity = GetCurrentActivity())
-				{
-					return activity.Call<bool>("shouldShowRequestPermissionRationale", permission);
-				}
-			}
-
-			return false;
-		}
-
-
-		/**
-		 * パーミッション要求
-		 * @param permission
-		 */
-		private IEnumerator RequestPermission(string permission)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestPermission[{Time.frameCount}]:");
-#endif
-			if (CheckAndroidVersion(23))
-			{
-				isPermissionRequesting = true;
-#if UNITY_2018_3_OR_NEWER
-				Permission.RequestUserPermission(permission);
-#else
-				using (var activity = GetCurrentActivity())
-				{
-					activity.Call("requestPermissions", new string[] { permission }, 0);
-				}
-#endif
-				// アプリにフォーカスが戻るまで待機する
-				yield return WaitPermissionWithTimeout(0.5f);
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestPermission[{Time.frameCount}]:finished");
-#endif
-			yield break;
-		}
-
-		/**
-		 * isPermissionRequestingが落ちるか指定時間経過するまで待機する
-		 * @param timeoutSecs 待機する最大時間[秒]
-		 */
-		private IEnumerator WaitPermissionWithTimeout(float timeoutSecs)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:");
-#endif
-			float timeElapsed = 0;
-			while (isPermissionRequesting)
-			{
-				if (timeElapsed > timeoutSecs)
-				{
-					isPermissionRequesting = false;
-					yield break;
-				}
-				timeElapsed += Time.deltaTime;
-
-				yield return null;
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:finished");
-#endif
-			yield break;
-		}
 
 	} // UVCController
 
