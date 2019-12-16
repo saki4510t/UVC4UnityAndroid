@@ -9,28 +9,6 @@ using UnityEngine;
 using UnityEngine.Android;
 #endif
 
-/*
- * AndroidでUVC機器からの映像をUnityのテクスチャとして取得するための
- * プラグイン(uvc-plugin-unity)へアクセスするためのヘルパークラスです。
- * 
- * プラグイン側では非UI Frgmentを使ってライフサイクルをコントロールしています。
- * Unityのメインアクティビティがフレームワーク版のActivityを使用しているため
- * プラグインでもフレームワーク版のFragmentを使用しています。
- * 
- * 現在の実装では接続されたUVC機器のうち１つだけしかハンドリングできません
- * ただしプラグイン自体は複数UVC機器に対応しているのでプラグインからの
- * イベント処理時に複数機器対応に変更すれば動作可能です。
- *
- * uvc-plugin-unity aar内で永続的パーミッションを保持するためのActivityを
- * AndroidManifest.xmlへ設定してあります。
- * もし永続的パーミッションを保持する必要がなければ、
- * 作成中のアプリのAndroidManifest.xmlへ
- * 次の行を追加してください。
- * 
- * <activity android:name="com.serenegiant.uvcplugin.UsbPermissionActivity" tools:node="remove"/>
- * 
- */
-
 namespace Serenegiant.UVC {
 
 	public class UVCController
