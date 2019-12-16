@@ -75,29 +75,51 @@ namespace Serenegiant.UVC
 		 */
 		private bool isPreviewing;
 
-		/**
-		 * 接続中のカメラの識別文字列
-		 * Android実機の場合はUVC機器のデバイス名
-		 * エディタ・PCの場合はWebCamDevice#name
-		 */
-		private string attachedDeviceName;
-
-		private string activeDeviceName {
-			get { return uvcController != null ? uvcController.activeDeviceName : null;  }
-			set
-			{
-				if (uvcController != null)
-				{
-					uvcController.activeDeviceName = value;
-				}
-			}
-		}
 		//--------------------------------------------------------------------------------
 
 #if UNITY_ANDROID
 		private UVCController uvcController;
 #endif
 		private WebCamController webCamController;
+
+		/**
+		 * 接続中のカメラ/UVC機器の識別文字列
+		 * Android実機の場合はUVC機器のデバイス名
+		 * エディタ・PCの場合はWebCamDevice#name
+		 */
+		private string AttachedDeviceName {
+			get
+			{
+				if (uvcController != null)
+				{
+					return uvcController.AttachedDeviceName;
+				}
+				if (webCamController != null)
+				{
+					return webCamController.AttachedDeviceName;
+				}
+				return null;
+			}
+		}
+
+		/**
+		 * 使用中のカメラ/UVC機器識別文字列
+		 * Android実機の場合はUVC機器のデバイス名
+		 * エディタ・PCの場合はWebCamDevice#name
+		 */
+		private string ActiveDeviceName {
+			get {
+				if (uvcController != null)
+				{
+					return uvcController.ActiveDeviceName;
+				}
+				if (webCamController != null)
+				{
+					return uvcController.ActiveDeviceName;
+				}
+				return null;
+			}
+		}
 
 		//================================================================================
 
@@ -138,7 +160,7 @@ namespace Serenegiant.UVC
 #endif
 			if (pauseStatus)
 			{
-				Close(activeDeviceName);
+				Close(ActiveDeviceName);
 			}
 		}
 
@@ -147,7 +169,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnDestroy:");
 #endif
-			Close(activeDeviceName);
+			Close(ActiveDeviceName);
 		}
 
 		//================================================================================
@@ -159,7 +181,7 @@ namespace Serenegiant.UVC
 		 */
 		public bool IsOpen()
 		{
-			return activeDeviceName != null;
+			return ActiveDeviceName != null;
 		}
 
 		/**
@@ -183,12 +205,12 @@ namespace Serenegiant.UVC
 				if (IsPreviewing())
 				{   // 映像取得中
 //					Close(attachedDeviceName);
-					StopPreview(attachedDeviceName);
+					StopPreview(AttachedDeviceName);
 				}
 				else
 				{   // 映像を取得していない
 //					Open(attachedDeviceName);
-					StartPreview(attachedDeviceName);
+					StartPreview(AttachedDeviceName);
 				}
 			}
 		}
@@ -201,12 +223,12 @@ namespace Serenegiant.UVC
 			bool prev = IsPreviewing();
 			if (prev)
 			{
-				StopPreview(activeDeviceName);
+				StopPreview(ActiveDeviceName);
 			}
 			UpdateTarget();
 			if (prev)
 			{
-				StartPreview(activeDeviceName);
+				StartPreview(ActiveDeviceName);
 			}
 		}
 
@@ -224,7 +246,6 @@ namespace Serenegiant.UVC
 			if (!String.IsNullOrEmpty(args)
 				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
-				attachedDeviceName = args;
 				if (uvcController != null)
 				{
 					uvcController.OnEventAttach(args);
@@ -294,10 +315,9 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventReady:({args})");
 #endif
-			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				Close(activeDeviceName);
+				Close(args);
 			}
 		}
 
@@ -389,7 +409,7 @@ namespace Serenegiant.UVC
 		public void OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+			Console.WriteLine($"OnResumeEvent:attachedDeviceName={AttachedDeviceName},activeDeviceName={ActiveDeviceName}");
 #endif
 #if UNITY_ANDROID
 			if (uvcController != null)
@@ -407,7 +427,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			Close(activeDeviceName);
+			Close(ActiveDeviceName);
 		}
 
 		//================================================================================

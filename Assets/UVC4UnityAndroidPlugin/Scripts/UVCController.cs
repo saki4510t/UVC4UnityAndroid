@@ -43,18 +43,21 @@ namespace Serenegiant.UVC {
 		private int defaultWidth;
 		private int defaultHeight;
 
-		/**
-		 * 接続中のカメラの識別文字列
-		 * Android実機の場合はUVC機器のデバイス名
-		 * エディタ・PCの場合はWebCamDevice#name
-		 */
 		private string attachedDeviceName;
 		/**
-		 * 使用中のUVCカメラ識別文字列
-		 * Android実機の場合はUVC機器のデバイス名
-		 * エディタ・PCの場合はWebCamDevice#name
+		 * 接続中のUVC機器識別文字列
 		 */
-		public string activeDeviceName { set; get; }
+		public string AttachedDeviceName {
+			get { return attachedDeviceName; }
+		}
+
+		private string activeDeviceName;
+		/**
+		 * 使用中のUVC機器識別文字列
+		 */
+		public string ActiveDeviceName {
+			get { return activeDeviceName;  }
+		}
 
 		/**
 		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
@@ -92,7 +95,7 @@ namespace Serenegiant.UVC {
 		 */
 		public bool IsOpen()
 		{
-			return activeDeviceName != null;
+			return ActiveDeviceName != null;
 		}
 
 		/**
@@ -147,10 +150,10 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Close:{deviceName}");
 #endif
+			activeDeviceName = null;
 			if (!String.IsNullOrEmpty(deviceName))
 			{
 				activeCameraId = 0;
-				activeDeviceName = null;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("closeDevice",

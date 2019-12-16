@@ -22,7 +22,24 @@ namespace Serenegiant
 		private int defaultWidth;
 		private int defaultHeight;
 
+		private string attachedDeviceName;
+		/**
+		 * 接続中のカメラ識別文字列
+		 */
+		public string AttachedDeviceName
+		{
+			get { return attachedDeviceName; }
+		}
+
 		private string activeDeviceName;
+		/**
+		 * 使用中のカメラ識別文字列
+		 */
+		public string ActiveDeviceName
+		{
+			get { return activeDeviceName; }
+		}
+
 		private WebCamTexture webCameraTexure;
 
 		/**
@@ -57,12 +74,12 @@ namespace Serenegiant
 				{
 					if (MatchWebCame(cam, deviceKeyword))
 					{   // 最初に見つかったものを使う
-						activeDeviceName = cam.name;
+						attachedDeviceName = cam.name;
 						break;
 					}
 				}
 			}
-			if (activeDeviceName != null)
+			if (attachedDeviceName != null)
 			{	// 使用可能なカメラが見つかったとき
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"Initialize:found={activeDeviceName}");
@@ -71,7 +88,7 @@ namespace Serenegiant
 				ExecuteEvents.Execute<IUVCEventHandler>(
 					target: target,
 					eventData: null,
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(activeDeviceName));
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(attachedDeviceName));
 			}
 		}
 
