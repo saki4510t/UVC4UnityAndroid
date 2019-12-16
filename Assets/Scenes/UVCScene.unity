@@ -739,7 +739,7 @@ PrefabInstance:
     - target: {fileID: 5777022740684865818, guid: ff17b3cd9f54c334da5368453f56b8e8,
         type: 3}
       propertyPath: RenderTargets.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5777022740684865818, guid: ff17b3cd9f54c334da5368453f56b8e8,
         type: 3}
@@ -756,6 +756,11 @@ PrefabInstance:
       propertyPath: RenderTargets.Array.data[1]
       value: 
       objectReference: {fileID: 415070982}
+    - target: {fileID: 5777022740684865818, guid: ff17b3cd9f54c334da5368453f56b8e8,
+        type: 3}
+      propertyPath: RenderTargets.Array.data[2]
+      value: 
+      objectReference: {fileID: 800007506}
     - target: {fileID: 6465409448752295666, guid: ff17b3cd9f54c334da5368453f56b8e8,
         type: 3}
       propertyPath: m_Name
