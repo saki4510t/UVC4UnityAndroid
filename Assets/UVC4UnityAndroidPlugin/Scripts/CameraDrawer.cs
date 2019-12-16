@@ -172,6 +172,8 @@ namespace Serenegiant.UVC
 			UpdateTarget();
 
 			yield return Restart();
+
+			yield break;
 		}
 
 //		// Update is called once per frame
@@ -262,11 +264,11 @@ namespace Serenegiant.UVC
 			{
 				uvcController = null;
 				webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-				webCamController.Initialize(WebCameraDeviceKeyword);
+				yield return webCamController.Initialize(WebCameraDeviceKeyword);
 			}
 #else
 			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-			webCamController.Initialize(WebCameraDeviceKeyword);
+			yield return webCamController.Initialize(WebCameraDeviceKeyword);
 #endif
 			yield break;
 		}
