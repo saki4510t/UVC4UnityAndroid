@@ -230,6 +230,9 @@ namespace Serenegiant.UVC
 		 */
 		public void ResetMaterial()
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("ResetMaterial:");
+#endif
 			bool prev = IsPreviewing;
 			if (prev)
 			{
@@ -244,6 +247,9 @@ namespace Serenegiant.UVC
 
 		public IEnumerator Restart()
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("Restart:");
+#endif
 			Close(ActiveDeviceName);
 #if UNITY_ANDROID
 			if (!Application.isEditor && !DisableUVC)
