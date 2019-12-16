@@ -119,6 +119,8 @@ namespace Serenegiant.UVC {
 		 */
 		private bool isPermissionRequesting;
 
+		private Texture previewTexture;
+
 		//================================================================================
 		/**
 		 * Start is called before the first frame update
@@ -228,6 +230,11 @@ namespace Serenegiant.UVC {
 			{
 				StartPreview(activeDeviceName);
 			}
+		}
+
+		public Texture GetTexture()
+		{
+			return previewTexture;
 		}
 
 		//================================================================================
@@ -503,6 +510,7 @@ namespace Serenegiant.UVC {
 				}
 			}
 			savedTextures = null;
+			previewTexture = null;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("HandleOnStopPreview:finished");
 #endif
@@ -796,14 +804,14 @@ namespace Serenegiant.UVC {
 				if (!String.IsNullOrEmpty(deviceName))
 				{
 					isPreviewing = true;
-					var tex = new Texture2D(
+					previewTexture = new Texture2D(
 							width, height,
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					HandleOnStartPreview(tex);
+					HandleOnStartPreview(previewTexture);
 
-					var nativeTexPtr = tex.GetNativeTexturePtr();
+					var nativeTexPtr = previewTexture.GetNativeTexturePtr();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 					Console.WriteLine($"RequestStartPreview:tex={nativeTexPtr}");
 #endif

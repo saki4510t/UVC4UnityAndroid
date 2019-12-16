@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 using Serenegiant.UVC;
 
@@ -10,13 +11,18 @@ namespace Serenegiant
 
 	public class WebCamController
 	{
+		private GameObject parent;
+		private int defaultWidth;
+		private int defaultHeight;
 
 		private string activeDeviceName;
 		private WebCamTexture webCameraTexure;
 
-		public WebCamController()
+		public WebCamController(GameObject parent, int width, int height)
 		{
-
+			this.parent = parent;
+			defaultWidth = width;
+			defaultHeight = height;
 		}
 
 		public void Initialize(string deviceKeyword)
@@ -39,18 +45,23 @@ namespace Serenegiant
 				}
 			}
 			if (activeDeviceName != null)
-			{	// 見つかったときはopenする
-				Open(activeDeviceName);
+			{   // 見つかったときはopenする
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: parent, // 呼び出す対象のオブジェクト
+					eventData: null,  // イベントデータ（モジュール等の情報）
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(activeDeviceName)); // 操作
 			}
 		}
 
 		public void Open(string deviceName)
 		{
-			WebCamDevice found = new WebCamDevice();
+			var found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
-				// FIXME 今は解像度は適当
-				StartPreview(deviceName, 1280, 720);
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: parent, // 呼び出す対象のオブジェクト
+					eventData: null,  // イベントデータ（モジュール等の情報）
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName)); // 操作
 			}
 		}
 
@@ -82,6 +93,10 @@ namespace Serenegiant
 //				HandleOnStopPreview(deviceName);
 				webCameraTexure.Stop();
 				webCameraTexure = null;
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: parent, // 呼び出す対象のオブジェクト
+					eventData: null,  // イベントデータ（モジュール等の情報）
+					functor: (recieveTarget, eventData) => recieveTarget.OnStopPreview(activeDeviceName)); // 操作
 			}
 		}
 
@@ -166,6 +181,10 @@ namespace Serenegiant
 			{
 				webCameraTexure.Play();
 			}
+			ExecuteEvents.Execute<IUVCEventHandler>(
+				target: parent, // 呼び出す対象のオブジェクト
+				eventData: null,  // イベントデータ（モジュール等の情報）
+				functor: (recieveTarget, eventData) => recieveTarget.OnStartPreview(activeDeviceName)); // 操作
 		}
 	}
 

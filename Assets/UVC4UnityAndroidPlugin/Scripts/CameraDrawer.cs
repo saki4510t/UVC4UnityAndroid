@@ -258,7 +258,7 @@ namespace Serenegiant.UVC
 			activeDeviceName = args;
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				StartPreview(args);
+				Close(activeDeviceName);
 			}
 		}
 
@@ -271,11 +271,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventReady:({args})");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.OnEventReady(args);
-
-			}
+			StartPreview(args);
 		}
 
 		/**
@@ -287,10 +283,18 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnStartPreview:({args})");
 #endif
+			Texture tex = null;
 			if (uvcController != null)
 			{
-				uvcController.OnStartPreview(args);
-
+				tex = uvcController.GetTexture();
+			}
+			if (webCamController != null)
+			{
+				tex = webCamController.GetTexture();
+			}
+			if (tex != null)
+			{
+				HandleOnStartPreview(tex);
 			}
 		}
 
@@ -303,11 +307,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnStopPreview:({args})");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.OnStopPreview(args);
-
-			}
+			HandleOnStopPreview(args);
 		}
 
 		//================================================================================
@@ -585,6 +585,11 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
 			isPreviewing = false;
+			if (uvcController != null)
+			{
+				uvcController.OnStopPreview(deviceName);
+
+			}
 			// 描画先のテクスチャをもとに戻す
 			var n = Math.Min(
 				(TargetMaterials != null) ? TargetMaterials.Length : 0,
