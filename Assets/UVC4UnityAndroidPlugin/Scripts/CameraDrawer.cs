@@ -209,14 +209,9 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventPermission:({args})");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.Open(args);
-				return;
-			}
-			if (webCamController != null)
-			{
-				webCamController.Open(args);
+			if (!String.IsNullOrEmpty(args))
+			{   // argsはdeviceName
+				Open(args);
 			}
 		}
 
@@ -229,11 +224,12 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventConnect:({args})");
 #endif
+#if UNITY_ANDROID
 			if (uvcController != null)
 			{
 				uvcController.OnEventConnect(args);
-
 			}
+#endif
 		}
 
 		/**
@@ -245,11 +241,12 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
+#if UNITY_ANDROID
 			if (uvcController != null)
 			{
 				uvcController.OnEventDisconnect(args);
-
 			}
+#endif
 		}
 
 		/**
@@ -439,6 +436,10 @@ namespace Serenegiant.UVC
 		}
 
 		//--------------------------------------------------------------------------------
+		/**
+		 * 指定したカメラ/UVC機器をOpenする
+		 * @param deviceName カメラ識別用文字列
+		 */
 		private void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -450,17 +451,20 @@ namespace Serenegiant.UVC
 				if (uvcController != null)
 				{
 					uvcController.Open(deviceName);
+					return;
 				}
 			}
-			else
-			{
-				// FIXME 未実装
-			}
-#else
-				// FIXME 未実装
 #endif
+			if (webCamController != null)
+			{
+				webCamController.Open(deviceName);
+			}
 		}
 
+		/**
+		 * 指定したカメラ/UVC機器をCloseする
+		 * @param deviceName カメラ識別用文字列
+		 */
 		private void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -483,7 +487,7 @@ namespace Serenegiant.UVC
 		 * IUVCSelectorが設定されているときはUVCSelector#SelectSizeから映像サイズの取得を試みる
 		 * IUVCSelectorが設定されていないかUVCSelector#SelectSizeがnullを返したときは
 		 * スクリプトに設定されているVideoWidth,VideoHeightを使う
-		 * @param deviceName カメラの識別文字列
+		 * @param deviceName カメラ識別文字列
 		 */
 		private void StartPreview(string deviceName)
 		{
@@ -525,8 +529,6 @@ namespace Serenegiant.UVC
 			{
 				uvcController.StartPreview(deviceName, width, height);
 			}
-#else
-
 #endif
 			if (webCamController != null)
 			{
@@ -536,7 +538,7 @@ namespace Serenegiant.UVC
 
 		/**
 		 * UVC機器/カメラからの映像受けとりを終了要求をする
-		 * @param deviceName カメラの識別文字列
+		 * @param deviceName カメラ識別文字列
 		 */
 		private void StopPreview(string deviceName)
 		{
@@ -550,9 +552,11 @@ namespace Serenegiant.UVC
 			{
 				uvcController.StopPreview(deviceName);
 			}
-#else
-			// FIXME 未実装
 #endif
+			if (webCamController != null)
+			{
+				webCamController.StopPreview(deviceName);
+			}
 		}
 
 		/**

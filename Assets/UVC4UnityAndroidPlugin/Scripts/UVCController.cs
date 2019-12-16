@@ -890,7 +890,7 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
-		 * 指定したUVC機器の対応解像度をjson文字列として取得する
+		 * 指定したUVC機器の対応解像度を取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
 		public SupportedFormats GetSupportedVideoSize(string deviceName)

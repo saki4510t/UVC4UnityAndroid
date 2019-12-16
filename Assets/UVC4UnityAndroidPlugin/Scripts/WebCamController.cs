@@ -1,4 +1,4 @@
-﻿#define ENABLE_LOG
+﻿//#define ENABLE_LOG
 
 using System;
 using System.Collections;
@@ -20,6 +20,12 @@ namespace Serenegiant
 		private string activeDeviceName;
 		private WebCamTexture webCameraTexure;
 
+		/**
+		 * コンストラクタ
+		 * @param parent 親のGameObject, EventSystemによる関数呼び出しのターゲット
+		 * @param width デフォルトの解像度(幅)
+		 * @param height デフォルトの解像度(高さ)
+		 */
 		public WebCamController(GameObject parent, int width, int height)
 		{
 			this.parent = parent;
@@ -27,6 +33,10 @@ namespace Serenegiant
 			defaultHeight = height;
 		}
 
+		/**
+		 * 初期化実行
+		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
+		 */
 		public void Initialize(string deviceKeyword)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -46,17 +56,22 @@ namespace Serenegiant
 				}
 			}
 			if (activeDeviceName != null)
-			{   // 見つかったときはopenする
+			{	// 使用可能なカメラが見つかったとき
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"Initialize:found={activeDeviceName}");
 #endif
+				// パーミッションを取得通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent, // 呼び出す対象のオブジェクト
-					eventData: null,  // イベントデータ（モジュール等の情報）
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(activeDeviceName)); // 操作
+					target: parent,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(activeDeviceName));
 			}
 		}
 
+		/**
+		 * 指定したカメラをOpenする
+		 * @param deviceName カメラの識別文字列
+		 */
 		public void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -65,17 +80,24 @@ namespace Serenegiant
 			var found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
+				activeDeviceName = deviceName;
+				// カメラとの接続通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent, // 呼び出す対象のオブジェクト
-					eventData: null,  // イベントデータ（モジュール等の情報）
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventConnect(deviceName)); // 操作
+					target: parent,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventConnect(deviceName));
+				// カメラからの映像取得の準備完了通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent, // 呼び出す対象のオブジェクト
-					eventData: null,  // イベントデータ（モジュール等の情報）
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName)); // 操作
+					target: parent,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName));
 			}
 		}
 
+		/**
+		 * 指定したカメラを閉じる
+		 * @param deviceName カメラの識別文字列
+		 */
 		public void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -83,15 +105,16 @@ namespace Serenegiant
 #endif
 			StopPreview(deviceName);
 			activeDeviceName = null;
+			// カメラ切断通知
 			ExecuteEvents.Execute<IUVCEventHandler>(
-				target: parent, // 呼び出す対象のオブジェクト
-				eventData: null,  // イベントデータ（モジュール等の情報）
-				functor: (recieveTarget, eventData) => recieveTarget.OnEventDisconnect(deviceName)); // 操作
+				target: parent,
+				eventData: null,
+				functor: (recieveTarget, eventData) => recieveTarget.OnEventDisconnect(deviceName));
 		}
 
 		/**
 		 * カメラからの映像取得開始
-		 * @param deviceName
+		 * @param deviceName カメラの識別文字列
 		 * @param width
 		 * @param height
 		 */
@@ -103,10 +126,26 @@ namespace Serenegiant
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
-				RequestStartPreview(found, width, height);
+				if (webCameraTexure == null)
+				{
+					webCameraTexure = new WebCamTexture(found.name, width, height);
+				}
+				if ((webCameraTexure != null) && !webCameraTexure.isPlaying)
+				{
+					webCameraTexure.Play();
+				}
+				// 映像取得開始通知
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: parent,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnStartPreview(activeDeviceName));
 			}
 		}
 
+		/**
+		 * カメラからの映像取得を終了する
+		 * @param deviceName カメラの識別文字列
+		 */
 		public void StopPreview(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -114,13 +153,13 @@ namespace Serenegiant
 #endif
 			if (webCameraTexure != null)
 			{
-//				HandleOnStopPreview(deviceName);
 				webCameraTexure.Stop();
 				webCameraTexure = null;
+				// 映像取得終了通知
 				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: parent, // 呼び出す対象のオブジェクト
-					eventData: null,  // イベントデータ（モジュール等の情報）
-					functor: (recieveTarget, eventData) => recieveTarget.OnStopPreview(activeDeviceName)); // 操作
+					target: parent,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnStopPreview(activeDeviceName));
 			}
 		}
 
@@ -133,6 +172,10 @@ namespace Serenegiant
 			return webCameraTexure;
 		}
 
+		/**
+		 * カメラ情報を取得
+		 * @param deviceName カメラの識別文字列
+		 */
 		public UVCInfo GetInfo(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -142,8 +185,8 @@ namespace Serenegiant
 		}
 
 		/**
-		 * 指定したUVC機器の対応解像度をjson文字列として取得する
-		 * @param deviceName UVC機器の識別文字列
+		 * 指定したカメラの対応解像度を取得する
+		 * @param deviceName カメラの識別文字列
 		 */
 		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
@@ -197,31 +240,6 @@ namespace Serenegiant
 			return false;
 		}
 
-		/**
-		 * カメラからの映像取得開始
-		 * @param device
-		 * @param width
-		 * @param height
-		 */
-		private void RequestStartPreview(WebCamDevice device, int width, int height)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestStartPreview:({device},{width}x{height})");
-#endif
-			if (webCameraTexure == null)
-			{
-				webCameraTexure = new WebCamTexture(device.name, width, height);
-//				HandleOnStartPreview(webCameraTexure);
-			}
-			if ((webCameraTexure != null) && !webCameraTexure.isPlaying)
-			{
-				webCameraTexure.Play();
-			}
-			ExecuteEvents.Execute<IUVCEventHandler>(
-				target: parent, // 呼び出す対象のオブジェクト
-				eventData: null,  // イベントデータ（モジュール等の情報）
-				functor: (recieveTarget, eventData) => recieveTarget.OnStartPreview(activeDeviceName)); // 操作
-		}
-	}
+	} // WebCamController
 
 } // namespace Serenegiant
