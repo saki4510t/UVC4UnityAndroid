@@ -42,6 +42,15 @@ namespace Serenegiant.UVC {
 		private bool preferH264;
 		private int defaultWidth;
 		private int defaultHeight;
+		/**
+		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
+		 */
+		private Int32 activeCameraId;
+
+		private bool isPreviewing;
+
+		private Texture previewTexture;
+
 
 		private string attachedDeviceName;
 		/**
@@ -60,13 +69,21 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
-		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
+		 * カメラをopenしているか
+		 * 映像取得中かどうかはIsPreviewingを使うこと
 		 */
-		private Int32 activeCameraId;
+		public bool IsOpen
+		{
+			get { return activeDeviceName != null; }
+		}
 
-		private bool isPreviewing;
-
-		private Texture previewTexture;
+		/**
+		 * 映像取得中かどうか
+		 */
+		public bool IsPreviewing
+		{
+			get { return IsOpen && isPreviewing; }
+		}
 
 		//================================================================================
 		/**
@@ -87,25 +104,6 @@ namespace Serenegiant.UVC {
 		}
 
 		//================================================================================
-		// 他のコンポーネントからの操作用
-
-		/**
-		 * カメラをopenしているか
-		 * 映像取得中かどうかはIsPreviewingを使うこと
-		 */
-		public bool IsOpen()
-		{
-			return ActiveDeviceName != null;
-		}
-
-		/**
-		 * 映像取得中かどうか
-		 */
-		public bool IsPreviewing()
-		{
-			return IsOpen() && isPreviewing;
-		}
-
 		/**
 		 * 映像取得用のTextureオブジェクトを取得する
 		 * @return Textureオブジェクト, プレビュー中でなければnull
@@ -459,7 +457,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"StartPreview:{deviceName}({width}x{height})");
 #endif
-			if (!IsPreviewing())
+			if (!IsPreviewing)
 			{
 				activeDeviceName = deviceName;
 

@@ -21,6 +21,7 @@ namespace Serenegiant
 		private GameObject target;
 		private int defaultWidth;
 		private int defaultHeight;
+		private WebCamTexture webCameraTexure;
 
 		private string attachedDeviceName;
 		/**
@@ -40,7 +41,22 @@ namespace Serenegiant
 			get { return activeDeviceName; }
 		}
 
-		private WebCamTexture webCameraTexure;
+		/**
+ * カメラをopenしているか
+ * 映像取得中かどうかはIsPreviewingを使うこと
+ */
+		public bool IsOpen
+		{
+			get { return activeDeviceName != null; }
+		}
+
+		/**
+		 * 映像取得中かどうか
+		 */
+		public bool IsPreviewing
+		{
+			get { return IsOpen && (webCameraTexure != null); }
+		}
 
 		/**
 		 * コンストラクタ

@@ -70,10 +70,6 @@ namespace Serenegiant.UVC
 		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
 		 */
 		private Texture[] savedTextures;
-		/**
-		 * プレビュー中フラグ
-		 */
-		private bool isPreviewing;
 
 		//--------------------------------------------------------------------------------
 
@@ -81,6 +77,45 @@ namespace Serenegiant.UVC
 		private UVCController uvcController;
 #endif
 		private WebCamController webCamController;
+
+		/**
+		 * カメラをopenしているか
+		 * 映像取得中かどうかはIsPreviewingを使うこと
+		 */
+		public bool IsOpen
+		{
+			get
+			{
+				if (uvcController != null)
+				{
+					return uvcController.IsOpen;
+				}
+				if (webCamController != null)
+				{
+					return webCamController.IsOpen;
+				}
+				return false;
+			}
+		}
+
+		/**
+		 * プレビュー中フラグ
+		 */
+		private bool IsPreviewing
+		{
+			get
+			{
+				if (uvcController != null)
+				{
+					return uvcController.IsPreviewing;
+				}
+				if (webCamController != null)
+				{
+					return webCamController.IsPreviewing;
+				}
+				return false;
+			}
+		}
 
 		/**
 		 * 接続中のカメラ/UVC機器の識別文字列
@@ -147,11 +182,11 @@ namespace Serenegiant.UVC
 			yield break;
 		}
 
-		//		// Update is called once per frame
-		//		void Update()
-		//		{
-		//
-		//		}
+//		// Update is called once per frame
+//		void Update()
+//		{
+//
+//		}
 
 		void OnApplicationPause(bool pauseStatus)
 		{
@@ -176,33 +211,16 @@ namespace Serenegiant.UVC
 		// 他のコンポーネントからの操作用
 
 		/**
-		 * カメラをopenしているか
-		 * 映像取得中かどうかはIsPreviewingを使うこと
-		 */
-		public bool IsOpen()
-		{
-			return ActiveDeviceName != null;
-		}
-
-		/**
-		 * 映像取得中かどうか
-		 */
-		public bool IsPreviewing()
-		{
-			return IsOpen() && isPreviewing;
-		}
-
-		/**
 		 * 映像取得のON/OFF
 		 */
 		public void Toggle()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Toggle:{IsPreviewing()}");
+			Console.WriteLine($"Toggle:{IsPreviewing}");
 #endif
-			if (IsOpen())
+			if (IsOpen)
 			{   // UVC機器が接続されている
-				if (IsPreviewing())
+				if (IsPreviewing)
 				{   // 映像取得中
 //					Close(attachedDeviceName);
 					StopPreview(AttachedDeviceName);
@@ -220,7 +238,7 @@ namespace Serenegiant.UVC
 		 */
 		public void ResetMaterial()
 		{
-			bool prev = IsPreviewing();
+			bool prev = IsPreviewing;
 			if (prev)
 			{
 				StopPreview(ActiveDeviceName);
@@ -710,7 +728,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
-			isPreviewing = false;
 			if (uvcController != null)
 			{
 				uvcController.OnStopPreview(deviceName);
