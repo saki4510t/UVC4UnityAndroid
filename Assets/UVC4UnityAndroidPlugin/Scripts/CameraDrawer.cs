@@ -155,7 +155,7 @@ namespace Serenegiant.UVC
 				}
 				if (webCamController != null)
 				{
-					return uvcController.ActiveDeviceName;
+					return webCamController.ActiveDeviceName;
 				}
 				return null;
 			}
