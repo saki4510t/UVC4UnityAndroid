@@ -109,6 +109,8 @@ namespace Serenegiant.UVC
 #endif
 			UpdateTarget();
 
+			webCamController = new WebCamController(gameObject, DefaultWidth, DefaultHeight);
+			webCamController.Initialize();
 		}
 
 //		// Update is called once per frame
