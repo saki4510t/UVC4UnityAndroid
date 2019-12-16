@@ -149,12 +149,12 @@ namespace Serenegiant.UVC
 			{   // UVC機器が接続されている
 				if (IsPreviewing())
 				{   // 映像取得中
-//					CloseCamera(attachedDeviceName);
+//					Close(attachedDeviceName);
 					StopPreview(attachedDeviceName);
 				}
 				else
 				{   // 映像を取得していない
-//					OpenCamera(attachedDeviceName);
+//					Open(attachedDeviceName);
 					StartPreview(attachedDeviceName);
 				}
 			}
@@ -436,14 +436,14 @@ namespace Serenegiant.UVC
 		private void OpenCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OpenCamera:{deviceName}");
+			Console.WriteLine($"Open:{deviceName}");
 #endif
 #if UNITY_ANDROID
 			if (!Application.isEditor)
 			{
 				if (uvcController != null)
 				{
-					uvcController.OpenCamera(deviceName);
+					uvcController.Open(deviceName);
 				}
 			}
 			else
@@ -458,14 +458,14 @@ namespace Serenegiant.UVC
 		private void CloseCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OpenCamera:{deviceName}");
+			Console.WriteLine($"Open:{deviceName}");
 #endif
 #if UNITY_ANDROID
 			if (!Application.isEditor)
 			{
 				if (uvcController != null)
 				{
-					uvcController.CloseCamera(deviceName);
+					uvcController.Close(deviceName);
 				}
 			}
 			else

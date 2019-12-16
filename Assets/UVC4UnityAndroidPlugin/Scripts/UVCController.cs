@@ -141,7 +141,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (pauseStatus)
 			{
-				CloseCamera(activeDeviceName);
+				Close(activeDeviceName);
 			}
 		}
 
@@ -202,12 +202,12 @@ namespace Serenegiant.UVC {
 			{	// UVC機器が接続されている
 				if (IsPreviewing())
 				{   // 映像取得中
-//					CloseCamera(attachedDeviceName);
+//					Close(attachedDeviceName);
 					StopPreview(attachedDeviceName);
 				}
 				else
 				{   // 映像を取得していない
-//					OpenCamera(attachedDeviceName);
+//					Open(attachedDeviceName);
 					StartPreview(attachedDeviceName);
 				}
 			}
@@ -352,10 +352,10 @@ namespace Serenegiant.UVC {
 			return selector;
 		}
 
-		public void OpenCamera(string deviceName)
+		public void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OpenCamera:{deviceName}");
+			Console.WriteLine($"Open:{deviceName}");
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -372,10 +372,10 @@ namespace Serenegiant.UVC {
 			}
 		}
 
-		public void CloseCamera(string deviceName)
+		public void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"CloseCamera:{deviceName}");
+			Console.WriteLine($"Close:{deviceName}");
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -389,7 +389,7 @@ namespace Serenegiant.UVC {
 				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("CloseCamera:finished");
+			Console.WriteLine("Close:finished");
 #endif
 		}
 
@@ -544,7 +544,7 @@ namespace Serenegiant.UVC {
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				isPermissionRequesting = false;
-				OpenCamera(args);
+				Open(args);
 			}
 		}
 
@@ -569,8 +569,8 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
 			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
-			// 念のためにCloseCameraを呼んでおく
-			CloseCamera(activeDeviceName);
+			// 念のためにCloseを呼んでおく
+			Close(activeDeviceName);
 		}
 
 		/**
@@ -673,7 +673,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			CloseCamera(activeDeviceName);
+			Close(activeDeviceName);
 		}
 
 		//--------------------------------------------------------------------------------
@@ -812,7 +812,7 @@ namespace Serenegiant.UVC {
 						clazz.CallStatic("setPreviewTexture",
 							GetCurrentActivity(), deviceName,
 							nativeTexPtr.ToInt32(),
-							-1,	// PreviewMode, -1:自動選択(OpenCamera時に指定したPreferH264フラグが有効になる)
+							-1,	// PreviewMode, -1:自動選択(Open時に指定したPreferH264フラグが有効になる)
 							width, height);
 					}
 
@@ -850,7 +850,7 @@ namespace Serenegiant.UVC {
 		 */
 		private void HandleDetach(string deviceName)
 		{
-			CloseCamera(activeDeviceName);
+			Close(activeDeviceName);
 			attachedDeviceName = null;
 		}
 
