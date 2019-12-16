@@ -171,20 +171,7 @@ namespace Serenegiant.UVC
 #endif
 			UpdateTarget();
 
-#if UNITY_ANDROID
-			if (!Application.isEditor && !DisableUVC)
-			{
-				uvcController = new UVCController(this, gameObject, DefaultWidth, DefaultHeight, PreferH264);
-				yield return uvcController.Initialize();
-			} else {
-				webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-				webCamController.Initialize(WebCameraDeviceKeyword);
-			}
-#else
-			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-			webCamController.Initialize(WebCameraDeviceKeyword);
-#endif
-			yield break;
+			yield return Restart();
 		}
 
 //		// Update is called once per frame
@@ -255,6 +242,28 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		public IEnumerator Restart()
+		{
+			Close(ActiveDeviceName);
+#if UNITY_ANDROID
+			if (!Application.isEditor && !DisableUVC)
+			{
+				webCamController = null;
+				uvcController = new UVCController(this, gameObject, DefaultWidth, DefaultHeight, PreferH264);
+				yield return uvcController.Initialize();
+			}
+			else
+			{
+				uvcController = null;
+				webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
+				webCamController.Initialize(WebCameraDeviceKeyword);
+			}
+#else
+			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
+			webCamController.Initialize(WebCameraDeviceKeyword);
+#endif
+			yield break;
+		}
 		//================================================================================
 
 		/**
