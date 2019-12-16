@@ -795,7 +795,7 @@ namespace Serenegiant.UVC {
 		public void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestStartPreview:{deviceName}");
+			Console.WriteLine($"StartPreview:{deviceName}({width}x{height})");
 #endif
 			if (!IsPreviewing())
 			{
