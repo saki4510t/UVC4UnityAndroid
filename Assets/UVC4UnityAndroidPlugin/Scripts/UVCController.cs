@@ -71,11 +71,6 @@ namespace Serenegiant.UVC {
 		 */
 		public IUVCSelector UVCSelector;
 
-		/**
-		 * WebCamDevice/WebCamTextureを使うときの機器名
-		 * 一致するか含んでいるカメラを選択する
-		 */
-		public string WebCameraDeviceKeyword;
 		//================================================================================
 		/**
 		 * UVC機器からの映像の描画先Material
@@ -111,7 +106,6 @@ namespace Serenegiant.UVC {
 		 */
 		public string activeDeviceName { set; get; }
 
-#if UNITY_ANDROID
 		private const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 		private const string PERMISSION_CAMERA = "android.permission.CAMERA";
@@ -124,7 +118,6 @@ namespace Serenegiant.UVC {
 		 * 動的パーミッション要求中かどうか
 		 */
 		private bool isPermissionRequesting;
-#endif  // #if UNITY_ANDROID
 
 		//================================================================================
 		/**
@@ -137,19 +130,7 @@ namespace Serenegiant.UVC {
 #endif
 			UpdateTarget();
 
-#if UNITY_ANDROID
-			if (!Application.isEditor)
-			{	// Android実機のとき
-				yield return InitializeAndroid();
-			}
-			else {
-				// ターゲットプラットフォームはAndroidだけどエディタで実行中
-				yield return InitializeWebCam();
-			}
-#else
-			// ターゲットプラットフォームがPCのとき
-			yield return InitializeWebCam();
-#endif  // #if UNITY_ANDROID
+			yield return InitializeAndroid();
 
 		}
 
@@ -160,7 +141,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (pauseStatus)
 			{
-				CloseUVCCamera(activeDeviceName);
+				CloseCamera(activeDeviceName);
 			}
 		}
 
@@ -371,46 +352,44 @@ namespace Serenegiant.UVC {
 			return selector;
 		}
 
-		private IEnumerator InitializeWebCam()
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("InitializeWebCam:");
-#endif
-			// FIXME 未実装
-			yield break;
-		}
-
 		public void OpenCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OpenCamera:{deviceName}");
 #endif
-#if UNITY_ANDROID
-			if (!Application.isEditor)
+			if (!String.IsNullOrEmpty(deviceName))
 			{
-				OpenUVCCamera(deviceName);
-			} else {
-				// FIXME 未実装
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					activeCameraId = clazz.CallStatic<Int32>("openDevice",
+						GetCurrentActivity(), deviceName,
+						VideoWidth, VideoHeight, PreferH264);
+				}
 			}
-#else
-				// FIXME 未実装
-#endif
+			else
+			{
+				throw new ArgumentException("device name is empty/null");
+			}
 		}
 
 		public void CloseCamera(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OpenCamera:{deviceName}");
+			Console.WriteLine($"CloseCamera:{deviceName}");
 #endif
-#if UNITY_ANDROID
-			if (!Application.isEditor)
+			if (!String.IsNullOrEmpty(deviceName))
 			{
-				CloseUVCCamera(deviceName);
-			} else {
-				// FIXME 未実装
+				HandleOnStopPreview(deviceName);
+				activeCameraId = 0;
+				activeDeviceName = null;
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					clazz.CallStatic("closeDevice",
+						GetCurrentActivity(), deviceName);
+				}
 			}
-#else
-				// FIXME 未実装
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("CloseCamera:finished");
 #endif
 		}
 
@@ -456,15 +435,8 @@ namespace Serenegiant.UVC {
 #endif
 				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
 			}
-#if UNITY_ANDROID
+
 			StartPreview(deviceName, width, height);
-#else
-			WebCamDevice found = new WebCamDevice();
-			if (FindWebCam(deviceName, ref found))
-			{
-				RequestStartPreviewWebCam(found, width, height);
-			}
-#endif
 		}
 
 		/**
@@ -502,11 +474,7 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"StopPreview:{deviceName}");
 #endif
 			HandleOnStopPreview(deviceName);
-#if UNITY_ANDROID
 			RequestStopPreviewUVC(deviceName);
-#else
-			// FIXME 未実装
-#endif
 		}
 
 		/**
@@ -519,10 +487,8 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
 			isPreviewing = false;
-#if UNITY_ANDROID
 			// 描画用のコールーチンを停止させる
 			StopCoroutine(OnRender());
-#endif
 			// 描画先のテクスチャをもとに戻す
 			var n = Math.Min(
 				(TargetMaterials != null) ? TargetMaterials.Length : 0,
@@ -544,7 +510,6 @@ namespace Serenegiant.UVC {
 
 		//================================================================================
 		// Android固有の処理
-#if UNITY_ANDROID
 		// Java側からのイベントコールバック
 
 		/**
@@ -811,57 +776,6 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
-		 * 指定したUVC機器をオープン要求する
-		 * @param deviceName UVC機器の識別文字列
-		 */
-		private void OpenUVCCamera(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OpenCamera:{deviceName}");
-#endif
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					activeCameraId = clazz.CallStatic<Int32>("openDevice",
-						GetCurrentActivity(), deviceName,
-						VideoWidth, VideoHeight, PreferH264);
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-		}
-
-		/**
-		 * 指定したUVC機器をクローズ要求する
-		 * @param deviceName UVC機器の識別文字列
-		 */
-		private void CloseUVCCamera(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"CloseCamera:{deviceName}");
-#endif
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				HandleOnStopPreview(deviceName);
-				activeCameraId = 0;
-				activeDeviceName = null;
-#if UNITY_ANDROID
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					clazz.CallStatic("closeDevice",
-						GetCurrentActivity(), deviceName);
-				}
-#endif
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("CloseCamera:finished");
-#endif
-		}
-
-		/**
 		 * UVC機器からの映像受け取り開始要求をする
 		 * この関数では指定したサイズに対応しているかどうかのチェックをしないので
 		 * 呼び出し元でチェックすること
@@ -936,7 +850,7 @@ namespace Serenegiant.UVC {
 		 */
 		private void HandleDetach(string deviceName)
 		{
-			CloseUVCCamera(activeDeviceName);
+			CloseCamera(activeDeviceName);
 			attachedDeviceName = null;
 		}
 
@@ -1129,8 +1043,6 @@ namespace Serenegiant.UVC {
 #endif
 			yield break;
 		}
-
-#endif	// #if UNITY_ANDROID
 
 	} // UVCController
 
