@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ENABLE_LOG
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,9 +29,8 @@ namespace Serenegiant
 
 		public void Initialize(string deviceKeyword)
 		{
-			// FIXME 未実装
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("InitializeWebCam:");
+			Console.WriteLine($"Initialize:({deviceKeyword})");
 #endif
 			// 使用可能なWebカメラを探す
 			var devices = WebCamTexture.devices;
@@ -46,6 +47,9 @@ namespace Serenegiant
 			}
 			if (activeDeviceName != null)
 			{   // 見つかったときはopenする
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"Initialize:found={activeDeviceName}");
+#endif
 				ExecuteEvents.Execute<IUVCEventHandler>(
 					target: parent, // 呼び出す対象のオブジェクト
 					eventData: null,  // イベントデータ（モジュール等の情報）
@@ -55,6 +59,9 @@ namespace Serenegiant
 
 		public void Open(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Open:({deviceName})");
+#endif
 			var found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
@@ -67,6 +74,9 @@ namespace Serenegiant
 
 		public void Close(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Close:({deviceName})");
+#endif
 			StopPreview(deviceName);
 			activeDeviceName = null;
 		}
@@ -79,6 +89,9 @@ namespace Serenegiant
 		 */
 		public void StartPreview(string deviceName, int width, int height)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"StartPreview:({deviceName})");
+#endif
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
 			{
@@ -88,6 +101,9 @@ namespace Serenegiant
 
 		public void StopPreview(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"StopPreview:({deviceName})");
+#endif
 			if (webCameraTexure != null)
 			{
 //				HandleOnStopPreview(deviceName);
@@ -111,6 +127,9 @@ namespace Serenegiant
 
 		public UVCInfo GetInfo(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"GetInfo:({deviceName})");
+#endif
 			// FIXME 未実装
 			return null;
 		}
@@ -121,6 +140,9 @@ namespace Serenegiant
 		 */
 		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"GetSupportedVideoSize:({deviceName})");
+#endif
 			// FIXME 未実装
 			return null;
 		}
@@ -172,6 +194,9 @@ namespace Serenegiant
 		 */
 		private void RequestStartPreview(WebCamDevice device, int width, int height)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"RequestStartPreview:({device})");
+#endif
 			if (webCameraTexure == null)
 			{
 				webCameraTexure = new WebCamTexture(device.name, width, height);
