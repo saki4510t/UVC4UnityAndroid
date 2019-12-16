@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6465409448752295677}
   - component: {fileID: 5777022740684865818}
   m_Layer: 0
-  m_Name: UVCDrawer
+  m_Name: CameraDrawer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
