@@ -37,6 +37,11 @@ namespace Serenegiant.UVC
 		public bool PreferH264 = true;
 
 		/**
+		 * UVC機器を使わないようにするかどうか
+		 * true: Android実機でもUVC機器を使わない
+		 */
+		public bool DisableUVC = false;
+		/**
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
@@ -167,7 +172,7 @@ namespace Serenegiant.UVC
 			UpdateTarget();
 
 #if UNITY_ANDROID
-			if (!Application.isEditor)
+			if (!Application.isEditor && !DisableUVC)
 			{
 				uvcController = new UVCController(this, gameObject, DefaultWidth, DefaultHeight, PreferH264);
 				yield return uvcController.Initialize();
@@ -264,11 +269,13 @@ namespace Serenegiant.UVC
 			if (!String.IsNullOrEmpty(args)
 				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
+#if UNITY_ANDROID
 				if (uvcController != null)
 				{
 					uvcController.OnEventAttach(args);
 
 				}
+#endif
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:finished");
@@ -299,12 +306,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventConnect:({args})");
 #endif
-#if UNITY_ANDROID
-			if (uvcController != null)
-			{
-				uvcController.OnEventConnect(args);
-			}
-#endif
 		}
 
 		/**
@@ -316,12 +317,9 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnEventDisconnect:({args})");
 #endif
-#if UNITY_ANDROID
-			if (uvcController != null)
-			{
-				uvcController.OnEventDisconnect(args);
-			}
-#endif
+			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
+			// 念のためにCloseを呼んでおく
+			Close(ActiveDeviceName);
 		}
 
 		/**
@@ -336,6 +334,13 @@ namespace Serenegiant.UVC
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				Close(args);
+#if UNITY_ANDROID
+				if (uvcController != null)
+				{
+					uvcController.OnEventDetach(args);
+
+				}
+#endif
 			}
 		}
 
@@ -700,6 +705,9 @@ namespace Serenegiant.UVC
 		 */
 		private void HandleOnStartPreview(Texture tex)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"HandleOnStartPreview:({tex})");
+#endif
 			if ((TargetMaterials != null) && (TargetMaterials.Length > 0))
 			{
 				int i = 0;
@@ -728,11 +736,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"HandleOnStopPreview:{deviceName}");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.OnStopPreview(deviceName);
-
-			}
 			// 描画先のテクスチャをもとに戻す
 			var n = Math.Min(
 				(TargetMaterials != null) ? TargetMaterials.Length : 0,

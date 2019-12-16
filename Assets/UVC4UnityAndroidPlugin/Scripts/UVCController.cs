@@ -33,7 +33,7 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC {
 
-	public class UVCController : IUVCEventHandler
+	public class UVCController
 	{
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 
@@ -200,47 +200,6 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
-		 * UVC機器へのアクセスのためのパーミッションを取得できた
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnEventPermission(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventPermission:({args})");
-#endif
-			if (!String.IsNullOrEmpty(args))
-			{   // argsはdeviceName
-				AndroidUtils.isPermissionRequesting = false;
-				Open(args);
-			}
-		}
-
-		/**
-		 * UVC機器をオープンした
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnEventConnect(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventConnect:({args})");
-#endif
-		}
-
-		/**
-		 * UVC機器をクローズした
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnEventDisconnect(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventDisconnect:({args})");
-#endif
-			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
-			// 念のためにCloseを呼んでおく
-			Close(activeDeviceName);
-		}
-
-		/**
 		 * UVC機器が取り外された
 		 * @param args UVC機器識別文字列
 		 */
@@ -250,39 +209,6 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"OnEventDetach:({args})");
 #endif
 			HandleDetach(args);
-		}
-
-		/**
-		 * 映像を受け取れるようになった
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnEventReady(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventReady:({args})");
-#endif
-		}
-
-		/**
-		 * UVC機器からの映像取得を開始した
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnStartPreview(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnStartPreview:({args})");
-#endif
-		}
-
-		/**
-		 * UVC機器からの映像取得を終了した
-		 * @param args UVC機器識別文字列
-		 */
-		public void OnStopPreview(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnStopPreview:({args})");
-#endif
 		}
 
 		/**
