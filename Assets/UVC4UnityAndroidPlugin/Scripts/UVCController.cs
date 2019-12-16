@@ -66,6 +66,14 @@ namespace Serenegiant.UVC {
 		private Texture previewTexture;
 
 		//================================================================================
+		/**
+		 * コンストラクタ
+		 * @param parent 親のスクリプト
+		 * @param target  EventSystemによる関数呼び出しのターゲット
+		 * @param width デフォルトの解像度(幅)
+		 * @param height デフォルトの解像度(高さ)
+		 * @param preferH264 H.264が使用可能な場合にMJPEGより優先して使用するかどうか
+		 */
 		public UVCController(MonoBehaviour parent, GameObject target, int width, int height, bool preferH264)
 		{
 			this.parent = parent;
@@ -94,13 +102,21 @@ namespace Serenegiant.UVC {
 		{
 			return IsOpen() && isPreviewing;
 		}
-	
+
+		/**
+		 * 映像取得用のTextureオブジェクトを取得する
+		 * @return Textureオブジェクト, プレビュー中でなければnull
+		 */
 		public Texture GetTexture()
 		{
 			return previewTexture;
 		}
 
 		//================================================================================
+		/**
+		 * 指定したUVC機器をopenする
+		 * @param deviceName UVC機器識別文字列
+		 */
 		public void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -122,6 +138,10 @@ namespace Serenegiant.UVC {
 			}
 		}
 
+		/**
+		 * 指定したUVC機器をcloseする
+		 * @param deviceName UVC機器識別文字列
+		 */
 		public void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -144,7 +164,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器/カメラからの映像受けとりを終了要求をする
-		 * @param deviceName カメラの識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		public void StopPreview(string deviceName)
 		{
@@ -161,7 +181,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器が接続された
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventAttach(string args)
 		{
@@ -180,7 +200,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器へのアクセスのためのパーミッションを取得できた
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventPermission(string args)
 		{
@@ -196,7 +216,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器をオープンした
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventConnect(string args)
 		{
@@ -207,7 +227,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器をクローズした
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventDisconnect(string args)
 		{
@@ -221,7 +241,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器が取り外された
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventDetach(string args)
 		{
@@ -233,7 +253,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * 映像を受け取れるようになった
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnEventReady(string args)
 		{
@@ -244,7 +264,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器からの映像取得を開始した
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnStartPreview(string args)
 		{
@@ -255,7 +275,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器からの映像取得を終了した
-		 * @param args UVC機器の識別文字列
+		 * @param args UVC機器識別文字列
 		 */
 		public void OnStopPreview(string args)
 		{
@@ -266,7 +286,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器からのステータスイベントを受信した
-		 * @param args UVC機器の識別文字列+ステータス
+		 * @param args UVC機器識別文字列＋ステータス
 		 */
 		public void OnReceiveStatus(string args)
 		{
@@ -277,7 +297,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器からのボタンイベントを受信した
-		 * @param args UVC機器の識別文字列＋ボタンイベント
+		 * @param args UVC機器識別文字列＋ボタンイベント
 		 */
 		public void OnButtonEvent(string args)
 		{
@@ -376,7 +396,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * 指定したUSB機器をアクセスするパーミッションを持っているかどうかを取得
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		private bool HasUsbPermission(string deviceName)
 		{
@@ -396,7 +416,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * USB機器アクセスのパーミッション要求
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		private void RequestUsbPermission(string deviceName)
 		{
@@ -427,7 +447,7 @@ namespace Serenegiant.UVC {
 		 * この関数では指定したサイズに対応しているかどうかのチェックをしないので
 		 * 呼び出し元でチェックすること
 		 * 通常はStartPreview(string deviceName)経由で呼び出す
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 * @param width
 		 * @param height
 		 */
@@ -472,7 +492,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器からの映像受けとりを終了要求をする
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		private void RequestStopPreview(string deviceName)
 		{
@@ -491,7 +511,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * UVC機器が取り外されたときの処理
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		private void HandleDetach(string deviceName)
 		{
@@ -501,7 +521,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		public UVCInfo GetInfo(string deviceName)
 		{
@@ -527,7 +547,7 @@ namespace Serenegiant.UVC {
 
 		/**
 		 * 指定したUVC機器の対応解像度を取得する
-		 * @param deviceName UVC機器の識別文字列
+		 * @param deviceName UVC機器識別文字列
 		 */
 		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{

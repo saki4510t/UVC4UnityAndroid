@@ -30,6 +30,7 @@ namespace Serenegiant
 		/**
 		 * 指定したバージョン以降かどうかを確認
 		 * @param apiLevel
+		 * @return true: 指定したバージョン以降で実行されている, false: 指定したバージョンよりも古い端末で実行されている
 		 */
 		public static bool CheckAndroidVersion(int apiLevel)
 		{
@@ -42,6 +43,7 @@ namespace Serenegiant
 		/**
 		 * パーミッションを持っているかどうかを調べる
 		 * @param permission
+		 * @param true: パーミッションを保持している, false: パーミッションを保持していない
 		 */
 		public static bool HasPermission(string permission)
 		{
@@ -62,6 +64,7 @@ namespace Serenegiant
 		/**
 		 * 指定したパーミッションの説明を表示する必要があるかどうかを取得
 		 * @param permission
+		 * @param 指定したパーミッションの説明を表示する必要がある
 		 */
 		public static bool ShouldShowRequestPermissionRationale(string permission)
 		{
@@ -76,6 +79,9 @@ namespace Serenegiant
 			return false;
 		}
 
+		/***
+		 * GrantPermissionでパーミッションを要求したときのコールバック用delegateer
+		 */
 		public delegate void OnPermission(string permission, bool granted);
 
 		/**

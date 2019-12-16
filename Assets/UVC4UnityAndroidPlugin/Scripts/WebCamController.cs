@@ -11,6 +11,10 @@ using Serenegiant.UVC;
 namespace Serenegiant
 {
 
+	/**
+	 * PCの場合はUSB接続のカメラハンドリング用ヘルパークラス
+	 * Androidの場合は内蔵カメラのハンドリング用ヘルパークラス
+	 */
 	public class WebCamController
 	{
 		private MonoBehaviour parent;
@@ -23,7 +27,8 @@ namespace Serenegiant
 
 		/**
 		 * コンストラクタ
-		 * @param parent 親のGameObject, EventSystemによる関数呼び出しのターゲット
+		 * @param parent 親のスクリプト
+		 * @param target  EventSystemによる関数呼び出しのターゲット
 		 * @param width デフォルトの解像度(幅)
 		 * @param height デフォルトの解像度(高さ)
 		 */
@@ -166,8 +171,8 @@ namespace Serenegiant
 		}
 
 		/**
-		 * 映像受け取り用のTextureを返す
-		 * @return プレビュー中でなければnull
+		 * 映像取得用のTextureオブジェクトを取得する
+		 * @return Textureオブジェクト, プレビュー中でなければnull
 		 */
 		public Texture GetTexture()
 		{
