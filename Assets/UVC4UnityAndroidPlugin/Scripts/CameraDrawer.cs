@@ -585,19 +585,22 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Open:{deviceName}");
 #endif
+			if (!String.IsNullOrEmpty(deviceName))
+			{
 #if UNITY_ANDROID
-			if (!Application.isEditor)
-			{
-				if (uvcController != null)
+				if (!Application.isEditor)
 				{
-					uvcController.Open(deviceName);
-					return;
+					if (uvcController != null)
+					{
+						uvcController.Open(deviceName);
+						return;
+					}
 				}
-			}
 #endif
-			if (webCamController != null)
-			{
-				webCamController.Open(deviceName);
+				if (webCamController != null)
+				{
+					webCamController.Open(deviceName);
+				}
 			}
 		}
 
@@ -610,15 +613,18 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Close:{deviceName}");
 #endif
+			if (!String.IsNullOrEmpty(deviceName))
+			{
 #if UNITY_ANDROID
-			if (uvcController != null)
-			{
-				uvcController.Close(deviceName);
-			}
+				if (uvcController != null)
+				{
+					uvcController.Close(deviceName);
+				}
 #endif
-			if (webCamController != null)
-			{
-				webCamController.Close(deviceName);
+				if (webCamController != null)
+				{
+					webCamController.Close(deviceName);
+				}
 			}
 		}
 
