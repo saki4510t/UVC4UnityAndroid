@@ -944,7 +944,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private UVCInfo GetInfo(string deviceName)
+		public UVCInfo GetInfo(string deviceName)
 		{
 //#if (!NDEBUG && DEBUG && ENABLE_LOG)
 //			Console.WriteLine($"GetInfo:{deviceName}");
@@ -970,7 +970,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器の対応解像度をjson文字列として取得する
 		 * @param deviceName UVC機器の識別文字列
 		 */
-		private SupportedFormats GetSupportedVideoSize(string deviceName)
+		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
 //#if (!NDEBUG && DEBUG && ENABLE_LOG)
 //			Console.WriteLine($"GetSupportedVideoSize:{deviceName}");

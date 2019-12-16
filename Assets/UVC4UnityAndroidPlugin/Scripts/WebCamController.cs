@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Serenegiant.UVC;
+
 namespace Serenegiant
 {
 
@@ -85,6 +87,22 @@ namespace Serenegiant
 		public Texture GetTexture()
 		{
 			return webCameraTexure;
+		}
+
+		public UVCInfo GetInfo(string deviceName)
+		{
+			// FIXME 未実装
+			return null;
+		}
+
+		/**
+		 * 指定したUVC機器の対応解像度をjson文字列として取得する
+		 * @param deviceName UVC機器の識別文字列
+		 */
+		public SupportedFormats GetSupportedVideoSize(string deviceName)
+		{
+			// FIXME 未実装
+			return null;
 		}
 
 		//--------------------------------------------------------------------------------

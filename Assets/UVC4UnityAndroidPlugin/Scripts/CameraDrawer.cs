@@ -84,12 +84,21 @@ namespace Serenegiant.UVC
 
 		private string activeDeviceName {
 			get { return uvcController != null ? uvcController.activeDeviceName : null;  }
+			set
+			{
+				if (uvcController != null)
+				{
+					uvcController.activeDeviceName = value;
+				}
+			}
 		}
 		//--------------------------------------------------------------------------------
 
 #if UNITY_ANDROID
 		private UVCController uvcController;
 #endif
+		private WebCamController webCamController;
+
 		//================================================================================
 
 		// Start is called before the first frame update
@@ -102,11 +111,11 @@ namespace Serenegiant.UVC
 
 		}
 
-		// Update is called once per frame
-		void Update()
-		{
-
-		}
+//		// Update is called once per frame
+//		void Update()
+//		{
+//
+//		}
 
 		//================================================================================
 		// 他のコンポーネントからの操作用
@@ -140,12 +149,12 @@ namespace Serenegiant.UVC
 			{   // UVC機器が接続されている
 				if (IsPreviewing())
 				{   // 映像取得中
-					//					CloseCamera(attachedDeviceName);
+//					CloseCamera(attachedDeviceName);
 					StopPreview(attachedDeviceName);
 				}
 				else
 				{   // 映像を取得していない
-					//					OpenCamera(attachedDeviceName);
+//					OpenCamera(attachedDeviceName);
 					StartPreview(attachedDeviceName);
 				}
 			}
@@ -244,12 +253,12 @@ namespace Serenegiant.UVC
 		public void OnEventDetach(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventDetach:({args})");
+			Console.WriteLine($"OnEventReady:({args})");
 #endif
-			if (uvcController != null)
-			{
-				uvcController.OnEventDetach(args);
-
+			activeDeviceName = args;
+			if (!String.IsNullOrEmpty(args))
+			{   // argsはdeviceName
+				StartPreview(args);
 			}
 		}
 
@@ -516,11 +525,7 @@ namespace Serenegiant.UVC
 				uvcController.StartPreview(deviceName, width, height);
 			}
 #else
-			WebCamDevice found = new WebCamDevice();
-			if (FindWebCam(deviceName, ref found))
-			{
-				RequestStartPreviewWebCam(found, width, height);
-			}
+
 #endif
 		}
 
@@ -605,7 +610,14 @@ namespace Serenegiant.UVC
  */
 		private UVCInfo GetInfo(string deviceName)
 		{
-			// FIXME 未実装
+			if (uvcController != null)
+			{
+				return uvcController.GetInfo(deviceName);
+			}
+			if (webCamController != null)
+			{
+				return webCamController.GetInfo(deviceName);
+			}
 			return null;
 		}
 
@@ -615,7 +627,14 @@ namespace Serenegiant.UVC
 		 */
 		private SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
-			// FIXME 未実装
+			if (uvcController != null)
+			{
+				return uvcController.GetSupportedVideoSize(deviceName);
+			}
+			if (webCamController != null)
+			{
+				return webCamController.GetSupportedVideoSize(deviceName);
+			}
 			return null;
 		}
 
