@@ -44,13 +44,13 @@ namespace Serenegiant.UVC {
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(幅)
 		 */
-		public int VideoWidth = 1280;
+		public int DefaultWidth = 1280;
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(高さ)
 		 */
-		public int VideoHeight = 720;
+		public int DefaultHeight = 720;
 		/**
 		 * UVC機器とのネゴシエーション時に
 		 * H.264を優先してネゴシエーションするかどうか
@@ -363,7 +363,7 @@ namespace Serenegiant.UVC {
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
 						GetCurrentActivity(), deviceName,
-						VideoWidth, VideoHeight, PreferH264);
+						DefaultWidth, DefaultHeight, PreferH264);
 				}
 			}
 			else
@@ -402,8 +402,8 @@ namespace Serenegiant.UVC {
 		 */
 		private void StartPreview(string deviceName)
 		{
-			int width = VideoWidth;
-			int height = VideoHeight;
+			int width = DefaultWidth;
+			int height = DefaultHeight;
 
 			var supportedVideoSize = GetSupportedVideoSize(deviceName);
 			if (supportedVideoSize == null)

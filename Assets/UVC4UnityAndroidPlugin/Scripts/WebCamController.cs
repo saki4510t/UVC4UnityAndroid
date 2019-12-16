@@ -14,6 +14,11 @@ namespace Serenegiant
 		private string activeDeviceName;
 		private WebCamTexture webCameraTexure;
 
+		public WebCamController()
+		{
+
+		}
+
 		public void Initialize(string deviceKeyword)
 		{
 			// FIXME 未実装
