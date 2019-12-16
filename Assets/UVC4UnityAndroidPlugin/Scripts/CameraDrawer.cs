@@ -92,7 +92,7 @@ namespace Serenegiant.UVC
 		 *	 > TargetGameObjectのMaterial
 		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
-		private Material[] TargetMaterials;
+		private UnityEngine.Object[] TargetMaterials;
 		/**
 		 * オリジナルのテクスチャ
 		 * UVCカメラ映像受け取り用テクスチャをセットする前に
@@ -508,7 +508,7 @@ namespace Serenegiant.UVC
 				Console.WriteLine($"UpdateTarget:UVCSelector={UVCSelector}");
 #endif
 
-				TargetMaterials = new Material[RenderTargets.Length];
+				TargetMaterials = new UnityEngine.Object[RenderTargets.Length];
 				int i = 0;
 				foreach (var target in RenderTargets)
 				{
@@ -529,7 +529,7 @@ namespace Serenegiant.UVC
 			{   // 描画先が1つも見つからなかったときはこのスクリプトが
 				// AddComponentされているGameObjectからの取得を試みる
 				// XXX RenderTargetsにgameObjectをセットする？
-				TargetMaterials = new Material[1];
+				TargetMaterials = new UnityEngine.Object[1];
 				TargetMaterials[0] = GetTargetMaterial(gameObject);
 				found = TargetMaterials[0] != null;
 			}
@@ -548,7 +548,7 @@ namespace Serenegiant.UVC
 		 * @param target
 		 * @return 見つからなければnullを返す
 		 */
-		Material GetTargetMaterial(GameObject target/*NonNull*/)
+		UnityEngine.Object GetTargetMaterial(GameObject target/*NonNull*/)
 		{
 			// Skyboxの取得を試みる
 			var skyboxs = target.GetComponents<Skybox>();
@@ -584,7 +584,7 @@ namespace Serenegiant.UVC
 				{
 					if (rawImage.enabled && (rawImage.material != null))
 					{
-						return rawImage.material;
+						return rawImage;
 					}
 
 				}
@@ -772,12 +772,16 @@ namespace Serenegiant.UVC
 			{
 				int i = 0;
 				savedTextures = new Texture[TargetMaterials.Length];
-				foreach (var material in TargetMaterials)
+				foreach (var target in TargetMaterials)
 				{
-					if (material != null)
+					if (target is Material)
 					{
-						savedTextures[i++] = material.mainTexture;
-						material.mainTexture = tex;
+						savedTextures[i++] = (target as Material).mainTexture;
+						(target as Material).mainTexture = tex;
+					} else if (target is RawImage)
+					{
+						savedTextures[i++] = (target as RawImage).texture;
+						(target as RawImage).texture = tex;
 					}
 				}
 			}
@@ -803,9 +807,16 @@ namespace Serenegiant.UVC
 			if (n > 0)
 			{
 				int i = 0;
-				foreach (var material in TargetMaterials)
+				foreach (var target in TargetMaterials)
 				{
-					material.mainTexture = savedTextures[i];
+					if (target is Material)
+					{
+						(target as Material).mainTexture = savedTextures[i];
+					}
+					else if (target is RawImage)
+					{
+						(target as RawImage).texture = savedTextures[i];
+					}
 					savedTextures[i++] = null;
 				}
 			}
