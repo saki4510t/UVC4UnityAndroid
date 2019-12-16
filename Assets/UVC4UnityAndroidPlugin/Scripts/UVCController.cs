@@ -322,6 +322,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (AndroidUtils.CheckAndroidVersion(28))
 			{
+				// Android9以降ではUVC機器アクセスにもCAMERAパーミッションが必要
 				yield return AndroidUtils.GrantPermission(AndroidUtils.PERMISSION_CAMERA, OnPermission);
 			}
 			else
