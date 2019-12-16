@@ -14,7 +14,7 @@ namespace Serenegiant
 		public const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		public const string PERMISSION_CAMERA = "android.permission.CAMERA";
 
-		public bool isPermissionRequesting { set; get; }
+		public static bool isPermissionRequesting { set; get; }
 
 		/**
 		 * UnityPlayerActivityを取得
@@ -81,7 +81,7 @@ namespace Serenegiant
 		/**
 		 * パーミッション要求
 		 */
-		public IEnumerator GrantPermission(string permission, OnPermission callback)
+		public static IEnumerator GrantPermission(string permission, OnPermission callback)
 		{
 			if (!HasPermission(permission))
 			{
@@ -96,7 +96,7 @@ namespace Serenegiant
 		 * パーミッション要求
 		 * @param permission
 		 */
-		public IEnumerator RequestPermission(string permission)
+		public static IEnumerator RequestPermission(string permission)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"RequestPermission[{Time.frameCount}]:");
@@ -125,7 +125,7 @@ namespace Serenegiant
 		 * isPermissionRequestingが落ちるか指定時間経過するまで待機する
 		 * @param timeoutSecs 待機する最大時間[秒]
 		 */
-		public IEnumerator WaitPermissionWithTimeout(float timeoutSecs)
+		public static IEnumerator WaitPermissionWithTimeout(float timeoutSecs)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:");

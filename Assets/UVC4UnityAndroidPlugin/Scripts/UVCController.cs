@@ -56,7 +56,6 @@ namespace Serenegiant.UVC {
 		 */
 		public string activeDeviceName { set; get; }
 
-		private AndroidUtils androidUtils = new AndroidUtils();
 		/**
 		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 		 */
@@ -109,7 +108,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				androidUtils.isPermissionRequesting = false;
+				AndroidUtils.isPermissionRequesting = false;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
@@ -190,7 +189,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				androidUtils.isPermissionRequesting = false;
+				AndroidUtils.isPermissionRequesting = false;
 				Open(args);
 			}
 		}
@@ -295,7 +294,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
 #endif
-			if (!androidUtils.isPermissionRequesting
+			if (!AndroidUtils.isPermissionRequesting
 				&& !String.IsNullOrEmpty(attachedDeviceName)
 				&& String.IsNullOrEmpty(activeDeviceName))
 			{
@@ -323,7 +322,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (AndroidUtils.CheckAndroidVersion(28))
 			{
-				yield return androidUtils.GrantPermission(AndroidUtils.PERMISSION_CAMERA, OnPermission);
+				yield return AndroidUtils.GrantPermission(AndroidUtils.PERMISSION_CAMERA, OnPermission);
 			}
 			else
 			{
@@ -405,7 +404,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				androidUtils.isPermissionRequesting = true;
+				AndroidUtils.isPermissionRequesting = true;
 
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
