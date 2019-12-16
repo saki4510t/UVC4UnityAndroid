@@ -91,6 +91,10 @@ namespace Serenegiant.UVC
 			public string[] size { get; set; }
 			public float[][] frameRate { get; set; }
 
+			/**
+			 * コンストラクタ
+			 * @param element
+			 */
 			public FrameFormat(JsonElement element)
 			{
 				frame_type = element.GetProperty("frame_type").GetInt32();
@@ -122,6 +126,30 @@ namespace Serenegiant.UVC
 
 			}
 
+			/**
+			 * WebCamDeviceのavailableResolutionsから対応解像度を生成するためのコンストラクタ
+			 * @param resolutions
+			 */
+			public FrameFormat(Resolution[] resolutions)
+			{
+				frame_type = -1;    // FIXME 適当
+				defaultIndex = 1;
+				var sizeNum = resolutions.Length;
+				size = new string[sizeNum];
+				frameRate = new float[sizeNum][];
+				if (sizeNum > 0)
+				{
+					int i = 0;
+					foreach (var resolution in resolutions)
+					{
+						size[i] = $"{resolution.width}x{resolution.height}";
+						frameRate[i] = new float[1] { resolution.refreshRate };
+//						Console.WriteLine($"FrameFormat:({size[i]}@[{string.Join(",", frameRate[i])}])");
+						i++;
+					}
+				}
+			}
+		
 			/**
 			 * 対応解像度の個数を取得
 			 */
@@ -205,6 +233,11 @@ namespace Serenegiant.UVC
 
 				return result;
 			}
+
+			public override string ToString()
+			{
+				return base.ToString() + $"[{string.Join(", ", size)}]";
+			}
 		}
 
 		/**
@@ -271,7 +304,7 @@ namespace Serenegiant.UVC
 			}
 		}
 
-		public FrameFormat[] formats { get; set; }
+		public FrameFormat[] formats;
 
 		/**
 		 * JSON文字列として引き渡された対応解像度をパースしてSupportedFormatsとして返す
@@ -311,6 +344,33 @@ namespace Serenegiant.UVC
 			return result;
 		}
 
+		public static SupportedFormats Parse(WebCamDevice camera)
+		{
+			SupportedFormats result;
+			try
+			{
+				var resolutions = camera.availableResolutions;
+				result = new SupportedFormats();
+				if ((resolutions != null) && (resolutions.Length > 0))
+				{
+					result.formats = new FrameFormat[1] { new FrameFormat(resolutions)};
+				}
+			}
+			catch (Exception e)
+			{
+				result = null;
+				Debug.LogError(e.ToString());
+			}
+			if (result == null)
+			{
+				throw new ArgumentException($"failed to parse ({camera})");
+			}
+			return result;
+		}
+
+		/**
+		 * デフォルトコンストラクタ
+		 */
 		public SupportedFormats()
 		{
 
@@ -356,6 +416,9 @@ namespace Serenegiant.UVC
 		 */
 		public Size Find(int width, int height, float minFps = 0.1f, float maxFps = 121.0f)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"Find:({width}x{height},{minFps}-{maxFps})");
+#endif
 			if (formats != null)
 			{
 				foreach (FrameFormat format in formats)
@@ -368,7 +431,8 @@ namespace Serenegiant.UVC
 						{
 							foreach (float val in sz.FrameRate)
 							{
-								if ((val >= minFps) && (val <= maxFps))
+								if ((val <= 0)
+									|| ((val >= minFps) && (val <= maxFps)))
 								{
 									return sz;
 								}
@@ -380,6 +444,12 @@ namespace Serenegiant.UVC
 
 			return null;
 		}
-	
+
+		public override string ToString()
+		{
+			return base.ToString() + "[" + string.Join<FrameFormat>(", ", formats) + "]";
+		}
+
 	}   // class SupportedFormats
+
 }   // namespace Serenegiant.UVC
