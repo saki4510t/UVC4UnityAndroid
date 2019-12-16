@@ -433,7 +433,7 @@ namespace Serenegiant.UVC
 		}
 
 		//--------------------------------------------------------------------------------
-		private void OpenCamera(string deviceName)
+		private void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Open:{deviceName}");
@@ -455,26 +455,21 @@ namespace Serenegiant.UVC
 #endif
 		}
 
-		private void CloseCamera(string deviceName)
+		private void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Open:{deviceName}");
 #endif
 #if UNITY_ANDROID
-			if (!Application.isEditor)
+			if (uvcController != null)
 			{
-				if (uvcController != null)
-				{
-					uvcController.Close(deviceName);
-				}
+				uvcController.Close(deviceName);
 			}
-			else
-			{
-				// FIXME 未実装
-			}
-#else
-				// FIXME 未実装
 #endif
+			if (webCamController != null)
+			{
+				webCamController.Close(deviceName);
+			}
 		}
 
 		/**
