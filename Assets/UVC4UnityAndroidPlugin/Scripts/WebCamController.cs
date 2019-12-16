@@ -68,6 +68,10 @@ namespace Serenegiant
 				ExecuteEvents.Execute<IUVCEventHandler>(
 					target: parent, // 呼び出す対象のオブジェクト
 					eventData: null,  // イベントデータ（モジュール等の情報）
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventConnect(deviceName)); // 操作
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: parent, // 呼び出す対象のオブジェクト
+					eventData: null,  // イベントデータ（モジュール等の情報）
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName)); // 操作
 			}
 		}
@@ -79,6 +83,10 @@ namespace Serenegiant
 #endif
 			StopPreview(deviceName);
 			activeDeviceName = null;
+			ExecuteEvents.Execute<IUVCEventHandler>(
+				target: parent, // 呼び出す対象のオブジェクト
+				eventData: null,  // イベントデータ（モジュール等の情報）
+				functor: (recieveTarget, eventData) => recieveTarget.OnEventDisconnect(deviceName)); // 操作
 		}
 
 		/**
@@ -90,7 +98,7 @@ namespace Serenegiant
 		public void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StartPreview:({deviceName})");
+			Console.WriteLine($"StartPreview:{deviceName}({width}x{height})");
 #endif
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
@@ -130,8 +138,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"GetInfo:({deviceName})");
 #endif
-			// FIXME 未実装
-			return null;
+			return new UVCInfo();
 		}
 
 		/**
@@ -143,7 +150,11 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"GetSupportedVideoSize:({deviceName})");
 #endif
-			// FIXME 未実装
+			WebCamDevice found = new WebCamDevice();
+			if (FindWebCam(deviceName, ref found))
+			{
+				return SupportedFormats.Parse(found);
+			}
 			return null;
 		}
 
@@ -195,7 +206,7 @@ namespace Serenegiant
 		private void RequestStartPreview(WebCamDevice device, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestStartPreview:({device})");
+			Console.WriteLine($"RequestStartPreview:({device},{width}x{height})");
 #endif
 			if (webCameraTexure == null)
 			{

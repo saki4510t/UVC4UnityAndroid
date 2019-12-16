@@ -366,6 +366,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
+				isPermissionRequesting = false;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",

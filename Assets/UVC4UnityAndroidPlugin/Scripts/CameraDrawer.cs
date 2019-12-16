@@ -110,7 +110,7 @@ namespace Serenegiant.UVC
 			UpdateTarget();
 
 			webCamController = new WebCamController(gameObject, DefaultWidth, DefaultHeight);
-			webCamController.Initialize();
+			webCamController.Initialize(WebCameraDeviceKeyword);
 		}
 
 //		// Update is called once per frame
@@ -211,8 +211,12 @@ namespace Serenegiant.UVC
 #endif
 			if (uvcController != null)
 			{
-				uvcController.OnEventPermission(args);
-
+				uvcController.Open(args);
+				return;
+			}
+			if (webCamController != null)
+			{
+				webCamController.Open(args);
 			}
 		}
 
@@ -524,6 +528,10 @@ namespace Serenegiant.UVC
 #else
 
 #endif
+			if (webCamController != null)
+			{
+				webCamController.StartPreview(deviceName, width, height);
+			}
 		}
 
 		/**
