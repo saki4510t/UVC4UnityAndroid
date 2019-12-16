@@ -77,35 +77,34 @@ namespace Serenegiant
 		 * 初期化実行
 		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
 		 */
-		public void Initialize(string deviceKeyword)
+		public IEnumerator Initialize(string deviceKeyword)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Initialize:({deviceKeyword})");
 #endif
-			// 使用可能なWebカメラを探す
-			var devices = WebCamTexture.devices;
-			if (devices != null)
+#if UNITY_ANDROID
+			yield return AndroidUtils.GrantCameraPermission((string permission, bool granted) =>
 			{
-				foreach (var cam in devices)
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"OnPermission:{permission}={granted}");
+#endif
+				if (granted)
 				{
-					if (MatchWebCame(cam, deviceKeyword))
-					{   // 最初に見つかったものを使う
-						attachedDeviceName = cam.name;
-						break;
+					FindCamera(deviceKeyword);
+				}
+				else {
+					if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
+					{
+						// パーミッションを取得できなかった
+						// FIXME 説明用のダイアログ等を表示しないといけない
 					}
 				}
-			}
-			if (attachedDeviceName != null)
-			{	// 使用可能なカメラが見つかったとき
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"Initialize:found={activeDeviceName}");
+			});
+#else
+			FindCamera(deviceKeyword);
 #endif
-				// パーミッションを取得通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: target,
-					eventData: null,
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(attachedDeviceName));
-			}
+
+			yield break;
 		}
 
 		/**
@@ -242,6 +241,36 @@ namespace Serenegiant
 		}
 
 		//--------------------------------------------------------------------------------
+		/**
+		 * 使用可能なWebカメラを探す
+		 */
+		private void FindCamera(string deviceKeyword)
+		{
+			var devices = WebCamTexture.devices;
+			if (devices != null)
+			{
+				foreach (var cam in devices)
+				{
+					if (MatchWebCame(cam, deviceKeyword))
+					{   // 最初に見つかったものを使う
+						attachedDeviceName = cam.name;
+						break;
+					}
+				}
+			}
+			if (attachedDeviceName != null)
+			{   // 使用可能なカメラが見つかったとき
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"Initialize:found={activeDeviceName}");
+#endif
+				// パーミッションを取得通知
+				ExecuteEvents.Execute<IUVCEventHandler>(
+					target: target,
+					eventData: null,
+					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(attachedDeviceName));
+			}
+		}
+
 
 		/**
 		 * WebCamDevice選択関数

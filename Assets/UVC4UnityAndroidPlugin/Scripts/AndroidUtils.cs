@@ -86,6 +86,8 @@ namespace Serenegiant
 
 		/**
 		 * パーミッション要求
+		 * @param permission
+		 * @param callback
 		 */
 		public static IEnumerator GrantPermission(string permission, OnPermission callback)
 		{
@@ -94,6 +96,29 @@ namespace Serenegiant
 				yield return RequestPermission(permission);
 			}
 			callback(permission, HasPermission(permission));
+
+			yield break;
+		}
+
+		/**
+		 * カメラパーミッションを要求
+		 * @param callback
+		 */
+		public static IEnumerator GrantCameraPermission(OnPermission callback)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("GrantCameraPermission:");
+#endif
+			if (AndroidUtils.CheckAndroidVersion(23))
+			{
+				// Android9以降ではUVC機器アクセスにもCAMERAパーミッションが必要
+				yield return GrantPermission(PERMISSION_CAMERA, callback);
+			}
+			else
+			{
+				// Android 9 未満ではパーミッション要求処理は不要
+				callback(PERMISSION_CAMERA, true);
+			}
 
 			yield break;
 		}

@@ -269,40 +269,27 @@ namespace Serenegiant.UVC {
 #endif
 			if (AndroidUtils.CheckAndroidVersion(28))
 			{
-				// Android9以降ではUVC機器アクセスにもCAMERAパーミッションが必要
-				yield return AndroidUtils.GrantPermission(AndroidUtils.PERMISSION_CAMERA, OnPermission);
-			}
-			else
-			{
-				// Android 9 未満ではパーミッション要求処理は不要
-				InitPlugin();
+				yield return AndroidUtils.GrantCameraPermission((string permission, bool granted) =>
+				{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"OnPermission:{permission}={granted}");
+#endif
+					if (granted)
+					{
+						InitPlugin();
+					}
+					else
+					{
+						if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
+						{
+							// パーミッションを取得できなかった
+							// FIXME 説明用のダイアログ等を表示しないといけない
+						}
+					}
+				});
 			}
 
 			yield break;
-		}
-
-		/**
-		 * カメラパーミッション要求結果のコールバック
-		 * @param permission
-		 * @param granted
-		 */
-		private void OnPermission(string permission, bool granted)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnPermission:{permission}={granted}");
-#endif
-			if (granted)
-			{
-				InitPlugin();
-			}
-			else {
-				if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
-				{
-					// パーミッションを取得できなかった
-					// FIXME 説明用のダイアログ等を表示しないといけない
-				}
-
-			} 
 		}
 
 		// uvc-plugin-unityへの処理要求
