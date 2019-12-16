@@ -603,7 +603,7 @@ namespace Serenegiant.UVC
 		private void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Open:{deviceName}");
+			Console.WriteLine($"Close:{deviceName}");
 #endif
 #if UNITY_ANDROID
 			if (uvcController != null)
