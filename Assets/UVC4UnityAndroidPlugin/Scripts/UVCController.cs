@@ -103,7 +103,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				AndroidUtils.ClearRequestPermission();
+				AndroidUtils.isPermissionRequesting = false;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
@@ -256,22 +256,25 @@ namespace Serenegiant.UVC {
 #endif
 			if (AndroidUtils.CheckAndroidVersion(28))
 			{
-				yield return AndroidUtils.GrantCameraPermission((string permission, bool granted) =>
+				yield return AndroidUtils.GrantCameraPermission((string permission, AndroidUtils.PermissionGrantResult result) =>
 				{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"OnPermission:{permission}={granted}");
+					Console.WriteLine($"OnPermission:{permission}={result}");
 #endif
-					if (granted)
+					switch (result)
 					{
-						InitPlugin();
-					}
-					else
-					{
-						if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
-						{
-							// パーミッションを取得できなかった
-							// FIXME 説明用のダイアログ等を表示しないといけない
-						}
+						case AndroidUtils.PermissionGrantResult.PERMISSION_GRANT:
+							InitPlugin();
+							break;
+						case AndroidUtils.PermissionGrantResult.PERMISSION_DENY:
+							if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
+							{
+								// パーミッションを取得できなかった
+								// FIXME 説明用のダイアログ等を表示しないといけない
+							}
+							break;
+						case AndroidUtils.PermissionGrantResult.PERMISSION_DENY_AND_NEVER_ASK_AGAIN:
+							break;
 					}
 				});
 			}

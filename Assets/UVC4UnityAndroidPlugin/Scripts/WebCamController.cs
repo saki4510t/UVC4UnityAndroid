@@ -118,21 +118,25 @@ namespace Serenegiant
 			Console.WriteLine($"Initialize:({deviceKeyword})");
 #endif
 #if UNITY_ANDROID
-			yield return AndroidUtils.GrantCameraPermission((string permission, bool granted) =>
+			yield return AndroidUtils.GrantCameraPermission((string permission, AndroidUtils.PermissionGrantResult result) =>
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"OnPermission:{permission}={granted}");
+				Console.WriteLine($"OnPermission:{permission}={result}");
 #endif
-				if (granted)
+				switch (result)
 				{
-					FindCamera(deviceKeyword);
-				}
-				else {
-					if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
-					{
-						// パーミッションを取得できなかった
-						// FIXME 説明用のダイアログ等を表示しないといけない
-					}
+					case AndroidUtils.PermissionGrantResult.PERMISSION_GRANT:
+						FindCamera(deviceKeyword);
+						break;
+					case AndroidUtils.PermissionGrantResult.PERMISSION_DENY:
+						if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
+						{
+							// パーミッションを取得できなかった
+							// FIXME 説明用のダイアログ等を表示しないといけない
+						}
+						break;
+					case AndroidUtils.PermissionGrantResult.PERMISSION_DENY_AND_NEVER_ASK_AGAIN:
+						break;
 				}
 			});
 #else
