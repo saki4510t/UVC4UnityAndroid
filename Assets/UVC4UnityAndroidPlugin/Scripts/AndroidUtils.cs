@@ -182,26 +182,33 @@ namespace Serenegiant
 		 */
 		public static IEnumerator GrantPermission(string permission, OnPermission callback)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}GrantCameraPermission:{permission}");
+#endif
 			if (!HasPermission(permission))
 			{
-				isPermissionRequesting = true;
 				grantResult = PermissionGrantResult.PERMISSION_DENY;
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				if (ShouldShowRequestPermissionRationale(permission))
 				{
-					clazz.CallStatic("requestPermission",
-						AndroidUtils.GetCurrentActivity(), permission);
-				}
-				float timeElapsed = 0;
-				while (isPermissionRequesting)
-				{
-					if ((PermissionTimeoutSecs > 0) && (timeElapsed > PermissionTimeoutSecs))
+					isPermissionRequesting = true;
+					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 					{
-						isPermissionRequesting = false;
-						yield break;
+						clazz.CallStatic("requestPermission",
+							AndroidUtils.GetCurrentActivity(), permission);
 					}
-					timeElapsed += Time.deltaTime;
+					float timeElapsed = 0;
+					while (isPermissionRequesting)
+					{
+						if ((PermissionTimeoutSecs > 0) && (timeElapsed > PermissionTimeoutSecs))
+						{
+							isPermissionRequesting = false;
+							yield break;
+						}
+						timeElapsed += Time.deltaTime;
 
-					yield return null;
+						yield return null;
+					}
+
 				}
 				callback(permission, grantResult);
 			}
