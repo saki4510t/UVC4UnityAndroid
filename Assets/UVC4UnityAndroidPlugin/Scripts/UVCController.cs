@@ -217,7 +217,9 @@ namespace Serenegiant.UVC {
 		public void OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
+				$",activeDeviceName={activeDeviceName}" +
+				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
 			// FIXME Android9以降でカメラパーミッションがなければ要求する
 

@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿//#define ENABLE_LOG
+
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

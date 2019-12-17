@@ -87,7 +87,8 @@ namespace Serenegiant
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
-				$",activeDeviceName={activeDeviceName}");
+				$",activeDeviceName={activeDeviceName}" +
+				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
 			// FIXME カメラパーミッションがなければ要求する
 		}
