@@ -29,13 +29,13 @@ namespace Serenegiant
 		private const string TAG = "AndroidUtils#";
 		private const string FQCN_PLUGIN = "com.serenegiant.androidutils.AndroidUtils";
 
+		//--------------------------------------------------------------------------------
 		/**
 		 * ライフサイクルイベント用のデリゲーター
 		 * @param resumed true: onResume, false: onPause
 		 */
 		public delegate void LifecycleEventHandler(bool resumed);
 
-		//--------------------------------------------------------------------------------
 		/***
 		 * GrantPermissionでパーミッションを要求したときのコールバック用delegateer
 		 * @param permission
@@ -43,6 +43,12 @@ namespace Serenegiant
 		*/
 		public delegate void OnPermission(string permission, PermissionGrantResult result);
 
+		//--------------------------------------------------------------------------------
+		/**
+		 * パーミッション要求時のタイムアウト
+		 */
+		public static float PermissionTimeoutSecs = 30;
+	
 		public event LifecycleEventHandler LifecycleEvent;
 
 		public static bool isPermissionRequesting;
@@ -188,7 +194,7 @@ namespace Serenegiant
 				float timeElapsed = 0;
 				while (isPermissionRequesting)
 				{
-					if (timeElapsed > 1)
+					if ((PermissionTimeoutSecs > 0) && (timeElapsed > PermissionTimeoutSecs))
 					{
 						isPermissionRequesting = false;
 						yield break;
