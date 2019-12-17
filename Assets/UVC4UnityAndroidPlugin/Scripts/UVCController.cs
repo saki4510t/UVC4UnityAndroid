@@ -103,7 +103,7 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				AndroidUtils.isPermissionRequesting = false;
+				AndroidUtils.ClearRequestPermission();
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					activeCameraId = clazz.CallStatic<Int32>("openDevice",
@@ -214,14 +214,17 @@ namespace Serenegiant.UVC {
 		/**
 		 * onResumeイベント
 		 */
-		public void OnResumeEvent()
+		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
 				$",activeDeviceName={activeDeviceName}" +
 				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
-			// FIXME Android9以降でカメラパーミッションがなければ要求する
+			if (!AndroidUtils.isPermissionRequesting)
+			{
+				yield return Initialize();
+			}
 
 			if (!AndroidUtils.isPermissionRequesting
 				&& !String.IsNullOrEmpty(attachedDeviceName)
@@ -230,6 +233,8 @@ namespace Serenegiant.UVC {
 				// アタッチされた機器があるけどオープンされていないとき
 				RequestUsbPermission(attachedDeviceName);
 			}
+
+			yield break;
 		}
 
 		/**

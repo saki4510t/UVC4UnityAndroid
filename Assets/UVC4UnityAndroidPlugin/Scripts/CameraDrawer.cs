@@ -488,7 +488,7 @@ namespace Serenegiant.UVC
 		/**
 		 * onResumeイベント
 		 */
-		public void OnResumeEvent()
+		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={AttachedDeviceName},activeDeviceName={ActiveDeviceName}");
@@ -496,12 +496,12 @@ namespace Serenegiant.UVC
 #if UNITY_ANDROID
 			if (uvcController != null)
 			{
-				uvcController.OnResumeEvent();
+				yield return uvcController.OnResumeEvent();
 			}
 #endif
 			if (webCamController != null)
 			{
-				webCamController.OnResumeEvent();
+				yield return webCamController.OnResumeEvent();
 			}
 		}
 
