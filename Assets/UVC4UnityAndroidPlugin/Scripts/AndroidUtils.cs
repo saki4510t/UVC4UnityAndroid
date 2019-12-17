@@ -80,6 +80,14 @@ namespace Serenegiant
 			return false;
 		}
 
+		/**
+		 * パーミッション要求中フラグをクリアする
+		 */
+		public static void ClearRequestPermission()
+		{
+			isPermissionRequesting = false;
+		}
+
 		/***
 		 * GrantPermissionでパーミッションを要求したときのコールバック用delegateer
 		 */
@@ -117,7 +125,7 @@ namespace Serenegiant
 			}
 			else
 			{
-				// Android 9 未満ではパーミッション要求処理は不要
+				// Android 6 未満ではパーミッション要求処理は不要
 				callback(PERMISSION_CAMERA, true);
 			}
 
@@ -125,7 +133,7 @@ namespace Serenegiant
 		}
 
 		/**
-		 * パーミッション要求
+		 * Android 6以降での動的パーミッション要求
 		 * @param permission
 		 */
 		public static IEnumerator RequestPermission(string permission)
@@ -133,7 +141,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"RequestPermission[{Time.frameCount}]:");
 #endif
-			if (CheckAndroidVersion(23))
+			if (CheckAndroidVersion(23) && !HasPermission(permission))
 			{
 				isPermissionRequesting = true;
 #if UNITY_2018_3_OR_NEWER
@@ -150,6 +158,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"RequestPermission[{Time.frameCount}]:finished");
 #endif
+			isPermissionRequesting = false;
 			yield break;
 		}
 
