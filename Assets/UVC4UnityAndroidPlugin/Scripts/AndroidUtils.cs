@@ -132,7 +132,7 @@ namespace Serenegiant
 		private void Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Initialize:");
+			Console.WriteLine($"{TAG}Initialize:{gameObject.name}");
 #endif
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
