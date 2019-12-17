@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-#if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
+#if UNITY_ANDROID
+#if UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
 #endif
 
@@ -182,3 +183,5 @@ namespace Serenegiant
 	} // class AndroidUtils
 
 } // namespace Serenegiant
+
+#endif // #if UNITY_ANDROID
