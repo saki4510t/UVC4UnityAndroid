@@ -481,6 +481,10 @@ namespace Serenegiant.UVC
 				uvcController.OnResumeEvent();
 			}
 #endif
+			if (webCamController != null)
+			{
+				webCamController.OnResumeEvent();
+			}
 		}
 
 		/**
@@ -492,6 +496,16 @@ namespace Serenegiant.UVC
 			Console.WriteLine("OnPauseEvent:");
 #endif
 			Close(ActiveDeviceName);
+#if UNITY_ANDROID
+			if (uvcController != null)
+			{
+				uvcController.OnPauseEvent();
+			}
+#endif
+			if (webCamController != null)
+			{
+				webCamController.OnPauseEvent();
+			}
 		}
 
 		//================================================================================

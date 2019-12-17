@@ -1,4 +1,4 @@
-﻿//#define ENABLE_LOG
+﻿#define ENABLE_LOG
 
 using System;
 using System.Collections;
@@ -71,6 +71,28 @@ namespace Serenegiant
 			this.target = target;
 			defaultWidth = width;
 			defaultHeight = height;
+		}
+
+		/**
+ * onResumeイベント
+ */
+		public void OnResumeEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+#endif
+			// FIXME カメラパーミッションがなければ要求する
+		}
+
+		/**
+		 * onPauseイベント
+		 */
+		public void OnPauseEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnPauseEvent:");
+#endif
+//			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
 		}
 
 		/**

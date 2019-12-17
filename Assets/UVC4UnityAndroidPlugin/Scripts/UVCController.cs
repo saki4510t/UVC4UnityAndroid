@@ -219,6 +219,8 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
 #endif
+			// FIXME Android9以降でカメラパーミッションがなければ要求する
+
 			if (!AndroidUtils.isPermissionRequesting
 				&& !String.IsNullOrEmpty(attachedDeviceName)
 				&& String.IsNullOrEmpty(activeDeviceName))
@@ -236,7 +238,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine("OnPauseEvent:");
 #endif
-			Close(activeDeviceName);
+//			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
 		}
 
 		//--------------------------------------------------------------------------------
