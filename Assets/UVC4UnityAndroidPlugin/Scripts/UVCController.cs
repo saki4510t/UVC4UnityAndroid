@@ -221,7 +221,10 @@ namespace Serenegiant.UVC {
 				$",activeDeviceName={activeDeviceName}" +
 				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
-			if (!AndroidUtils.isPermissionRequesting)
+			if (!AndroidUtils.isPermissionRequesting
+				&& AndroidUtils.CheckAndroidVersion(28)
+				&& !AndroidUtils.HasPermission(AndroidUtils.PERMISSION_CAMERA))
+
 			{
 				yield return Initialize();
 			}

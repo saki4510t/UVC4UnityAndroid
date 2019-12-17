@@ -90,10 +90,12 @@ namespace Serenegiant
 				$",activeDeviceName={activeDeviceName}" +
 				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
-			if (!AndroidUtils.isPermissionRequesting)
+			if (!AndroidUtils.isPermissionRequesting
+				&& !AndroidUtils.HasPermission(AndroidUtils.PERMISSION_CAMERA))
 			{
 				yield return Initialize();
 			}
+
 			yield break;
 		}
 
