@@ -206,6 +206,13 @@ namespace Serenegiant.UVC
 //
 //		}
 
+		void OnApplicationFocus()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnApplicationFocus:");
+#endif
+		}
+
 		void OnApplicationPause(bool pauseStatus)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -217,6 +224,13 @@ namespace Serenegiant.UVC
 			} else {
 				OnResumeEvent();
 			}
+		}
+
+		void OnApplicationQuits()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine("OnApplicationQuits:");
+#endif
 		}
 
 		void OnDestroy()
