@@ -80,7 +80,7 @@ namespace Serenegiant
 				}
 			}
 
-			return false;
+			return true;
 		}
 
 		/**
