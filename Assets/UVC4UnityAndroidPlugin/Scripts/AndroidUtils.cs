@@ -1,24 +1,230 @@
-﻿//#define ENABLE_LOG
+﻿#define ENABLE_LOG
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 
 #if UNITY_ANDROID
 #if UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
 #endif
+#endif
 
 namespace Serenegiant
 {
 
-	public class AndroidUtils
+	public class AndroidUtils : MonoBehaviour
 	{
 		public const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		public const string PERMISSION_CAMERA = "android.permission.CAMERA";
 
-		public static bool isPermissionRequesting { set; get; }
+		public enum PermissionGrantResult {
+			PERMISSION_GRANT = 0,
+			PERMISSION_DENY = -1,
+			PERMISSION_DENY_AND_NEVER_ASK_AGAIN = -2
+		}
+
+		private const string TAG = "AndroidUtils#";
+		private const string FQCN_PLUGIN = "com.serenegiant.androidutils.AndroidUtils";
+
+		/**
+		 * ライフサイクルイベント用のデリゲーター
+		 * @param resumed true: onResume, false: onPause
+		 */
+		public delegate void LifecycleEventHandler(bool resumed);
+
+		//--------------------------------------------------------------------------------
+		/***
+		 * GrantPermissionでパーミッションを要求したときのコールバック用delegateer
+		 * @param permission
+		 * @param grantResult 0:grant, -1:deny, -2:denyAndNeverAskAgain
+		*/
+		public delegate void OnPermission(string permission, PermissionGrantResult result);
+
+		public event LifecycleEventHandler LifecycleEvent;
+
+		public static bool isPermissionRequesting;
+		private static PermissionGrantResult grantResult;
+
+		void Start()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Start:");
+#endif
+#if UNITY_ANDROID
+			Initialize();
+#endif
+		}
+
+		//--------------------------------------------------------------------------------
+		// Java側からのイベントコールバック
+		/**
+		 * onResumeイベント
+		 */
+		public void OnResumeEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnResumeEvent:");
+#endif
+			LifecycleEvent(true);
+		}
+
+		/**
+		 * onPauseイベント
+		 */
+		public void OnPauseEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnPauseEvent:");
+#endif
+			LifecycleEvent(false);
+		}
+
+		/**
+		 * パーミッションを取得できた
+		 */
+		public void OnPermissionGrant()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnPermissionGrant:");
+#endif
+			grantResult = PermissionGrantResult.PERMISSION_GRANT;
+			isPermissionRequesting = false;
+		}
+
+		/**
+		 * パーミッションを取得できなかった
+		 */
+		public void OnPermissionDeny()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnPermissionDeny:");
+#endif
+			grantResult = PermissionGrantResult.PERMISSION_DENY;
+			isPermissionRequesting = false;
+		}
+
+		/**
+		 * パーミッションを取得できずパーミッションダイアログを再び表示しないように設定された
+		 */
+		public void OnPermissionDenyAndNeverAskAgain()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnPermissionDenyAndNeverAskAgain:");
+#endif
+			grantResult = PermissionGrantResult.PERMISSION_DENY_AND_NEVER_ASK_AGAIN;
+			isPermissionRequesting = false;
+		}
+
+		//--------------------------------------------------------------------------------
+#if UNITY_ANDROID
+		/**
+		 * プラグインの初期化実行
+		 */
+		private void Initialize()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Initialize:");
+#endif
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				clazz.CallStatic("initialize",
+					AndroidUtils.GetCurrentActivity(), gameObject.name);
+			}
+		}
+
+		/**
+		 * 指定したパーミッションを保持しているかどうかを取得
+		 * @param permission
+		 * @param 指定したパーミッションを保持している
+		 */
+		public static bool HasPermission(string permission)
+		{
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				return clazz.CallStatic<bool>("hasPermission",
+					AndroidUtils.GetCurrentActivity(), permission);
+			}
+		}
+
+		/**
+		 * 指定したパーミッションの説明を表示する必要があるかどうかを取得
+		 * @param permission
+		 * @param 指定したパーミッションの説明を表示する必要がある
+		 */
+		public static bool ShouldShowRequestPermissionRationale(string permission)
+		{
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+			{
+				return clazz.CallStatic<bool>("shouldShowRequestPermissionRationale",
+					AndroidUtils.GetCurrentActivity(), permission);
+			}
+		}
+
+		/**
+		 * パーミッション要求
+		 * @param permission
+		 * @param 指定したパーミッションの説明を表示する必要がある
+		 */
+		public static IEnumerator GrantPermission(string permission, OnPermission callback)
+		{
+			if (!HasPermission(permission))
+			{
+				grantResult = PermissionGrantResult.PERMISSION_DENY;
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					clazz.CallStatic("requestPermission",
+						AndroidUtils.GetCurrentActivity(), permission);
+				}
+				float timeElapsed = 0;
+				while (isPermissionRequesting)
+				{
+					if (timeElapsed > 1)
+					{
+						isPermissionRequesting = false;
+						yield break;
+					}
+					timeElapsed += Time.deltaTime;
+
+					yield return null;
+				}
+				callback(permission, grantResult);
+			}
+			else
+			{
+				callback(permission, PermissionGrantResult.PERMISSION_GRANT);
+			}
+	
+			yield break;
+		}
+
+		/**
+		 * カメラパーミッションを要求
+		 * @param callback
+		 */
+		public static IEnumerator GrantCameraPermission(OnPermission callback)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}GrantCameraPermission:");
+#endif
+			if (CheckAndroidVersion(23))
+			{
+				// Android9以降ではUVC機器アクセスにもCAMERAパーミッションが必要
+				yield return GrantPermission(PERMISSION_CAMERA, callback);
+			}
+			else
+			{
+				// Android 6 未満ではパーミッション要求処理は不要
+				callback(PERMISSION_CAMERA, PermissionGrantResult.PERMISSION_GRANT);
+			}
+
+			yield break;
+		}
+
+
+		//================================================================================
 
 		/**
 		 * UnityPlayerActivityを取得
@@ -42,160 +248,6 @@ namespace Serenegiant
 			{
 				return VERSION.GetStatic<int>("SDK_INT") >= apiLevel;
 			}
-		}
-
-		/**
-		 * パーミッションを持っているかどうかを調べる
-		 * @param permission
-		 * @param true: パーミッションを保持している, false: パーミッションを保持していない
-		 */
-		public static bool HasPermission(string permission)
-		{
-			if (CheckAndroidVersion(23))
-			{
-#if UNITY_2018_3_OR_NEWER
-				return Permission.HasUserAuthorizedPermission(permission);
-#else
-				using (var activity = GetCurrentActivity())
-				{
-					return activity.Call<int>("checkSelfPermission", permission) == 0;
-				}
-#endif
-			}
-			return true;
-		}
-
-		/**
-		 * 指定したパーミッションの説明を表示する必要があるかどうかを取得
-		 * @param permission
-		 * @param 指定したパーミッションの説明を表示する必要がある
-		 */
-		public static bool ShouldShowRequestPermissionRationale(string permission)
-		{
-			if (CheckAndroidVersion(23))
-			{
-				using (var activity = GetCurrentActivity())
-				{
-					return activity.Call<bool>("shouldShowRequestPermissionRationale", permission);
-				}
-			}
-
-			return true;
-		}
-
-		/**
-		 * パーミッション要求中フラグをクリアする
-		 */
-		public static void ClearRequestPermission()
-		{
-			isPermissionRequesting = false;
-		}
-
-		/***
-		 * GrantPermissionでパーミッションを要求したときのコールバック用delegateer
-		 */
-		public delegate void OnPermission(string permission, bool granted);
-
-		/**
-		 * パーミッション要求
-		 * @param permission
-		 * @param callback
-		 */
-		public static IEnumerator GrantPermission(string permission, OnPermission callback)
-		{
-			if (!HasPermission(permission))
-			{
-				yield return RequestPermission(permission);
-			}
-			callback(permission, HasPermission(permission));
-
-			yield break;
-		}
-
-		/**
-		 * カメラパーミッションを要求
-		 * @param callback
-		 */
-		public static IEnumerator GrantCameraPermission(OnPermission callback)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("GrantCameraPermission:");
-#endif
-			if (AndroidUtils.CheckAndroidVersion(23))
-			{
-				// Android9以降ではUVC機器アクセスにもCAMERAパーミッションが必要
-				yield return GrantPermission(PERMISSION_CAMERA, callback);
-			}
-			else
-			{
-				// Android 6 未満ではパーミッション要求処理は不要
-				callback(PERMISSION_CAMERA, true);
-			}
-
-			yield break;
-		}
-
-		/**
-		 * Android 6以降での動的パーミッション要求
-		 * @param permission
-		 */
-		public static IEnumerator RequestPermission(string permission)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestPermission[{Time.frameCount}]:");
-#endif
-			if (CheckAndroidVersion(23) && !HasPermission(permission))
-			{
-				isPermissionRequesting = true;
-#if UNITY_2018_3_OR_NEWER
-				Permission.RequestUserPermission(permission);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"RequestUserPermission:finished[{Time.frameCount}]:");
-#endif
-#else
-				using (var activity = GetCurrentActivity())
-				{
-					activity.Call("requestPermissions", new string[] { permission }, 0);
-				}
-#endif
-				// アプリにフォーカスが戻るまで待機する
-				yield return WaitPermissionWithTimeout(0.5f);
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestPermission[{Time.frameCount}]:finished");
-#endif
-			isPermissionRequesting = false;
-			yield break;
-		}
-
-		/**
-		 * isPermissionRequestingが落ちるか指定時間経過するまで待機する
-		 * @param timeoutSecs 待機する最大時間[秒]
-		 */
-		public static IEnumerator WaitPermissionWithTimeout(float timeoutSecs)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:");
-#endif
-			float timeElapsed = 0;
-			while (isPermissionRequesting)
-			{
-				if (timeElapsed > timeoutSecs)
-				{
-					isPermissionRequesting = false;
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:timeout");
-#endif
-					yield break;
-				}
-				timeElapsed += Time.deltaTime;
-
-				yield return null;
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:finished");
-#endif
-			yield break;
 		}
 
 	} // class AndroidUtils
