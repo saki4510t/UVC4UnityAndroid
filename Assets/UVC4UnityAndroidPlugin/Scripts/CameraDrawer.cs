@@ -297,14 +297,16 @@ namespace Serenegiant.UVC
 			if (!Application.isEditor && !DisableUVC)
 			{
 				webCamController = null;
-				uvcController = new UVCController(this, gameObject, DefaultWidth, DefaultHeight, PreferH264);
+				uvcController = new UVCController(this, gameObject,
+					DefaultWidth, DefaultHeight, PreferH264);
 				yield return uvcController.Initialize();
 			}
 			else
 			{
 				uvcController = null;
-				webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-				yield return webCamController.Initialize(WebCameraDeviceKeyword);
+				webCamController = new WebCamController(this, gameObject,
+					DefaultWidth, DefaultHeight, WebCameraDeviceKeyword);
+				yield return webCamController.Initialize();
 			}
 #else
 			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);

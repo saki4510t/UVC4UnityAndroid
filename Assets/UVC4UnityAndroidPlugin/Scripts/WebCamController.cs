@@ -21,6 +21,7 @@ namespace Serenegiant
 		private GameObject target;
 		private int defaultWidth;
 		private int defaultHeight;
+		private string deviceKeyword;
 		private WebCamTexture webCameraTexure;
 
 		private string attachedDeviceName;
@@ -65,13 +66,17 @@ namespace Serenegiant
 		 * @param target  EventSystemによる関数呼び出しのターゲット
 		 * @param width デフォルトの解像度(幅)
 		 * @param height デフォルトの解像度(高さ)
+		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
 		 */
-		public WebCamController(MonoBehaviour parent, GameObject target, int width, int height)
+		public WebCamController(MonoBehaviour parent, GameObject target,
+			int width, int height,
+			string deviceKeyword)
 		{
 			this.parent = parent;
 			this.target = target;
-			defaultWidth = width;
-			defaultHeight = height;
+			this.defaultWidth = width;
+			this.defaultHeight = height;
+			this.deviceKeyword = deviceKeyword;
 		}
 
 		//--------------------------------------------------------------------------------
@@ -81,7 +86,8 @@ namespace Serenegiant
 		public void OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName},activeDeviceName={activeDeviceName}");
+			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
+				$",activeDeviceName={activeDeviceName}");
 #endif
 			// FIXME カメラパーミッションがなければ要求する
 		}
@@ -100,9 +106,8 @@ namespace Serenegiant
 		//--------------------------------------------------------------------------------
 		/**
 		 * 初期化実行
-		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
 		 */
-		public IEnumerator Initialize(string deviceKeyword)
+		public IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"Initialize:({deviceKeyword})");
@@ -128,7 +133,6 @@ namespace Serenegiant
 #else
 			FindCamera(deviceKeyword);
 #endif
-
 			yield break;
 		}
 
