@@ -48,10 +48,10 @@ namespace Serenegiant
 		public static bool isPermissionRequesting;
 		private static PermissionGrantResult grantResult;
 
-		void Start()
+		void Awake()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Start:");
+			Console.WriteLine($"{TAG}Awake:");
 #endif
 #if UNITY_ANDROID
 			Initialize();
