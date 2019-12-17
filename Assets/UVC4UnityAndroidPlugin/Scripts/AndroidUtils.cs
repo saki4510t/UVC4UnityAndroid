@@ -178,6 +178,7 @@ namespace Serenegiant
 		{
 			if (!HasPermission(permission))
 			{
+				isPermissionRequesting = true;
 				grantResult = PermissionGrantResult.PERMISSION_DENY;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
