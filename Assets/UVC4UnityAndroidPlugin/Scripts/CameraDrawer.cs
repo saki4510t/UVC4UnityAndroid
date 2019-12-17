@@ -213,7 +213,9 @@ namespace Serenegiant.UVC
 #endif
 			if (pauseStatus)
 			{
-				Close(ActiveDeviceName);
+				OnPauseEvent();
+			} else {
+				OnResumeEvent();
 			}
 		}
 
