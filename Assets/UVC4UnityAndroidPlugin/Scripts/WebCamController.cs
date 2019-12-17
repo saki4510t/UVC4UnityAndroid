@@ -58,6 +58,7 @@ namespace Serenegiant
 			get { return IsOpen && (webCameraTexure != null); }
 		}
 
+		//================================================================================
 		/**
 		 * コンストラクタ
 		 * @param parent 親のスクリプト
@@ -73,6 +74,7 @@ namespace Serenegiant
 			defaultHeight = height;
 		}
 
+		//--------------------------------------------------------------------------------
 		/**
  * onResumeイベント
  */
@@ -95,6 +97,7 @@ namespace Serenegiant
 //			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
 		}
 
+		//--------------------------------------------------------------------------------
 		/**
 		 * 初期化実行
 		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
