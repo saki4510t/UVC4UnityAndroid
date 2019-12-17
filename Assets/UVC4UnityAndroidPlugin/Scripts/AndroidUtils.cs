@@ -176,6 +176,17 @@ namespace Serenegiant
 		}
 
 		/**
+		 * パーミッション要求が必要かどうか
+		 * @param permission
+		 * @return true: パーミッションを保持していなくてShouldShowRequestPermissionRationale=true、false:それ以外
+		 */
+		public static Boolean NeedRequestPermission(string permission)
+		{
+			return !HasPermission(permission) && ShouldShowRequestPermissionRationale(permission);
+		}
+
+
+		/**
 		 * パーミッション要求
 		 * @param permission
 		 * @param 指定したパーミッションの説明を表示する必要がある
