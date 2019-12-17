@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6465409448752295679}
   - component: {fileID: 6465409448752295677}
   - component: {fileID: 5777022740684865818}
+  - component: {fileID: 114619053125224756}
   m_Layer: 0
   m_Name: CameraDrawer
   m_TagString: Untagged
@@ -59,6 +60,19 @@ MonoBehaviour:
   DefaultWidth: 1280
   DefaultHeight: 720
   PreferH264: 1
+  DisableUVC: 0
   RenderTargets:
   - {fileID: 0}
   WebCameraDeviceKeyword: 
+--- !u!114 &114619053125224756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6465409448752295666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eca0239a3e830b45b761684e2a8c8ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
