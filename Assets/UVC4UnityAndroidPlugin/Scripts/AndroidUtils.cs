@@ -149,6 +149,9 @@ namespace Serenegiant
 				isPermissionRequesting = true;
 #if UNITY_2018_3_OR_NEWER
 				Permission.RequestUserPermission(permission);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"RequestUserPermission:finished[{Time.frameCount}]:");
+#endif
 #else
 				using (var activity = GetCurrentActivity())
 				{
@@ -180,6 +183,9 @@ namespace Serenegiant
 				if (timeElapsed > timeoutSecs)
 				{
 					isPermissionRequesting = false;
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"WaitPermissionWithTimeout[{Time.frameCount}]:timeout");
+#endif
 					yield break;
 				}
 				timeElapsed += Time.deltaTime;
