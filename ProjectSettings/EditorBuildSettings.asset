@@ -6,7 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVCScene3D.unity
+    path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVC2DScene.unity
+    guid: d9c653ce29884b648bd83d4066fe46c0
+  - enabled: 0
+    path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVC3DScene.unity
     guid: 534dbb7308777da4688d42c039024ab4
   - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaSScene.unity
