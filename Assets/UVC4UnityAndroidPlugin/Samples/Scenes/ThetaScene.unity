@@ -194,7 +194,7 @@ GameObject:
   - component: {fileID: 232926193}
   - component: {fileID: 232926194}
   m_Layer: 0
-  m_Name: UVCDrawer
+  m_Name: CameraDrawer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -209,14 +209,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 232926190}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7e3fa0f7bdc68444abad301469f7cf7, type: 3}
+  m_Script: {fileID: 11500000, guid: bda887b4b2b31454fb7dd4b9cf6982cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  VideoWidth: 1280
-  VideoHeight: 720
+  DefaultWidth: 1280
+  DefaultHeight: 720
   PreferH264: 1
-  TargetGameObject: {fileID: 1098241171}
-  TargetMaterial: {fileID: 0}
+  DisableUVC: 0
+  RenderTargets:
+  - {fileID: 1098241171}
+  WebCameraDeviceKeyword: 
 --- !u!4 &232926192
 Transform:
   m_ObjectHideFlags: 0
@@ -229,7 +231,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &232926193
 MonoBehaviour:
@@ -505,5 +507,5 @@ Transform:
   m_LocalScale: {x: 1000, y: 1000, z: 1000}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
