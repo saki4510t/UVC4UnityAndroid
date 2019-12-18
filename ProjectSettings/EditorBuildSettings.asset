@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVCScene.unity
     guid: 534dbb7308777da4688d42c039024ab4
   - enabled: 1
