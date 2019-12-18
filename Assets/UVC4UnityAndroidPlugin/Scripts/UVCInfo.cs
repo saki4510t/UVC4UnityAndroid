@@ -28,7 +28,7 @@ namespace Serenegiant.UVC
 				var element = JsonDocument.Parse(jsonString).RootElement;
 				result = new UVCInfo();
 				result.vid = element.GetProperty("vid").GetInt32();
-				result.vid = element.GetProperty("pid").GetInt32();
+				result.pid = element.GetProperty("pid").GetInt32();
 			}
 			catch (JsonException e)
 			{
