@@ -6,7 +6,7 @@ using static Serenegiant.TouchEventManager;
 public class CameraController : MonoBehaviour
 {
 	/**
-	 * このスクリプトで操作するGameObject
+	 * このスクリプトで操作するカメラ(GameObject)
 	 * 未割り当ての場合はこのスクリプトがセットされているGameObjectを使う
 	 */
 	public GameObject TargetCamera;
