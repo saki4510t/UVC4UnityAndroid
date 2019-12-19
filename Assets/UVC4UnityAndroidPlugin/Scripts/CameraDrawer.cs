@@ -68,7 +68,7 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
-		public GameObject[] RenderTargets;
+		public List<GameObject> RenderTargets;
 
 		/**
 		 * UVC機器とその解像度を選択するためのインターフェース
@@ -534,14 +534,14 @@ namespace Serenegiant.UVC
 		private void UpdateTarget()
 		{
 			bool found = false;
-			if ((RenderTargets != null) && (RenderTargets.Length > 0))
+			if ((RenderTargets != null) && (RenderTargets.Count > 0))
 			{
 				UVCSelector = GetUVCSelector(RenderTargets);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}UpdateTarget:UVCSelector={UVCSelector}");
 #endif
 
-				TargetMaterials = new UnityEngine.Object[RenderTargets.Length];
+				TargetMaterials = new UnityEngine.Object[RenderTargets.Count];
 				int i = 0;
 				foreach (var target in RenderTargets)
 				{
@@ -638,7 +638,7 @@ namespace Serenegiant.UVC
 		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
 		 * @return 見つからなければnull
 		 */
-		IUVCSelector GetUVCSelector(GameObject[] targets)
+		IUVCSelector GetUVCSelector(List<GameObject> targets)
 		{
 			if (UVCSelector != null)
 			{
