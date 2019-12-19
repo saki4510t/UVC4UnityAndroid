@@ -17,6 +17,8 @@ namespace Serenegiant
 	 */
 	public class WebCamController
 	{
+		private const string TAG = "WebCamController#";
+
 		private MonoBehaviour parent;
 		private GameObject target;
 		private int defaultWidth;
@@ -86,7 +88,7 @@ namespace Serenegiant
 		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
+			Console.WriteLine($"{TAG}OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
 				$",activeDeviceName={activeDeviceName}" +
 				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
@@ -105,7 +107,7 @@ namespace Serenegiant
 		public void OnPauseEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("OnPauseEvent:");
+			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
 //			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
 		}
@@ -117,13 +119,13 @@ namespace Serenegiant
 		public IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Initialize:({deviceKeyword})");
+			Console.WriteLine($"{TAG}Initialize:({deviceKeyword})");
 #endif
 #if UNITY_ANDROID
 			yield return AndroidUtils.GrantCameraPermission((string permission, AndroidUtils.PermissionGrantResult result) =>
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"OnPermission:{permission}={result}");
+				Console.WriteLine($"{TAG}OnPermission:{permission}={result}");
 #endif
 				switch (result)
 				{
@@ -154,7 +156,7 @@ namespace Serenegiant
 		public void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Open:({deviceName})");
+			Console.WriteLine($"{TAG}Open:({deviceName})");
 #endif
 			var found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
@@ -180,7 +182,7 @@ namespace Serenegiant
 		public void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Close:({deviceName})");
+			Console.WriteLine($"{TAG}Close:({deviceName})");
 #endif
 			StopPreview(deviceName);
 			activeDeviceName = null;
@@ -200,7 +202,7 @@ namespace Serenegiant
 		public void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StartPreview:{deviceName}({width}x{height})");
+			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
 #endif
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
@@ -228,7 +230,7 @@ namespace Serenegiant
 		public void StopPreview(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StopPreview:({deviceName})");
+			Console.WriteLine($"{TAG}StopPreview:({deviceName})");
 #endif
 			if (webCameraTexure != null)
 			{
@@ -258,7 +260,7 @@ namespace Serenegiant
 		public UVCInfo GetInfo(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetInfo:({deviceName})");
+			Console.WriteLine($"{TAG}GetInfo:({deviceName})");
 #endif
 			return new UVCInfo();
 		}
@@ -270,7 +272,7 @@ namespace Serenegiant
 		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetSupportedVideoSize:({deviceName})");
+			Console.WriteLine($"{TAG}GetSupportedVideoSize:({deviceName})");
 #endif
 			WebCamDevice found = new WebCamDevice();
 			if (FindWebCam(deviceName, ref found))
@@ -301,7 +303,7 @@ namespace Serenegiant
 			if (attachedDeviceName != null)
 			{   // 使用可能なカメラが見つかったとき
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"Initialize:found={activeDeviceName}");
+				Console.WriteLine($"{TAG}Initialize:found={activeDeviceName}");
 #endif
 				// パーミッションを取得通知
 				ExecuteEvents.Execute<IUVCEventHandler>(

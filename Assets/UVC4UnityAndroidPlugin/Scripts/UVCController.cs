@@ -13,6 +13,7 @@ namespace Serenegiant.UVC {
 
 	public class UVCController
 	{
+		private const string TAG = "UVCController#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 
 		private MonoBehaviour parent;
@@ -99,7 +100,7 @@ namespace Serenegiant.UVC {
 		public void Open(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Open:{deviceName}");
+			Console.WriteLine($"{TAG}Open:{deviceName}");
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -124,7 +125,7 @@ namespace Serenegiant.UVC {
 		public void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"Close:{deviceName}");
+			Console.WriteLine($"{TAG}Close:{deviceName}");
 #endif
 			activeDeviceName = null;
 			if (!String.IsNullOrEmpty(deviceName))
@@ -137,7 +138,7 @@ namespace Serenegiant.UVC {
 				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("Close:finished");
+			Console.WriteLine($"{TAG}Close:finished");
 #endif
 		}
 
@@ -148,7 +149,7 @@ namespace Serenegiant.UVC {
 		public void StopPreview(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StopPreview:{deviceName}");
+			Console.WriteLine($"{TAG}StopPreview:{deviceName}");
 #endif
 			parent.StopCoroutine(OnRender());
 			RequestStopPreview(deviceName);
@@ -165,7 +166,7 @@ namespace Serenegiant.UVC {
 		public void OnEventAttach(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:(" + args + ")");
+			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
@@ -173,7 +174,7 @@ namespace Serenegiant.UVC {
 				RequestUsbPermission(attachedDeviceName);
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventAttach[{Time.frameCount}]:finished");
+			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
 #endif
 		}
 
@@ -184,7 +185,7 @@ namespace Serenegiant.UVC {
 		public void OnEventDetach(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnEventDetach:({args})");
+			Console.WriteLine($"{TAG}OnEventDetach:({args})");
 #endif
 			HandleDetach(args);
 		}
@@ -196,7 +197,7 @@ namespace Serenegiant.UVC {
 		public void OnReceiveStatus(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnReceiveStatus:({args})");
+			Console.WriteLine($"{TAG}OnReceiveStatus:({args})");
 #endif
 		}
 
@@ -207,7 +208,7 @@ namespace Serenegiant.UVC {
 		public void OnButtonEvent(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnButtonEvent:({args})");
+			Console.WriteLine($"{TAG}OnButtonEvent:({args})");
 #endif
 		}
 
@@ -217,7 +218,7 @@ namespace Serenegiant.UVC {
 		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
+			Console.WriteLine($"{TAG}OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
 				$",activeDeviceName={activeDeviceName}" +
 				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
@@ -246,7 +247,7 @@ namespace Serenegiant.UVC {
 		public void OnPauseEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("OnPauseEvent:");
+			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
 //			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
 		}
@@ -255,14 +256,14 @@ namespace Serenegiant.UVC {
 		public IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("Initialize:");
+			Console.WriteLine($"{TAG}Initialize:");
 #endif
 			if (AndroidUtils.CheckAndroidVersion(28))
 			{
 				yield return AndroidUtils.GrantCameraPermission((string permission, AndroidUtils.PermissionGrantResult result) =>
 				{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"OnPermission:{permission}={result}");
+					Console.WriteLine($"{TAG}OnPermission:{permission}={result}");
 #endif
 					switch (result)
 					{
@@ -292,7 +293,7 @@ namespace Serenegiant.UVC {
 		private void InitPlugin()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine("InitPlugin:");
+			Console.WriteLine($"{TAG}InitPlugin:");
 #endif
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
@@ -328,7 +329,7 @@ namespace Serenegiant.UVC {
 		private void RequestUsbPermission(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestUsbPermission[{Time.frameCount}]:({deviceName})");
+			Console.WriteLine($"{TAG}RequestUsbPermission[{Time.frameCount}]:({deviceName})");
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -345,7 +346,7 @@ namespace Serenegiant.UVC {
 				throw new ArgumentException("device name is empty/null");
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestUsbPermission[{Time.frameCount}]:finsihed");
+			Console.WriteLine($"{TAG}RequestUsbPermission[{Time.frameCount}]:finsihed");
 #endif
 		}
 
@@ -361,7 +362,7 @@ namespace Serenegiant.UVC {
 		public void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"StartPreview:{deviceName}({width}x{height})");
+			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
 #endif
 			if (!IsPreviewing)
 			{
@@ -377,7 +378,7 @@ namespace Serenegiant.UVC {
 							true /* linear */);
 					var nativeTexPtr = previewTexture.GetNativeTexturePtr();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"RequestStartPreview:tex={nativeTexPtr}");
+					Console.WriteLine($"{TAG}RequestStartPreview:tex={nativeTexPtr}");
 #endif
 					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 					{
@@ -404,7 +405,7 @@ namespace Serenegiant.UVC {
 		private void RequestStopPreview(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"RequestStopPreviewUVC:{deviceName}");
+			Console.WriteLine($"{TAG}RequestStopPreviewUVC:{deviceName}");
 #endif
 			if (!String.IsNullOrEmpty(deviceName))
 			{
@@ -433,7 +434,7 @@ namespace Serenegiant.UVC {
 		public UVCInfo GetInfo(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetInfo:{deviceName}");
+			Console.WriteLine($"{TAG}GetInfo:{deviceName}");
 #endif
 
 			if (!String.IsNullOrEmpty(deviceName))
@@ -459,7 +460,7 @@ namespace Serenegiant.UVC {
 		public SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"GetSupportedVideoSize:{deviceName}");
+			Console.WriteLine($"{TAG}GetSupportedVideoSize:{deviceName}");
 #endif
 
 			if (!String.IsNullOrEmpty(deviceName))
