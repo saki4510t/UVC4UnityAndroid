@@ -75,12 +75,6 @@ namespace Serenegiant.UVC
 		 */
 		public IUVCSelector UVCSelector;
 
-		/**
-		 * WebCamDevice/WebCamTextureを使うときの機器名
-		 * 一致するか含んでいるカメラを選択する
-		 */
-		public string WebCameraDeviceKeyword;
-
 		//--------------------------------------------------------------------------------
 		private const string TAG = "CameraDrawer#";
 
