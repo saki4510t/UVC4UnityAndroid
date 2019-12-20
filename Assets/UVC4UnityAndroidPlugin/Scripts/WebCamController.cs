@@ -23,18 +23,8 @@ namespace Serenegiant
 		private readonly GameObject target;
 		private readonly int defaultWidth;
 		private readonly int defaultHeight;
-		private readonly string deviceKeyword;
 
 		private WebCamTexture webCameraTexure;
-
-		private string attachedDeviceName;
-		/**
-		 * 接続中のカメラ識別文字列
-		 */
-		public string AttachedDeviceName
-		{
-			get { return attachedDeviceName; }
-		}
 
 		private string activeDeviceName;
 		/**
@@ -72,20 +62,44 @@ namespace Serenegiant
 		 * @param deviceKeyword カメラ選択用のキーワード, nullのときは最初に見つかったカメラを使う
 		 */
 		public WebCamController(MonoBehaviour parent, GameObject target,
-			int width, int height,
-			string deviceKeyword)
+			int width, int height)
 		{
 			this.parent = parent;
 			this.target = target;
 			this.defaultWidth = width;
 			this.defaultHeight = height;
-			this.deviceKeyword = deviceKeyword;
 		}
 
 		//--------------------------------------------------------------------------------
 		/**
- * onResumeイベント
- */
+		 * カメラが接続された
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnEventAttach(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
+#endif
+			if (String.IsNullOrEmpty(ActiveDeviceName))
+			{	// 1つだけしかOpenできないようにActiveDeiceName=nullのときのみ処理する
+				WebCamDevice found = new WebCamDevice();
+				if (FindWebCam(args, ref found))
+				{   // argsはdeviceName
+					// パーミッション取得通知
+					ExecuteEvents.Execute<IUVCEventHandler>(
+						target: target,
+						eventData: null,
+						functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(found.name));
+				}
+			}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
+#endif
+		}
+
+		/**
+		 * onResumeイベント
+		 */
 		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -131,7 +145,7 @@ namespace Serenegiant
 				switch (result)
 				{
 					case AndroidUtils.PermissionGrantResult.PERMISSION_GRANT:
-						FindCamera(deviceKeyword);
+						NotifyAttachedCameras();
 						break;
 					case AndroidUtils.PermissionGrantResult.PERMISSION_DENY:
 						if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
@@ -287,30 +301,19 @@ namespace Serenegiant
 		/**
 		 * 使用可能なWebカメラを探す
 		 */
-		private void FindCamera(string deviceKeyword)
+		private void NotifyAttachedCameras()
 		{
 			var devices = WebCamTexture.devices;
 			if (devices != null)
 			{
 				foreach (var cam in devices)
 				{
-					if (MatchWebCame(cam, deviceKeyword))
-					{   // 最初に見つかったものを使う
-						attachedDeviceName = cam.name;
-						break;
-					}
+					// カメラ接続通知
+					ExecuteEvents.Execute<IUVCEventHandler>(
+						target: target,
+						eventData: null,
+						functor: (recieveTarget, eventData) => recieveTarget.OnEventAttach(cam.name));
 				}
-			}
-			if (attachedDeviceName != null)
-			{   // 使用可能なカメラが見つかったとき
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}Initialize:found={activeDeviceName}");
-#endif
-				// パーミッションを取得通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
-					target: target,
-					eventData: null,
-					functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(attachedDeviceName));
 			}
 		}
 
@@ -349,6 +352,7 @@ namespace Serenegiant
 					}
 				}
 			}
+
 			return false;
 		}
 

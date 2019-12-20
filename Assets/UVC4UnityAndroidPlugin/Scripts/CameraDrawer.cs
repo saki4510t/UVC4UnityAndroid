@@ -275,7 +275,7 @@ namespace Serenegiant.UVC
 			{
 				uvcController = null;
 				webCamController = new WebCamController(this, gameObject,
-					DefaultWidth, DefaultHeight, WebCameraDeviceKeyword);
+					DefaultWidth, DefaultHeight);
 				yield return webCamController.Initialize();
 			}
 #else
@@ -306,6 +306,10 @@ namespace Serenegiant.UVC
 
 				}
 #endif
+				if (webCamController != null)
+				{
+					webCamController.OnEventAttach(args);
+				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
