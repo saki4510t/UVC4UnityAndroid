@@ -19,11 +19,12 @@ namespace Serenegiant
 	{
 		private const string TAG = "WebCamController#";
 
-		private MonoBehaviour parent;
-		private GameObject target;
-		private int defaultWidth;
-		private int defaultHeight;
-		private string deviceKeyword;
+		private readonly MonoBehaviour parent;
+		private readonly GameObject target;
+		private readonly int defaultWidth;
+		private readonly int defaultHeight;
+		private readonly string deviceKeyword;
+
 		private WebCamTexture webCameraTexure;
 
 		private string attachedDeviceName;

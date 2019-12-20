@@ -16,11 +16,12 @@ namespace Serenegiant.UVC {
 		private const string TAG = "UVCController#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 
-		private MonoBehaviour parent;
-		private GameObject target;
-		private bool preferH264;
-		private int defaultWidth;
-		private int defaultHeight;
+		private readonly MonoBehaviour parent;
+		private readonly GameObject target;
+		private readonly bool preferH264;
+		private readonly int defaultWidth;
+		private readonly int defaultHeight;
+
 		/**
 		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 		 */
