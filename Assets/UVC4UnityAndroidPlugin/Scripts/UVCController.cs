@@ -106,14 +106,6 @@ namespace Serenegiant.UVC {
 			return info != null ? info.previewTexture : null;
 		}
 
-		/**
-		 * カメラ映像回転用のQuaternionを取得
-		 */
-		public Quaternion AngleAxis(string deviceName)
-		{
-			return Quaternion.identity;
-		}
-
 		//================================================================================
 		/**
 		 * 指定したUVC機器をopenする
