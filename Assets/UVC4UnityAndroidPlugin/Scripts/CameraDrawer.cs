@@ -289,6 +289,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
+			// FIXME RenderTargetSettings.WebCameraDeviceKeywordによるフィルタリングをできるようにする
 			if (!String.IsNullOrEmpty(args)
 				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
