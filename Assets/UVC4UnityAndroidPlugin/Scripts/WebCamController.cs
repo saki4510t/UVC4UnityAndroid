@@ -263,7 +263,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}GetInfo:({deviceName})");
 #endif
-			return new UVCInfo();
+			return new UVCInfo(0, 0, deviceName);
 		}
 
 		/**
