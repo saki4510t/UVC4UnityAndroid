@@ -269,6 +269,16 @@ namespace Serenegiant
 		}
 
 		/**
+		 * カメラ映像回転用のQuaternionを取得
+		 */
+		public Quaternion AngleAxis(string deviceName)
+		{
+			return webCameraTexure != null
+				? Quaternion.AngleAxis(webCameraTexure.videoRotationAngle, Vector3.up)
+				: Quaternion.identity;
+		}
+
+		/**
 		 * カメラ情報を取得
 		 * @param deviceName カメラの識別文字列
 		 */

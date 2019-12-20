@@ -179,11 +179,23 @@ namespace Serenegiant.UVC
 			yield break;
 		}
 
-//		// Update is called once per frame
-//		void Update()
-//		{
-//
-//		}
+		// Update is called once per frame
+		void Update()
+		{
+			// FIXME 映像の回転制御 未実装	
+			// XXX UVC機器の場合は端末の画面回転と映像の回転は関係がないのでWebCamControllerの場合のみ処理する
+			if (webCamController != null)
+			{
+				foreach (var info in cameraInfos)
+				{
+					if (info.Value.isActive)
+					{   // カメラから映像取得中
+						var q = webCamController.AngleAxis(info.Key);
+						// FIXME 未実装
+					}
+				}
+			}
+		}
 
 		void OnApplicationFocus()
 		{
