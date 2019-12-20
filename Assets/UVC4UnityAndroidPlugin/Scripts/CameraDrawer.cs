@@ -68,7 +68,7 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
-		public List<GameObject> RenderTargets;
+		public List<RenderTargetSettings> CameraRenderSettings;
 
 		/**
 		 * UVC機器とその解像度を選択するためのインターフェース
@@ -83,23 +83,85 @@ namespace Serenegiant.UVC
 
 		//--------------------------------------------------------------------------------
 		private const string TAG = "CameraDrawer#";
+
+		private class CameraInfo
+		{
+			public readonly int cameraIx;
+			public bool isActive;
+
+			public CameraInfo(int ix)
+			{
+				cameraIx = ix;
+			}
+		}
+	
 		/**
-		 * UVC機器からの映像の描画先Material
-		 * TargetGameObjectから取得する
-		 * 優先順位：
-		 *	 TargetGameObjectのSkybox
-		 *	 > TargetGameObjectのRenderer
-		 *	 > TargetGameObjectのRawImage
-		 *	 > TargetGameObjectのMaterial
-		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
+		 * カメラ毎の設定保持用
 		 */
-		private UnityEngine.Object[] TargetMaterials;
+		private class TargetInfo
+		{
+			public readonly int Count;
+			/**
+			 * UVC機器からの映像の描画先Material
+			 * TargetGameObjectから取得する
+			 * 優先順位：
+			 *	 TargetGameObjectのSkybox
+			 *	 > TargetGameObjectのRenderer
+			 *	 > TargetGameObjectのRawImage
+			 *	 > TargetGameObjectのMaterial
+			 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
+			 */
+			public readonly UnityEngine.Object[] TargetMaterials;
+			/**
+			 * オリジナルのテクスチャ
+			 * UVCカメラ映像受け取り用テクスチャをセットする前に
+			 * GetComponent<Renderer>().material.mainTextureに設定されていた値
+			 */
+			public readonly Texture[] SavedTextures;
+
+			public TargetInfo(int targetNums)
+			{
+				Count = targetNums;
+				TargetMaterials = new UnityEngine.Object[targetNums];
+				SavedTextures = new Texture[targetNums];
+			}
+
+			public void RestoreTexture()
+			{
+				for (int i = 0; i < Count; i++)
+				{
+					var target = TargetMaterials[i];
+					if (target is Material)
+					{
+						(target as Material).mainTexture = SavedTextures[i];
+					}
+					else if (target is RawImage)
+					{
+						(target as RawImage).texture = SavedTextures[i];
+					}
+					SavedTextures[i] = null;
+				}
+			}
+
+			public void ClearTextures()
+			{
+				for (int i = 0; i < SavedTextures.Length; i++)
+				{
+					SavedTextures[i] = null;
+				}
+			}
+		}
+
 		/**
-		 * オリジナルのテクスチャ
-		 * UVCカメラ映像受け取り用テクスチャをセットする前に
-		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
+		 * カメラ毎の設定値
 		 */
-		private Texture[] savedTextures;
+		private TargetInfo[] targetInfos;
+
+		/**
+		 * ハンドリングしているカメラ情報
+		 * string(deviceName) - CameraInfo ペアを保持する
+		 */
+		private Dictionary<string, CameraInfo> cameraInfos = new Dictionary<string, CameraInfo>();
 
 		//--------------------------------------------------------------------------------
 
@@ -107,84 +169,6 @@ namespace Serenegiant.UVC
 		private UVCController uvcController;
 #endif
 		private WebCamController webCamController;
-
-		/**
-		 * カメラをopenしているか
-		 * 映像取得中かどうかはIsPreviewingを使うこと
-		 */
-		public bool IsOpen
-		{
-			get
-			{
-				if (uvcController != null)
-				{
-					return uvcController.IsOpen;
-				}
-				if (webCamController != null)
-				{
-					return webCamController.IsOpen;
-				}
-				return false;
-			}
-		}
-
-		/**
-		 * プレビュー中フラグ
-		 */
-		private bool IsPreviewing
-		{
-			get
-			{
-				if (uvcController != null)
-				{
-					return uvcController.IsPreviewing;
-				}
-				if (webCamController != null)
-				{
-					return webCamController.IsPreviewing;
-				}
-				return false;
-			}
-		}
-
-		/**
-		 * 接続中のカメラ/UVC機器の識別文字列
-		 * Android実機の場合はUVC機器のデバイス名
-		 * エディタ・PCの場合はWebCamDevice#name
-		 */
-		private string AttachedDeviceName {
-			get
-			{
-				if (uvcController != null)
-				{
-					return uvcController.AttachedDeviceName;
-				}
-				if (webCamController != null)
-				{
-					return webCamController.AttachedDeviceName;
-				}
-				return null;
-			}
-		}
-
-		/**
-		 * 使用中のカメラ/UVC機器識別文字列
-		 * Android実機の場合はUVC機器のデバイス名
-		 * エディタ・PCの場合はWebCamDevice#name
-		 */
-		private string ActiveDeviceName {
-			get {
-				if (uvcController != null)
-				{
-					return uvcController.ActiveDeviceName;
-				}
-				if (webCamController != null)
-				{
-					return webCamController.ActiveDeviceName;
-				}
-				return null;
-			}
-		}
 
 		//================================================================================
 
@@ -239,35 +223,11 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnDestroy:");
 #endif
-			Close(ActiveDeviceName);
+			CloseAll();
 		}
 
 		//================================================================================
 		// 他のコンポーネントからの操作用
-
-		/**
-		 * 映像取得のON/OFF
-		 */
-		public void Toggle()
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Toggle:{IsPreviewing}");
-#endif
-			if (IsOpen)
-			{   // UVC機器が接続されている
-				if (IsPreviewing)
-				{   // 映像取得中
-//					Close(attachedDeviceName);
-					StopPreview(AttachedDeviceName);
-				}
-				else
-				{   // 映像を取得していない
-//					Open(attachedDeviceName);
-					StartPreview(AttachedDeviceName);
-				}
-			}
-		}
-
 		/**
 		 * 映像描画先のMaterialを再取得する
 		 */
@@ -276,15 +236,24 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}ResetMaterial:");
 #endif
-			bool prev = IsPreviewing;
-			if (prev)
+			bool[] prevs = new bool[cameraInfos.Count];
+			int i = 0;
+			foreach (var elm in cameraInfos)
 			{
-				StopPreview(ActiveDeviceName);
+				prevs[i++] = elm.Value.isActive;
+				if (elm.Value.isActive)
+				{
+					StopPreview(elm.Key);
+				}
 			}
 			UpdateTarget();
-			if (prev)
+			i = 0;
+			foreach (var elm in cameraInfos)
 			{
-				StartPreview(ActiveDeviceName);
+				if (prevs[i++])
+				{
+					StartPreview(elm.Key);
+				}
 			}
 		}
 
@@ -293,7 +262,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Restart:");
 #endif
-			Close(ActiveDeviceName);
+			CloseAll();
 #if UNITY_ANDROID
 			if (!Application.isEditor && !DisableUVC)
 			{
@@ -329,6 +298,7 @@ namespace Serenegiant.UVC
 			if (!String.IsNullOrEmpty(args)
 				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
+				var info = CreateIfNotExist(args);
 #if UNITY_ANDROID
 				if (uvcController != null)
 				{
@@ -379,7 +349,7 @@ namespace Serenegiant.UVC
 #endif
 			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
 			// 念のためにCloseを呼んでおく
-			Close(ActiveDeviceName);
+			Close(args);
 		}
 
 		/**
@@ -393,6 +363,7 @@ namespace Serenegiant.UVC
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
+				Remove(args);
 				Close(args);
 #if UNITY_ANDROID
 				if (uvcController != null)
@@ -428,7 +399,7 @@ namespace Serenegiant.UVC
 			Texture tex = null;
 			if (uvcController != null)
 			{
-				tex = uvcController.GetTexture();
+				tex = uvcController.GetTexture(args);
 			}
 			if (webCamController != null)
 			{
@@ -436,7 +407,7 @@ namespace Serenegiant.UVC
 			}
 			if (tex != null)
 			{
-				HandleOnStartPreview(tex);
+				HandleOnStartPreview(args, tex);
 			}
 		}
 
@@ -514,7 +485,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
-			Close(ActiveDeviceName);
+			CloseAll();
 #if UNITY_ANDROID
 			if (uvcController != null)
 			{
@@ -534,37 +505,43 @@ namespace Serenegiant.UVC
 		private void UpdateTarget()
 		{
 			bool found = false;
-			if ((RenderTargets != null) && (RenderTargets.Count > 0))
+			if ((CameraRenderSettings != null) && (CameraRenderSettings.Count > 0))
 			{
-				UVCSelector = GetUVCSelector(RenderTargets);
+				UVCSelector = GetUVCSelector(CameraRenderSettings);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}UpdateTarget:UVCSelector={UVCSelector}");
 #endif
-
-				TargetMaterials = new UnityEngine.Object[RenderTargets.Count];
-				int i = 0;
-				foreach (var target in RenderTargets)
+				targetInfos = new TargetInfo[CameraRenderSettings.Count];
+				int j = 0;
+				foreach (var targets in CameraRenderSettings)
 				{
-					if (target != null)
+					if (targets != null)
 					{
-						var material = TargetMaterials[i++] = GetTargetMaterial(target);
-						if (material != null)
+						targetInfos[j] = new TargetInfo(targets.RenderTargets.Count);
+						int i = 0;
+						foreach (var target in targets.RenderTargets)
 						{
-							found = true;
-						}
+							var material = targetInfos[j].TargetMaterials[i++] = GetTargetMaterial(target);
+							if (material != null)
+							{
+								found = true;
+							}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-						Console.WriteLine($"{TAG}UpdateTarget:material={material}");
+							Console.WriteLine($"{TAG}UpdateTarget:material={material}");
 #endif
+						}
 					}
+					j++;
 				}
 			}
 			if (!found)
 			{   // 描画先が1つも見つからなかったときはこのスクリプトが
 				// AddComponentされているGameObjectからの取得を試みる
 				// XXX RenderTargetsにgameObjectをセットする？
-				TargetMaterials = new UnityEngine.Object[1];
-				TargetMaterials[0] = GetTargetMaterial(gameObject);
-				found = TargetMaterials[0] != null;
+				targetInfos = new TargetInfo[1];
+				targetInfos[0] = new TargetInfo(1);
+				targetInfos[0].TargetMaterials[0] = GetTargetMaterial(gameObject);
+				found = targetInfos[0].TargetMaterials[0] != null;
 			}
 
 			if (!found)
@@ -638,7 +615,7 @@ namespace Serenegiant.UVC
 		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
 		 * @return 見つからなければnull
 		 */
-		IUVCSelector GetUVCSelector(List<GameObject> targets)
+		IUVCSelector GetUVCSelector(List<RenderTargetSettings> targetList)
 		{
 			if (UVCSelector != null)
 			{
@@ -646,14 +623,21 @@ namespace Serenegiant.UVC
 			}
 
 			IUVCSelector selector;
-			foreach (var target in targets)
+			foreach (var targets in targetList)
 			{
-				if (target != null)
+				if (targets != null)
 				{
-					selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-					if (selector != null)
+					foreach (var target in targets.RenderTargets)
 					{
-						return selector;
+						if (target != null)
+						{
+							selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
+							if (selector != null)
+							{
+								return selector;
+							}
+
+						}
 					}
 				}
 			}
@@ -663,6 +647,12 @@ namespace Serenegiant.UVC
 		}
 
 		//--------------------------------------------------------------------------------
+		private int FindCameraIx(string deviceName)
+		{
+			var info = Get(deviceName);
+			return info != null ? info.cameraIx : -1;
+		}
+
 		/**
 		 * 指定したカメラ/UVC機器をOpenする
 		 * @param deviceName カメラ識別用文字列
@@ -672,8 +662,10 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Open:{deviceName}");
 #endif
-			if (!String.IsNullOrEmpty(deviceName))
+			var info = Get(deviceName);
+			if (info != null)
 			{
+				info.isActive = false;
 #if UNITY_ANDROID
 				if (!Application.isEditor)
 				{
@@ -700,8 +692,10 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Close:{deviceName}");
 #endif
-			if (!String.IsNullOrEmpty(deviceName))
+			var info = Get(deviceName);
+			if (info != null)
 			{
+				info.isActive = false;
 #if UNITY_ANDROID
 				if (uvcController != null)
 				{
@@ -715,6 +709,18 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		/**
+		 * Openしているすべてのカメラ/UVC機器をCloseする
+		 */
+		private void CloseAll()
+		{
+			List<string> keys = new List<string>(cameraInfos.Keys);
+			foreach (var deviceName in keys)
+			{
+				Close(deviceName);
+			}
+		}
+	
 		/**
 		 * UVC機器/カメラからの映像受け取り開始要求をする
 		 * IUVCSelectorが設定されているときはUVCSelector#SelectSizeから映像サイズの取得を試みる
@@ -796,31 +802,38 @@ namespace Serenegiant.UVC
 		 * 映像取得開始時の処理
 		 * @param tex 映像を受け取るテクスチャ
 		 */
-		private void HandleOnStartPreview(Texture tex)
+		private void HandleOnStartPreview(string deviceName, Texture tex)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStartPreview:({tex})");
 #endif
-			if ((TargetMaterials != null) && (TargetMaterials.Length > 0))
+			int cameraIx = 0;	// FIXME deviceNameから探す
+			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
 			{
-				int i = 0;
-				savedTextures = new Texture[TargetMaterials.Length];
-				foreach (var target in TargetMaterials)
+				if (targetInfos[cameraIx].Count > 0)
 				{
-					if (target is Material)
+					int i = 0;
+					foreach (var target in targetInfos[cameraIx].TargetMaterials)
 					{
-						savedTextures[i++] = (target as Material).mainTexture;
-						(target as Material).mainTexture = tex;
-					} else if (target is RawImage)
-					{
-						savedTextures[i++] = (target as RawImage).texture;
-						(target as RawImage).texture = tex;
+						if (target is Material)
+						{
+							targetInfos[cameraIx].SavedTextures[i++] = (target as Material).mainTexture;
+							(target as Material).mainTexture = tex;
+						}
+						else if (target is RawImage)
+						{
+							targetInfos[cameraIx].SavedTextures[i++] = (target as RawImage).texture;
+							(target as RawImage).texture = tex;
+						}
 					}
 				}
-			}
-			else
+				else
+				{
+					targetInfos[cameraIx].ClearTextures();
+				}
+			} else 
 			{
-				savedTextures = null;
+				throw new ArgumentOutOfRangeException();
 			}
 		}
 
@@ -833,30 +846,54 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:{deviceName}");
 #endif
+			int cameraIx = 0;	// FIXME deviceNameから探す
 			// 描画先のテクスチャをもとに戻す
-			var n = Math.Min(
-				(TargetMaterials != null) ? TargetMaterials.Length : 0,
-				(savedTextures != null) ? savedTextures.Length : 0);
-			if (n > 0)
+			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
 			{
-				int i = 0;
-				foreach (var target in TargetMaterials)
-				{
-					if (target is Material)
-					{
-						(target as Material).mainTexture = savedTextures[i];
-					}
-					else if (target is RawImage)
-					{
-						(target as RawImage).texture = savedTextures[i];
-					}
-					savedTextures[i++] = null;
-				}
+				targetInfos[cameraIx].RestoreTexture();
 			}
-			savedTextures = null;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:finished");
 #endif
+		}
+
+		/*NonNull*/
+		private CameraInfo CreateIfNotExist(string deviceName)
+		{
+			if (!cameraInfos.ContainsKey(deviceName))
+			{
+				int n = cameraInfos.Count;
+				int cameraIx = 0;
+				foreach (var info in cameraInfos.Values)
+				{
+					if (info.cameraIx == cameraIx)
+					{
+						cameraIx++;
+					}
+				}
+				cameraInfos[deviceName] = new CameraInfo(cameraIx);
+			}
+			return cameraInfos[deviceName];
+		}
+
+		/*Nullable*/
+		private CameraInfo Get(string deviceName)
+		{
+			return cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
+		}
+
+		/*Nullable*/
+		private CameraInfo Remove(string deviceName)
+		{
+			CameraInfo info = null;
+
+			if (cameraInfos.ContainsKey(deviceName))
+			{
+				info = cameraInfos[deviceName];
+				cameraInfos.Remove(deviceName);
+			}
+
+			return info;
 		}
 
 		/**

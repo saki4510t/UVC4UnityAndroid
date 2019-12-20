@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -16,6 +17,35 @@ namespace Serenegiant.UVC {
 		private const string TAG = "UVCController#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 
+		/**
+		 * プラグインでのレンダーイベント取得用native(c/c++)関数
+		 */
+		[DllImport("uvc-plugin")]
+		private static extern IntPtr GetRenderEventFunc();
+
+		private class CameraInfo
+		{
+			/**
+			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
+			 */
+			public Int32 activeCameraId;
+			public Texture previewTexture;
+
+			/**
+			 * レンダーイベント処理用
+			 * コールーチンとして実行される
+			 */
+			public IEnumerator OnRender()
+			{
+				var renderEventFunc = GetRenderEventFunc();
+				for (; ; )
+				{
+					yield return new WaitForEndOfFrame();
+					GL.IssuePluginEvent(renderEventFunc, activeCameraId);
+				}
+			}
+		}
+
 		private readonly MonoBehaviour parent;
 		private readonly GameObject target;
 		private readonly bool preferH264;
@@ -23,48 +53,11 @@ namespace Serenegiant.UVC {
 		private readonly int defaultHeight;
 
 		/**
-		 * プレビュー中のUVCカメラ識別子, レンダーイベント用
+		 * ハンドリングしているカメラ情報を保持
+		 * string(deviceName) - CameraInfo ペアを保持する
 		 */
-		private Int32 activeCameraId;
-
-		private bool isPreviewing;
-
-		private Texture previewTexture;
-
-
-		private string attachedDeviceName;
-		/**
-		 * 接続中のUVC機器識別文字列
-		 */
-		public string AttachedDeviceName {
-			get { return attachedDeviceName; }
-		}
-
-		private string activeDeviceName;
-		/**
-		 * 使用中のUVC機器識別文字列
-		 */
-		public string ActiveDeviceName {
-			get { return activeDeviceName;  }
-		}
-
-		/**
-		 * カメラをopenしているか
-		 * 映像取得中かどうかはIsPreviewingを使うこと
-		 */
-		public bool IsOpen
-		{
-			get { return activeDeviceName != null; }
-		}
-
-		/**
-		 * 映像取得中かどうか
-		 */
-		public bool IsPreviewing
-		{
-			get { return IsOpen && isPreviewing; }
-		}
-
+		private Dictionary<string, CameraInfo> cameraInfos = new Dictionary<string, CameraInfo>();
+	
 		//================================================================================
 		/**
 		 * コンストラクタ
@@ -85,12 +78,32 @@ namespace Serenegiant.UVC {
 
 		//================================================================================
 		/**
+		 * カメラをopenしているか
+		 * 映像取得中かどうかはIsPreviewingを使うこと
+		 */
+		public bool IsOpen(string deviceName)
+		{
+			var info = Get(deviceName);
+			return (info != null) && (info.activeCameraId != 0);
+		}
+
+		/**
+		 * 映像取得中かどうか
+		 */
+		public bool IsPreviewing(string deviceName)
+		{
+			var info = Get(deviceName);
+			return (info != null) && (info.activeCameraId != 0) && (info.previewTexture != null);
+		}
+
+		/**
 		 * 映像取得用のTextureオブジェクトを取得する
 		 * @return Textureオブジェクト, プレビュー中でなければnull
 		 */
-		public Texture GetTexture()
+		public Texture GetTexture(string deviceName)
 		{
-			return previewTexture;
+			var info = Get(deviceName);
+			return info != null ? info.previewTexture : null;
 		}
 
 		//================================================================================
@@ -103,12 +116,13 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Open:{deviceName}");
 #endif
-			if (!String.IsNullOrEmpty(deviceName))
+			var info = Get(deviceName);
+			if (info != null)
 			{
 				AndroidUtils.isPermissionRequesting = false;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					activeCameraId = clazz.CallStatic<Int32>("openDevice",
+					info.activeCameraId = clazz.CallStatic<Int32>("openDevice",
 						AndroidUtils.GetCurrentActivity(), deviceName,
 						defaultWidth, defaultHeight, preferH264);
 				}
@@ -128,10 +142,14 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Close:{deviceName}");
 #endif
-			activeDeviceName = null;
+			var info = Get(deviceName);
+			if (info != null)
+			{
+				info.activeCameraId = 0;
+				info.previewTexture = null;
+			}
 			if (!String.IsNullOrEmpty(deviceName))
 			{
-				activeCameraId = 0;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("closeDevice",
@@ -152,7 +170,11 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StopPreview:{deviceName}");
 #endif
-			parent.StopCoroutine(OnRender());
+			var info = Get(deviceName);
+			if (info != null)
+			{
+				parent.StopCoroutine(info.OnRender());
+			}
 			RequestStopPreview(deviceName);
 		}
 
@@ -171,8 +193,8 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				attachedDeviceName = args;
-				RequestUsbPermission(attachedDeviceName);
+				var inf = CreateIfNotExist(args);
+				RequestUsbPermission(args);
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
@@ -188,7 +210,8 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventDetach:({args})");
 #endif
-			HandleDetach(args);
+			Close(args);
+			Remove(args);
 		}
 
 		/**
@@ -231,12 +254,16 @@ namespace Serenegiant.UVC {
 				yield return Initialize();
 			}
 
-			if (!AndroidUtils.isPermissionRequesting
-				&& !String.IsNullOrEmpty(attachedDeviceName)
-				&& String.IsNullOrEmpty(activeDeviceName))
-			{
-				// アタッチされた機器があるけどオープンされていないとき
-				RequestUsbPermission(attachedDeviceName);
+			if (!AndroidUtils.isPermissionRequesting)
+			{	// パーミッション要求中ではないとき
+				foreach (var elm in cameraInfos)
+				{
+					if (elm.Value.activeCameraId == 0)
+					{	// アタッチされた機器があるけどオープンされていないとき
+						RequestUsbPermission(elm.Key);
+						break;
+					}
+				}
 			}
 
 			yield break;
@@ -365,19 +392,17 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
 #endif
-			if (!IsPreviewing)
+			if (!IsPreviewing(deviceName))
 			{
-				activeDeviceName = deviceName;
-
-				if (!String.IsNullOrEmpty(deviceName))
+				var info = Get(deviceName);
+				if (info != null)
 				{
-					isPreviewing = true;
-					previewTexture = new Texture2D(
+					info.previewTexture = new Texture2D(
 							width, height,
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					var nativeTexPtr = previewTexture.GetNativeTexturePtr();
+					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 					Console.WriteLine($"{TAG}RequestStartPreview:tex={nativeTexPtr}");
 #endif
@@ -390,7 +415,7 @@ namespace Serenegiant.UVC {
 							width, height);
 					}
 
-					parent.StartCoroutine(OnRender());
+					parent.StartCoroutine(info.OnRender());
 				}
 				else
 				{
@@ -416,16 +441,6 @@ namespace Serenegiant.UVC {
 						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
-		}
-
-		/**
-		 * UVC機器が取り外されたときの処理
-		 * @param deviceName UVC機器識別文字列
-		 */
-		private void HandleDetach(string deviceName)
-		{
-			Close(activeDeviceName);
-			attachedDeviceName = null;
 		}
 
 		/**
@@ -479,27 +494,36 @@ namespace Serenegiant.UVC {
 			}
 		}
 
-		//--------------------------------------------------------------------------------
-		/**
-		 * プラグインでのレンダーイベント取得用native(c/c++)関数
-		 */
-		[DllImport("uvc-plugin")]
-		private static extern IntPtr GetRenderEventFunc();
-
-		/**
-		 * レンダーイベント処理用
-		 * コールーチンとして実行される
-		 */
-		IEnumerator OnRender()
+		/*NonNull*/
+		private CameraInfo CreateIfNotExist(string deviceName)
 		{
-			var renderEventFunc = GetRenderEventFunc();
-			for (; ; )
+			if (!cameraInfos.ContainsKey(deviceName))
 			{
-				yield return new WaitForEndOfFrame();
-				GL.IssuePluginEvent(renderEventFunc, activeCameraId);
+				cameraInfos[deviceName] = new CameraInfo();
 			}
+			return cameraInfos[deviceName];
 		}
 
+		/*Nullable*/
+		private CameraInfo Get(string deviceName)
+		{
+			return cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
+		}
+
+		/*Nullable*/
+		private CameraInfo Remove(string deviceName)
+		{
+			CameraInfo info = null;
+
+			if (cameraInfos.ContainsKey(deviceName))
+			{
+				info = cameraInfos[deviceName];
+				cameraInfos.Remove(deviceName);
+			}
+	
+			return info;
+		}
+	
 
 	} // UVCController
 
