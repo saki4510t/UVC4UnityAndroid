@@ -461,7 +461,7 @@ namespace Serenegiant.UVC {
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return clazz.CallStatic<bool>("hasUsbPermission",
+					return clazz.CallStatic<bool>("hasPermission",
 						AndroidUtils.GetCurrentActivity(), deviceName);
 				}
 			}
