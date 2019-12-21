@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Serenegiant.UVC
+namespace Serenegiant
 {
 
 	public interface IUVCEventHandler : IEventSystemHandler

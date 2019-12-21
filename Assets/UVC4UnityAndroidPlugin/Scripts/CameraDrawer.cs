@@ -29,7 +29,7 @@ using UnityEngine.UI;
  * 
  */
 
-namespace Serenegiant.UVC
+namespace Serenegiant
 {
 
 	[RequireComponent(typeof(AndroidUtils))]
@@ -164,9 +164,6 @@ namespace Serenegiant.UVC
 
 		//--------------------------------------------------------------------------------
 
-#if UNITY_ANDROID
-		private UVCManager uvcManager;
-#endif
 		private WebCamController webCamController;
 
 		//================================================================================
@@ -276,25 +273,8 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}Restart:");
 #endif
 			CloseAll();
-#if UNITY_ANDROID
-			if (!Application.isEditor && !DisableUVC)
-			{
-				webCamController = null;
-				uvcManager = new UVCManager(this, gameObject,
-					DefaultWidth, DefaultHeight, PreferH264);
-				yield return uvcManager.Initialize();
-			}
-			else
-			{
-				uvcManager = null;
-				webCamController = new WebCamController(this, gameObject,
-					DefaultWidth, DefaultHeight);
-				yield return webCamController.Initialize();
-			}
-#else
 			webCamController = new WebCamController(this, gameObject, DefaultWidth, DefaultHeight);
-			yield return webCamController.Initialize(WebCameraDeviceKeyword);
-#endif
+			yield return webCamController.Initialize();
 			yield break;
 		}
 		//================================================================================
@@ -313,13 +293,6 @@ namespace Serenegiant.UVC
 				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
 			{   // argsはdeviceName
 				var info = CreateIfNotExist(args);
-#if UNITY_ANDROID
-				if (uvcManager != null)
-				{
-					uvcManager.OnEventAttach(args);
-
-				}
-#endif
 				if (webCamController != null)
 				{
 					webCamController.OnEventAttach(args);
@@ -383,13 +356,6 @@ namespace Serenegiant.UVC
 			{   // argsはdeviceName
 				Remove(args);
 				Close(args);
-#if UNITY_ANDROID
-				if (uvcManager != null)
-				{
-					uvcManager.OnEventDetach(args);
-
-				}
-#endif
 			}
 		}
 
@@ -415,10 +381,6 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			Texture tex = null;
-			if (uvcManager != null)
-			{
-				tex = uvcManager.GetTexture(args);
-			}
 			if (webCamController != null)
 			{
 				tex = webCamController.GetTexture();
@@ -450,12 +412,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnReceiveStatus:({args})");
 #endif
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				uvcManager.OnReceiveStatus(args);
-			}
-#endif
 		}
 
 		/**
@@ -467,12 +423,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnButtonEvent:({args})");
 #endif
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				uvcManager.OnButtonEvent(args);
-			}
-#endif
 		}
 
 		/**
@@ -482,12 +432,6 @@ namespace Serenegiant.UVC
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnResumeEvent:attachedDeviceName={AttachedDeviceName},activeDeviceName={ActiveDeviceName}");
-#endif
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				yield return uvcManager.OnResumeEvent();
-			}
 #endif
 			if (webCamController != null)
 			{
@@ -504,12 +448,6 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
 			CloseAll();
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				uvcManager.OnPauseEvent();
-			}
-#endif
 			if (webCamController != null)
 			{
 				webCamController.OnPauseEvent();
@@ -684,16 +622,6 @@ namespace Serenegiant.UVC
 			if (info != null)
 			{
 				info.isActive = false;
-#if UNITY_ANDROID
-				if (!Application.isEditor)
-				{
-					if (uvcManager != null)
-					{
-						uvcManager.Open(deviceName);
-						return;
-					}
-				}
-#endif
 				if (webCamController != null)
 				{
 					webCamController.Open(deviceName);
@@ -714,12 +642,6 @@ namespace Serenegiant.UVC
 			if (info != null)
 			{
 				info.isActive = false;
-#if UNITY_ANDROID
-				if (uvcManager != null)
-				{
-					uvcManager.Close(deviceName);
-				}
-#endif
 				if (webCamController != null)
 				{
 					webCamController.Close(deviceName);
@@ -781,12 +703,6 @@ namespace Serenegiant.UVC
 #endif
 				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
 			}
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				uvcManager.StartPreview(deviceName, width, height);
-			}
-#endif
 			if (webCamController != null)
 			{
 				webCamController.StartPreview(deviceName, width, height);
@@ -804,12 +720,6 @@ namespace Serenegiant.UVC
 #endif
 
 			HandleOnStopPreview(deviceName);
-#if UNITY_ANDROID
-			if (uvcManager != null)
-			{
-				uvcManager.StopPreview(deviceName);
-			}
-#endif
 			if (webCamController != null)
 			{
 				webCamController.StopPreview(deviceName);
@@ -920,10 +830,6 @@ namespace Serenegiant.UVC
  */
 		private UVCInfo GetInfo(string deviceName)
 		{
-			if (uvcManager != null)
-			{
-				return uvcManager.GetInfo(deviceName);
-			}
 			if (webCamController != null)
 			{
 				return webCamController.GetInfo(deviceName);
@@ -937,10 +843,6 @@ namespace Serenegiant.UVC
 		 */
 		private SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
-			if (uvcManager != null)
-			{
-				return uvcManager.GetSupportedVideoSize(deviceName);
-			}
 			if (webCamController != null)
 			{
 				return webCamController.GetSupportedVideoSize(deviceName);

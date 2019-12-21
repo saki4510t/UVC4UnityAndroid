@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Serenegiant.UVC
+namespace Serenegiant
 {
 	[System.Serializable]
 	public class RenderTargetSettings
