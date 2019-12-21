@@ -60,6 +60,7 @@ namespace Serenegiant
 			Console.WriteLine($"{TAG}Awake:");
 #endif
 #if UNITY_ANDROID
+			Input.backButtonLeavesApp = true;	// 端末のバックキーでアプリを終了できるようにする
 			Initialize();
 #endif
 		}
