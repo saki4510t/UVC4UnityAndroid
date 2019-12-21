@@ -121,8 +121,8 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCAttachEvent:{info}");
 #endif
-			var result = !info.IsRicoh()
-				|| (info.IsTHETA_S() || info.IsTHETA_V());
+			var result = !info.IsRicoh
+				|| (info.IsTHETA_S || info.IsTHETA_V);
 
 			if (result)
 			{
@@ -145,14 +145,14 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCSelectSize:{info}");
 #endif
-			if (info.IsTHETA_V())
+			if (info.IsTHETA_V)
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V");
 #endif
 				return FindSize(formats, 3840, 1920);
 			}
-			else if (info.IsTHETA_S())
+			else if (info.IsTHETA_S)
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA S");
