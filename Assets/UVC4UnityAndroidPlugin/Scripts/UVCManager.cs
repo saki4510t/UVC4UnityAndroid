@@ -12,7 +12,7 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC {
 
-	public class UVCController
+	public class UVCManager
 	{
 		private const string TAG = "UVCController#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
@@ -67,7 +67,7 @@ namespace Serenegiant.UVC {
 		 * @param height デフォルトの解像度(高さ)
 		 * @param preferH264 H.264が使用可能な場合にMJPEGより優先して使用するかどうか
 		 */
-		public UVCController(MonoBehaviour parent, GameObject target, int width, int height, bool preferH264)
+		public UVCManager(MonoBehaviour parent, GameObject target, int width, int height, bool preferH264)
 		{
 			this.parent = parent;
 			this.target = target;
