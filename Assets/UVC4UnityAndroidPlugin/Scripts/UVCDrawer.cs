@@ -23,17 +23,6 @@ namespace Serenegiant.UVC
 		//--------------------------------------------------------------------------------
 		private const string TAG = "UVCDrawer#";
 
-		private class CameraInfo
-		{
-			public readonly int cameraIx;
-			public bool isActive = false;
-
-			public CameraInfo(int ix)
-			{
-				cameraIx = ix;
-			}
-		}
-
 		/**
 		 * カメラ毎の設定保持用
 		 */
@@ -59,6 +48,7 @@ namespace Serenegiant.UVC
 			public readonly Texture[] SavedTextures;
 
 			public Quaternion[] quaternions;
+			public bool isActive = false;
 
 			public TargetInfo(int targetNums)
 			{
@@ -101,10 +91,10 @@ namespace Serenegiant.UVC
 		private TargetInfo[] targetInfos;
 
 		/**
-		 * ハンドリングしているカメラ情報
-		 * string(deviceName) - CameraInfo ペアを保持する
+		 * ハンドリングしているカメラとTargetInfoを結びつけるための連想配列
+		 * string(deviceName) - index ペアを保持する
 		 */
-		private Dictionary<string, CameraInfo> cameraInfos = new Dictionary<string, CameraInfo>();
+		private Dictionary<string, int> cameraIndies = new Dictionary<string, int>();
 
 		//================================================================================
 
@@ -131,8 +121,15 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCAttachEvent:{info}");
 #endif
-			CreateIfNotExist(info.deviceName);
-			return true;	// FIXME UVC機器の選択処理
+			var result = !info.IsRicoh()
+				|| (info.IsTHETA_S() || info.IsTHETA_V());
+
+			if (result)
+			{
+				CreateIfNotExist(info.deviceName);
+			}
+
+			return result;
 		}
 
 		public void OnUVCDetachEvent(UVCManager manager, UVCInfo info)
@@ -296,47 +293,40 @@ namespace Serenegiant.UVC
 		//--------------------------------------------------------------------------------
 		private int FindCameraIx(string deviceName)
 		{
-			var info = Get(deviceName);
-			return info != null ? info.cameraIx : -1;
+			return cameraIndies.ContainsKey(deviceName) ? cameraIndies[deviceName] : -1;
 		}
 
 		/*NonNull*/
-		private CameraInfo CreateIfNotExist(string deviceName)
+		private int CreateIfNotExist(string deviceName)
 		{
-			if (!cameraInfos.ContainsKey(deviceName))
+			if (!cameraIndies.ContainsKey(deviceName))
 			{
-				int n = cameraInfos.Count;
+				int n = cameraIndies.Count;
 				int cameraIx = 0;
-				foreach (var info in cameraInfos.Values)
+				foreach (var index in cameraIndies.Values)
 				{
-					if (info.cameraIx == cameraIx)
+					if (index == cameraIx)
 					{
 						cameraIx++;
 					}
 				}
-				cameraInfos[deviceName] = new CameraInfo(cameraIx);
+				cameraIndies[deviceName] = cameraIx;
 			}
-			return cameraInfos[deviceName];
+			return cameraIndies[deviceName];
 		}
 
 		/*Nullable*/
-		private CameraInfo Get(string deviceName)
+		private int Remove(string deviceName)
 		{
-			return cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
-		}
+			int index = -1;
 
-		/*Nullable*/
-		private CameraInfo Remove(string deviceName)
-		{
-			CameraInfo info = null;
-
-			if (cameraInfos.ContainsKey(deviceName))
+			if (cameraIndies.ContainsKey(deviceName))
 			{
-				info = cameraInfos[deviceName];
-				cameraInfos.Remove(deviceName);
+				index = cameraIndies[deviceName];
+				cameraIndies.Remove(deviceName);
 			}
 
-			return info;
+			return index;
 		}
 
 		//--------------------------------------------------------------------------------
@@ -354,9 +344,10 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStartPreview:({tex})");
 #endif
-			int cameraIx = FindCameraIx(deviceName);
+			var cameraIx = FindCameraIx(deviceName);
 			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
 			{
+				targetInfos[cameraIx].isActive = true;
 				if (targetInfos[cameraIx].Count > 0)
 				{
 					int i = 0;
@@ -394,10 +385,11 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:{deviceName}");
 #endif
-			int cameraIx = 0;   // FIXME deviceNameから探す
-								// 描画先のテクスチャをもとに戻す
+			var cameraIx = FindCameraIx(deviceName);
+			// 描画先のテクスチャをもとに戻す
 			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
 			{
+				targetInfos[cameraIx].isActive = false;
 				targetInfos[cameraIx].RestoreTexture();
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
