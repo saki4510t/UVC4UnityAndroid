@@ -72,11 +72,6 @@ namespace Serenegiant
 		 */
 		public List<RenderTargetSettings> CameraRenderSettings;
 
-		/**
-		 * UVC機器とその解像度を選択するためのインターフェース
-		 */
-		public IUVCSelector UVCSelector;
-
 		//--------------------------------------------------------------------------------
 		private const string TAG = "CameraDrawer#";
 
@@ -290,8 +285,7 @@ namespace Serenegiant
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
 #endif
 			// FIXME RenderTargetSettings.WebCameraDeviceKeywordによるフィルタリングをできるようにする
-			if (!String.IsNullOrEmpty(args)
-				&& ((UVCSelector == null) || UVCSelector.CanSelect(GetInfo(args))))
+			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				var info = CreateIfNotExist(args);
 				if (webCamController != null)
@@ -464,10 +458,6 @@ namespace Serenegiant
 			bool found = false;
 			if ((CameraRenderSettings != null) && (CameraRenderSettings.Count > 0))
 			{
-				UVCSelector = GetUVCSelector(CameraRenderSettings);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}UpdateTarget:UVCSelector={UVCSelector}");
-#endif
 				targetInfos = new TargetInfo[CameraRenderSettings.Count];
 				int j = 0;
 				foreach (var targets in CameraRenderSettings)
@@ -565,44 +555,6 @@ namespace Serenegiant
 			return null;
 		}
 
-		/**
-		 * IUVCSelectorを取得する
-		 * UVCSelectorが設定されていればそれを返す
-		 * UVCSelectorが見つからないときはTargetGameObjectから取得を試みる
-		 * さらに見つからなければこのスクリプトがaddされているGameObjectから取得を試みる
-		 * @return 見つからなければnull
-		 */
-		IUVCSelector GetUVCSelector(List<RenderTargetSettings> targetList)
-		{
-			if (UVCSelector != null)
-			{
-				return UVCSelector;
-			}
-
-			IUVCSelector selector;
-			foreach (var targets in targetList)
-			{
-				if (targets != null)
-				{
-					foreach (var target in targets.RenderTargets)
-					{
-						if (target != null)
-						{
-							selector = target.GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-							if (selector != null)
-							{
-								return selector;
-							}
-
-						}
-					}
-				}
-			}
-
-			selector = GetComponent(typeof(IUVCSelector)) as IUVCSelector;
-			return selector;
-		}
-
 		//--------------------------------------------------------------------------------
 		private int FindCameraIx(string deviceName)
 		{
@@ -678,20 +630,6 @@ namespace Serenegiant
 			if (supportedVideoSize == null)
 			{
 				throw new ArgumentException("fauled to get supported video size");
-			}
-
-			// 解像度の選択処理
-			if (UVCSelector != null)
-			{
-				var size = UVCSelector.SelectSize(GetInfo(deviceName), supportedVideoSize);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}StartPreview:selected={size}");
-#endif
-				if (size != null)
-				{
-					width = size.Width;
-					height = size.Height;
-				}
 			}
 
 			// 対応解像度のチェック
