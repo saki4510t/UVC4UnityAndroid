@@ -66,6 +66,17 @@ namespace Serenegiant
 
 		//--------------------------------------------------------------------------------
 		// Java側からのイベントコールバック
+
+		/**
+		 * onStartイベント
+		 */
+		public void OnStartEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnStartEvent:");
+#endif
+		}
+
 		/**
 		 * onResumeイベント
 		 */
@@ -86,6 +97,16 @@ namespace Serenegiant
 			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
 			LifecycleEvent?.Invoke(false);
+		}
+
+		/**
+		 * onStopイベント
+		 */
+		public void OnStopEvent()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnStopEvent:");
+#endif
 		}
 
 		/**
