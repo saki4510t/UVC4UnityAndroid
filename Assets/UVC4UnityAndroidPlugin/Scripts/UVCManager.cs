@@ -1,4 +1,4 @@
-﻿//#define ENABLE_LOG
+﻿#define ENABLE_LOG
 
 using System;
 using System.Collections;
@@ -12,10 +12,62 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC {
 
-	public class UVCManager
+	[RequireComponent(typeof(AndroidUtils))]
+	public class UVCManager : MonoBehaviour
 	{
-		private const string TAG = "UVCController#";
+		private const string TAG = "UVCManager#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
+
+		/**
+		 * UVC機器が接続されたときのイベント
+		 * @param UVCManager
+		 * @param UVCInfo 接続されたUVC機器情報
+		 * @return bool 接続されたUVC機器を使用するかどうか
+		 */
+		public IOnUVCAttachHandler OnAttachEventHandler;
+		/**
+		 * UVC機器が取り外されたときのイベント
+		 * @param UVCManager
+		 * @param UVCInfo 取り外されるUVC機器情報
+		 */
+		public IOnUVCDetachHandler OnDetachEventHandler;
+		/**
+		 * 解像度の選択処理
+		 */
+		public IOnUVCSelectSizeHandler OnUVCSelectSizeHandler;
+		/**
+		 * 映像取得開始時の処理
+		 * @param UVCManager
+		 * @param UVCInfo 取り外されるUVC機器情報
+		 * @param texture 映像を受け取るTextureオブジェクト
+		 */
+		public IOnUVCStartHandler OnStartPreviewEventHandler;
+		/**
+		 * 映像取得終了時の処理
+		 */
+		public IOnUVCStopHandler OnStopPreviewEventHandler;
+
+
+		/**
+		 * IUVCSelectorがセットされていないとき
+		 * またはIUVCSelectorが解像度選択時にnullを
+		 * 返したときのデフォルトの解像度(幅)
+		 */
+		public int DefaultWidth = 1280;
+		/**
+		 * IUVCSelectorがセットされていないとき
+		 * またはIUVCSelectorが解像度選択時にnullを
+		 * 返したときのデフォルトの解像度(高さ)
+		 */
+		public int DefaultHeight = 720;
+		/**
+		 * UVC機器とのネゴシエーション時に
+		 * H.264を優先してネゴシエーションするかどうか
+		 * Android実機のみ有効
+		 * true:	H.264 > MJPEG > YUV
+		 * false:	MJPEG > H.264 > YUV
+		 */
+		public bool PreferH264 = true;
 
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
@@ -25,12 +77,18 @@ namespace Serenegiant.UVC {
 
 		private class CameraInfo
 		{
+			public readonly UVCInfo info;
 			/**
 			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 			 */
 			public Int32 activeCameraId;
 			public Texture previewTexture;
 
+			public CameraInfo(UVCInfo info)
+			{
+				this.info = info;
+			}
+		
 			/**
 			 * レンダーイベント処理用
 			 * コールーチンとして実行される
@@ -46,34 +104,50 @@ namespace Serenegiant.UVC {
 			}
 		}
 
-		private readonly MonoBehaviour parent;
-		private readonly GameObject target;
-		private readonly bool preferH264;
-		private readonly int defaultWidth;
-		private readonly int defaultHeight;
-
 		/**
 		 * ハンドリングしているカメラ情報を保持
 		 * string(deviceName) - CameraInfo ペアを保持する
 		 */
 		private Dictionary<string, CameraInfo> cameraInfos = new Dictionary<string, CameraInfo>();
-	
+
 		//================================================================================
-		/**
-		 * コンストラクタ
-		 * @param parent 親のスクリプト
-		 * @param target  EventSystemによる関数呼び出しのターゲット
-		 * @param width デフォルトの解像度(幅)
-		 * @param height デフォルトの解像度(高さ)
-		 * @param preferH264 H.264が使用可能な場合にMJPEGより優先して使用するかどうか
-		 */
-		public UVCManager(MonoBehaviour parent, GameObject target, int width, int height, bool preferH264)
+		// UnityEngineからの呼び出し
+
+		IEnumerator Start()
 		{
-			this.parent = parent;
-			this.target = target;
-			this.preferH264 = preferH264;
-			defaultWidth = width;
-			defaultHeight = height;
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Start:");
+#endif
+			yield return Initialize();
+		}
+
+		void OnApplicationFocus()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnApplicationFocus:");
+#endif
+		}
+
+		void OnApplicationPause(bool pauseStatus)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnApplicationPause:{pauseStatus}");
+#endif
+		}
+
+		void OnApplicationQuits()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnApplicationQuits:");
+#endif
+		}
+
+		void OnDestroy()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnDestroy:");
+#endif
+			CloseAll();
 		}
 
 		//================================================================================
@@ -107,78 +181,6 @@ namespace Serenegiant.UVC {
 		}
 
 		//================================================================================
-		/**
-		 * 指定したUVC機器をopenする
-		 * @param deviceName UVC機器識別文字列
-		 */
-		public void Open(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Open:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{
-				AndroidUtils.isPermissionRequesting = false;
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					info.activeCameraId = clazz.CallStatic<Int32>("openDevice",
-						AndroidUtils.GetCurrentActivity(), deviceName,
-						defaultWidth, defaultHeight, preferH264);
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-		}
-
-		/**
-		 * 指定したUVC機器をcloseする
-		 * @param deviceName UVC機器識別文字列
-		 */
-		public void Close(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Close:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{
-				info.activeCameraId = 0;
-				info.previewTexture = null;
-			}
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					clazz.CallStatic("closeDevice",
-						AndroidUtils.GetCurrentActivity(), deviceName);
-				}
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Close:finished");
-#endif
-		}
-
-		/**
-		 * UVC機器/カメラからの映像受けとりを終了要求をする
-		 * @param deviceName UVC機器識別文字列
-		 */
-		public void StopPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}StopPreview:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{
-				parent.StopCoroutine(info.OnRender());
-			}
-			RequestStopPreview(deviceName);
-		}
-
-		//================================================================================
 		// Android固有の処理
 		// Java側からのイベントコールバック
 
@@ -193,8 +195,15 @@ namespace Serenegiant.UVC {
 #endif
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
-				var inf = CreateIfNotExist(args);
-				RequestUsbPermission(args);
+				var info = CreateIfNotExist(args);
+				if ((OnAttachEventHandler == null) 
+					|| OnAttachEventHandler.OnUVCAttachEvent(this, info.info))
+				{
+					RequestUsbPermission(args);
+				} else
+				{
+					Remove(args);
+				}
 			}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
@@ -210,8 +219,97 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventDetach:({args})");
 #endif
+			var info = Get(args);
+			if ((info != null) && (OnDetachEventHandler != null))
+			{
+				OnDetachEventHandler.OnUVCDetachEvent(this, info.info);
+				Close(args);
+				Remove(args);
+			}
+		}
+
+		/**
+		 * UVC機器へのアクセスのためのパーミッションを取得できた
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnEventPermission(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventPermission:({args})");
+#endif
+			if (!String.IsNullOrEmpty(args))
+			{   // argsはdeviceName
+				Open(args);
+			}
+		}
+
+		/**
+		 * UVC機器をオープンした
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnEventConnect(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventConnect:({args})");
+#endif
+		}
+
+		/**
+		 * UVC機器をクローズした
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnEventDisconnect(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventDisconnect:({args})");
+#endif
+			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
+			// 念のためにCloseを呼んでおく
 			Close(args);
-			Remove(args);
+		}
+
+		/**
+ * 映像を受け取れるようになった
+ * @param args UVC機器の識別文字列
+ */
+		public void OnEventReady(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnEventReady:({args})");
+#endif
+			StartPreview(args);
+		}
+
+		/**
+		 * UVC機器からの映像取得を開始した
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnStartPreview(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnStartPreview:({args})");
+#endif
+			var info = Get(args);
+			if ((info != null) && (OnStartPreviewEventHandler != null))
+			{
+				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.info, GetTexture(args));
+			}
+		}
+
+		/**
+		 * UVC機器からの映像取得を終了した
+		 * @param args UVC機器の識別文字列
+		 */
+		public void OnStopPreview(string args)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnStopPreview:({args})");
+#endif
+			var info = Get(args);
+			if ((info != null) && (OnStopPreviewEventHandler != null))
+			{
+				OnStopPreviewEventHandler.OnUVCStopEvent(this, info.info);
+			}
 		}
 
 		/**
@@ -242,14 +340,12 @@ namespace Serenegiant.UVC {
 		public IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnResumeEvent:attachedDeviceName={attachedDeviceName}" +
-				$",activeDeviceName={activeDeviceName}" +
-				$",isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
+			Console.WriteLine($"{TAG}OnResumeEvent:" +
+				$"isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
 #endif
 			if (!AndroidUtils.isPermissionRequesting
 				&& AndroidUtils.CheckAndroidVersion(28)
 				&& !AndroidUtils.HasPermission(AndroidUtils.PERMISSION_CAMERA))
-
 			{
 				yield return Initialize();
 			}
@@ -277,7 +373,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
-//			Close(activeDeviceName);	// CameraDrawerからCloseを呼ぶので不要
+			CloseAll();
 		}
 
 		//--------------------------------------------------------------------------------
@@ -323,10 +419,30 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:");
 #endif
+			if (OnAttachEventHandler == null)
+			{
+				OnAttachEventHandler = GetComponent(typeof(IOnUVCAttachHandler)) as IOnUVCAttachHandler;
+			}
+			if (OnDetachEventHandler == null)
+			{
+				OnDetachEventHandler = GetComponent(typeof(IOnUVCDetachHandler)) as IOnUVCDetachHandler;
+			}
+			if (OnStartPreviewEventHandler == null)
+			{
+				OnStartPreviewEventHandler = GetComponent(typeof(IOnUVCStartHandler)) as IOnUVCStartHandler;
+			}
+			if (OnStopPreviewEventHandler == null)
+			{
+				OnStopPreviewEventHandler = GetComponent(typeof(IOnUVCStopHandler)) as IOnUVCStopHandler;
+			}
+			if (OnUVCSelectSizeHandler == null)
+			{
+				OnUVCSelectSizeHandler = GetComponent(typeof(IOnUVCSelectSizeHandler)) as IOnUVCSelectSizeHandler;
+			}
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
 				clazz.CallStatic("initDeviceDetector",
-					AndroidUtils.GetCurrentActivity(), target.name);
+					AndroidUtils.GetCurrentActivity(), gameObject.name);
 			}
 		}
 
@@ -379,6 +495,114 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
+		 * 指定したUVC機器をopenする
+		 * @param deviceName UVC機器識別文字列
+		 */
+		private void Open(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Open:{deviceName}");
+#endif
+			var info = Get(deviceName);
+			if (info != null)
+			{
+				AndroidUtils.isPermissionRequesting = false;
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					info.activeCameraId = clazz.CallStatic<Int32>("openDevice",
+						AndroidUtils.GetCurrentActivity(), deviceName,
+						DefaultWidth, DefaultHeight, PreferH264);
+				}
+			}
+			else
+			{
+				throw new ArgumentException("device name is empty/null");
+			}
+		}
+
+		/**
+		 * 指定したUVC機器をcloseする
+		 * @param deviceName UVC機器識別文字列
+		 */
+		public void Close(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Close:{deviceName}");
+#endif
+			var info = Get(deviceName);
+			if (info != null)
+			{
+				info.activeCameraId = 0;
+				info.previewTexture = null;
+			}
+			if (!String.IsNullOrEmpty(deviceName))
+			{
+				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
+				{
+					clazz.CallStatic("closeDevice",
+						AndroidUtils.GetCurrentActivity(), deviceName);
+				}
+			}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}Close:finished");
+#endif
+		}
+
+		/**
+		 * OpenしているすべてのUVC機器をCloseする
+		 */
+		private void CloseAll()
+		{
+			List<string> keys = new List<string>(cameraInfos.Keys);
+			foreach (var deviceName in keys)
+			{
+				Close(deviceName);
+			}
+		}
+
+		/**
+		 * UVC機器からの映像受け取り開始要求をする
+		 * @param deviceName UVC機器識別文字列
+		 */
+		private void StartPreview(string deviceName)
+		{
+			int width = DefaultWidth;
+			int height = DefaultHeight;
+
+			var supportedVideoSize = GetSupportedVideoSize(deviceName);
+			if (supportedVideoSize == null)
+			{
+				throw new ArgumentException("fauled to get supported video size");
+			}
+
+			// 解像度の選択処理
+			if (OnUVCSelectSizeHandler != null)
+			{
+				var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, GetInfo(deviceName), supportedVideoSize);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}StartPreview:selected={size}");
+#endif
+				if (size != null)
+				{
+					width = size.Width;
+					height = size.Height;
+				}
+			}
+
+			// 対応解像度のチェック
+			if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+			{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
+				Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
+				Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
+#endif
+				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+			}
+			StartPreview(deviceName, width, height);
+		}
+
+		/**
 		 * UVC機器からの映像受け取り開始要求をする
 		 * この関数では指定したサイズに対応しているかどうかのチェックをしないので
 		 * 呼び出し元でチェックすること
@@ -387,7 +611,7 @@ namespace Serenegiant.UVC {
 		 * @param width
 		 * @param height
 		 */
-		public void StartPreview(string deviceName, int width, int height)
+		private void StartPreview(string deviceName, int width, int height)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
@@ -415,13 +639,30 @@ namespace Serenegiant.UVC {
 							width, height);
 					}
 
-					parent.StartCoroutine(info.OnRender());
+					StartCoroutine(info.OnRender());
 				}
 				else
 				{
 					throw new ArgumentException("device name is empty/null");
 				}
 			}
+		}
+
+		/**
+ * UVC機器/カメラからの映像受けとりを終了要求をする
+ * @param deviceName UVC機器識別文字列
+ */
+		private void StopPreview(string deviceName)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}StopPreview:{deviceName}");
+#endif
+			var info = Get(deviceName);
+			if (info != null)
+			{
+				StopCoroutine(info.OnRender());
+			}
+			RequestStopPreview(deviceName);
 		}
 
 		/**
@@ -447,7 +688,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
 		 * @param deviceName UVC機器識別文字列
 		 */
-		public UVCInfo GetInfo(string deviceName)
+		private UVCInfo GetInfo(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}GetInfo:{deviceName}");
@@ -457,7 +698,7 @@ namespace Serenegiant.UVC {
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return UVCInfo.Parse(
+					return UVCInfo.Parse(deviceName,
 						clazz.CallStatic<string>("getInfo",
 							AndroidUtils.GetCurrentActivity(), deviceName));
 				}
@@ -499,7 +740,7 @@ namespace Serenegiant.UVC {
 		{
 			if (!cameraInfos.ContainsKey(deviceName))
 			{
-				cameraInfos[deviceName] = new CameraInfo();
+				cameraInfos[deviceName] = new CameraInfo(GetInfo(deviceName));
 			}
 			return cameraInfos[deviceName];
 		}
@@ -525,6 +766,6 @@ namespace Serenegiant.UVC {
 		}
 	
 
-	} // UVCController
+	} // UVCManager
 
 }   // namespace Serenegiant.UVC
