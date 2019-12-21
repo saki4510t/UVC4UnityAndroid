@@ -74,10 +74,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnResumeEvent:");
 #endif
-			if (LifecycleEvent != null)
-			{
-				LifecycleEvent(true);
-			}
+			LifecycleEvent?.Invoke(true);
 		}
 
 		/**
@@ -88,10 +85,7 @@ namespace Serenegiant
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnPauseEvent:");
 #endif
-			if (LifecycleEvent != null)
-			{
-				LifecycleEvent(false);
-			}
+			LifecycleEvent?.Invoke(false);
 		}
 
 		/**
