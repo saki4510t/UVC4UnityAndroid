@@ -10,6 +10,8 @@ using UnityEngine;
 using UnityEngine.Android;
 #endif
 
+using static Serenegiant.UVC.UVCEventHandler;
+
 namespace Serenegiant.UVC {
 
 	[RequireComponent(typeof(AndroidUtils))]

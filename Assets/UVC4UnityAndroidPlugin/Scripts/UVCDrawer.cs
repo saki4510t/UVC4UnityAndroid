@@ -10,9 +10,9 @@ namespace Serenegiant.UVC
 {
 
 	public class UVCDrawer : MonoBehaviour,
-		IOnUVCAttachHandler, IOnUVCDetachHandler,
-		IOnUVCSelectSizeHandler,
-		IOnUVCStartHandler, IOnUVCStopHandler
+		UVCEventHandler.IOnUVCAttachHandler, UVCEventHandler.IOnUVCDetachHandler,
+		UVCEventHandler.IOnUVCSelectSizeHandler,
+		UVCEventHandler.IOnUVCStartHandler, UVCEventHandler.IOnUVCStopHandler
 	{
 		/**
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
