@@ -113,14 +113,17 @@ namespace Serenegiant.UVC
 			 */
 			public readonly Texture[] SavedTextures;
 
+			public Quaternion[] quaternions;
+
 			public TargetInfo(int targetNums)
 			{
 				Count = targetNums;
 				TargetMaterials = new UnityEngine.Object[targetNums];
 				SavedTextures = new Texture[targetNums];
-			}
+				quaternions = new Quaternion[targetNums];
+		}
 
-			public void RestoreTexture()
+		public void RestoreTexture()
 			{
 				for (int i = 0; i < Count; i++)
 				{
@@ -134,6 +137,7 @@ namespace Serenegiant.UVC
 						(target as RawImage).texture = SavedTextures[i];
 					}
 					SavedTextures[i] = null;
+					quaternions[i] = Quaternion.identity;
 				}
 			}
 
@@ -190,7 +194,9 @@ namespace Serenegiant.UVC
 				{
 					if (info.Value.isActive)
 					{   // カメラから映像取得中
+						var settings = CameraRenderSettings[info.Value.cameraIx];
 						var q = webCamController.AngleAxis(info.Key);
+
 						// FIXME 未実装
 					}
 				}
@@ -818,7 +824,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStartPreview:({tex})");
 #endif
-			int cameraIx = 0;	// FIXME deviceNameから探す
+			int cameraIx = FindCameraIx(deviceName);
 			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
 			{
 				if (targetInfos[cameraIx].Count > 0)
