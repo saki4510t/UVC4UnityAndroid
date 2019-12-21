@@ -352,15 +352,26 @@ namespace Serenegiant.UVC {
 				yield return Initialize();
 			}
 
-			if (!AndroidUtils.isPermissionRequesting)
-			{	// パーミッション要求中ではないとき
-				foreach (var elm in cameraInfos)
-				{
-					if (elm.Value.activeCameraId == 0)
-					{	// アタッチされた機器があるけどオープンされていないとき
-						RequestUsbPermission(elm.Key);
-						break;
-					}
+			KeyValuePair<string, CameraInfo>? found = null;
+			foreach (var elm in cameraInfos)
+			{
+				if (elm.Value.activeCameraId == 0)
+				{   // アタッチされたけどオープンされていない機器があるとき
+					found = elm;
+					break;
+				}
+			}
+			if (found != null)
+			{	// アタッチされたけどオープンされていない機器があるとき
+				var deviceName = found?.Key;
+				if (!AndroidUtils.isPermissionRequesting)
+				{ // パーミッション要求中ではないとき
+					RequestUsbPermission(deviceName);
+				}
+				else if (HasUsbPermission(deviceName))
+				{ // すでにパーミッションがあるとき
+					AndroidUtils.isPermissionRequesting = false;
+					OnEventPermission(deviceName);
 				}
 			}
 
