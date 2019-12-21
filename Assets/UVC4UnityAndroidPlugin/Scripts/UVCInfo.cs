@@ -14,11 +14,12 @@ namespace Serenegiant.UVC
 	[Serializable]
 	public class UVCInfo
 	{
+		public readonly string deviceName;
 		public readonly int vid;
 		public readonly int pid;
 		public readonly string name;
 
-		public static UVCInfo Parse(string jsonString)
+		public static UVCInfo Parse(string deviceName, string jsonString)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"UVCInfo:{jsonString}");
@@ -27,10 +28,21 @@ namespace Serenegiant.UVC
 			try
 			{
 				var element = JsonDocument.Parse(jsonString).RootElement;
+				JsonElement v;
+				string name;
+				if (element.TryGetProperty("name", out v))
+				{
+					name = v.GetString();
+				} else
+				{
+					name = null;
+				}
+
 				result = new UVCInfo(
+					deviceName,
 					element.GetProperty("vid").GetInt32(),
 					element.GetProperty("pid").GetInt32(),
-					null);
+					name);
 			}
 			catch (JsonException e)
 			{
@@ -44,8 +56,9 @@ namespace Serenegiant.UVC
 			return result;
 		}
 
-		public UVCInfo(int vid, int pid, string name)
+		public UVCInfo(string deviceName, int vid, int pid, string name)
 		{
+			this.deviceName = deviceName;
 			this.vid = vid;
 			this.pid = pid;
 			this.name = name;
@@ -53,7 +66,7 @@ namespace Serenegiant.UVC
 
 		public override string ToString()
 		{
-			return $"{base.ToString()}(vid={vid},pid={pid},name={name})";
+			return $"{base.ToString()}(deviceName={deviceName},vid={vid},pid={pid},name={name})";
 		}
 
 
