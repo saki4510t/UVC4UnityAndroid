@@ -86,7 +86,7 @@ namespace Serenegiant
 				if (FindWebCam(args, ref found))
 				{   // argsはdeviceName
 					// パーミッション取得通知
-					ExecuteEvents.Execute<IUVCEventHandler>(
+					ExecuteEvents.Execute<ICameraEventHandler>(
 						target: target,
 						eventData: null,
 						functor: (recieveTarget, eventData) => recieveTarget.OnEventPermission(found.name));
@@ -178,12 +178,12 @@ namespace Serenegiant
 			{
 				activeDeviceName = deviceName;
 				// カメラとの接続通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
+				ExecuteEvents.Execute<ICameraEventHandler>(
 					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventConnect(deviceName));
 				// カメラからの映像取得の準備完了通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
+				ExecuteEvents.Execute<ICameraEventHandler>(
 					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnEventReady(deviceName));
@@ -202,7 +202,7 @@ namespace Serenegiant
 			StopPreview(deviceName);
 			activeDeviceName = null;
 			// カメラ切断通知
-			ExecuteEvents.Execute<IUVCEventHandler>(
+			ExecuteEvents.Execute<ICameraEventHandler>(
 				target: target,
 				eventData: null,
 				functor: (recieveTarget, eventData) => recieveTarget.OnEventDisconnect(deviceName));
@@ -231,7 +231,7 @@ namespace Serenegiant
 					webCameraTexure.Play();
 				}
 				// 映像取得開始通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
+				ExecuteEvents.Execute<ICameraEventHandler>(
 					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnStartPreview(activeDeviceName));
@@ -252,7 +252,7 @@ namespace Serenegiant
 				webCameraTexure.Stop();
 				webCameraTexure = null;
 				// 映像取得終了通知
-				ExecuteEvents.Execute<IUVCEventHandler>(
+				ExecuteEvents.Execute<ICameraEventHandler>(
 					target: target,
 					eventData: null,
 					functor: (recieveTarget, eventData) => recieveTarget.OnStopPreview(activeDeviceName));
@@ -319,7 +319,7 @@ namespace Serenegiant
 				foreach (var cam in devices)
 				{
 					// カメラ接続通知
-					ExecuteEvents.Execute<IUVCEventHandler>(
+					ExecuteEvents.Execute<ICameraEventHandler>(
 						target: target,
 						eventData: null,
 						functor: (recieveTarget, eventData) => recieveTarget.OnEventAttach(cam.name));

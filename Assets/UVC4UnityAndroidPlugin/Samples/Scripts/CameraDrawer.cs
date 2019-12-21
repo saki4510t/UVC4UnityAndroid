@@ -34,7 +34,7 @@ namespace Serenegiant
 {
 
 	[RequireComponent(typeof(AndroidUtils))]
-	public class CameraDrawer : MonoBehaviour, IUVCEventHandler
+	public class CameraDrawer : MonoBehaviour, ICameraEventHandler
 	{
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
 		// THETA SのH.264映像: 1920x1080@30fps, H.264

@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 namespace Serenegiant
 {
 
-	public interface IUVCEventHandler : IEventSystemHandler
+	public interface ICameraEventHandler : IEventSystemHandler
 	{
 		void OnEventAttach(string args);
 		void OnEventPermission(string args);
@@ -17,6 +17,6 @@ namespace Serenegiant
 		void OnStartPreview(string args);
 		void OnStopPreview(string args);
 
-	}   // IUVCEventHandler
+	}   // ICameraEventHandler
 
 }	// namespace Serenegiant.UVC
