@@ -32,6 +32,7 @@ using UnityEngine.UI;
 namespace Serenegiant.UVC
 {
 
+	[RequireComponent(typeof(AndroidUtils))]
 	public class CameraDrawer : MonoBehaviour, IUVCEventHandler
 	{
 		// THETA VのH.264映像: 3840x1920@30fps, H.264
