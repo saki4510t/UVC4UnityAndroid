@@ -1,5 +1,6 @@
 ﻿//#define ENABLE_LOG
 
+using Serenegiant.UVC;
 using System;
 using System.Collections;
 using System.Collections.Generic;
