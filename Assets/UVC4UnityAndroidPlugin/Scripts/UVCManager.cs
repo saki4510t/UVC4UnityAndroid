@@ -407,6 +407,9 @@ namespace Serenegiant.UVC {
 							break;
 					}
 				});
+			} else
+			{
+				InitPlugin();
 			}
 
 			yield break;
