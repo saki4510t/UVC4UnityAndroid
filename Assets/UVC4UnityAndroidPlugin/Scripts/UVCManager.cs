@@ -550,25 +550,35 @@ namespace Serenegiant.UVC {
 			{
 				OnDetachEventHandler = GetComponent(typeof(IOnUVCDetachHandler)) as IOnUVCDetachHandler;
 			}
-			if ((UVCDrawers == null) || (UVCDrawers.Length == 0))
-			{
-				UVCDrawers = new Component[1];
-			}
+			// UVCDrawerが割り当てられているかどうかをチェック
 			var hasDrawer = false;
-			foreach (var drawer in UVCDrawers)
+			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
 			{
-				if (drawer is IUVCDrawer)
+				foreach (var drawer in UVCDrawers)
 				{
-					hasDrawer = true;
-					break;
+					if (drawer is IUVCDrawer)
+					{
+						hasDrawer = true;
+						break;
+					}
 				}
 			}
 			if (!hasDrawer)
-			{
+			{	// インスペクタでUVCDrawerが設定されていないときは
+				// このスクリプトがaddされているゲームオブジェクトからの取得を試みる
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}InitPlugin:has no IUVCDrawer, try to get from gameObject");
 #endif
-				UVCDrawers[0] = GetComponent(typeof(IUVCDrawer));
+				var drawers = GetComponents(typeof(IUVCDrawer));
+				if ((drawers != null) && (drawers.Length > 0))
+				{
+					UVCDrawers = new Component[drawers.Length];
+					int i = 0;
+					foreach (var drawer in drawers)
+					{
+						UVCDrawers[i++] = drawer;
+					}
+				}
 			}
 			if (OnUVCSelectSizeHandler == null)
 			{
