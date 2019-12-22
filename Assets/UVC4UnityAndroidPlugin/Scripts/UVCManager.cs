@@ -21,27 +21,6 @@ namespace Serenegiant.UVC {
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
 
 		/**
-		 * UVC機器が接続されたときのイベント
-		 * @param UVCManager
-		 * @param UVCDevice 接続されたUVC機器情報
-		 * @return bool 接続されたUVC機器を使用するかどうか
-		 */
-		public IOnUVCAttachHandler OnAttachEventHandler;
-		/**
-		 * UVC機器が取り外されたときのイベント
-		 * @param UVCManager
-		 * @param UVCDevice 取り外されるUVC機器情報
-		 */
-		public IOnUVCDetachHandler OnDetachEventHandler;
-		/**
-		 * 解像度の選択処理
-		 */
-		public IOnUVCSelectSizeHandler OnUVCSelectSizeHandler;
-		/**
-		 * 映像描画処理
-		 */
-		public IUVCDrawer UVCDrawer;
-		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(幅)
@@ -61,6 +40,28 @@ namespace Serenegiant.UVC {
 		 * false:	MJPEG > H.264 > YUV
 		 */
 		public bool PreferH264 = true;
+		/**
+		 * UVC機器が接続されたときのイベント
+		 * @param UVCManager
+		 * @param UVCDevice 接続されたUVC機器情報
+		 * @return bool 接続されたUVC機器を使用するかどうか
+		 */
+		public IOnUVCAttachHandler OnAttachEventHandler;
+		/**
+		 * UVC機器が取り外されたときのイベント
+		 * @param UVCManager
+		 * @param UVCDevice 取り外されるUVC機器情報
+		 */
+		public IOnUVCDetachHandler OnDetachEventHandler;
+		/**
+		 * 解像度の選択処理
+		 */
+		public IOnUVCSelectSizeHandler OnUVCSelectSizeHandler;
+		/**
+		 * 映像描画処理
+		 */
+		[SerializeField, ComponentRestriction(typeof(IUVCDrawer))]
+		public Component[] UVCDrawers;
 
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
@@ -383,9 +384,15 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCDrawer != null))
+			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
 			{
-				UVCDrawer.OnUVCStartEvent(this, info.device, info.previewTexture);
+				foreach (var drawer in UVCDrawers)
+				{
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					{
+						(drawer as IUVCDrawer).OnUVCStartEvent(this, info.device, info.previewTexture);
+					}
+				}
 			}
 		}
 
@@ -399,10 +406,16 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStopPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && (UVCDrawer != null))
+			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
 			{
 				info.SetSize(0, 0);
-				UVCDrawer.OnUVCStopEvent(this, info.device);
+				foreach (var drawer in UVCDrawers)
+				{
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					{
+						(drawer as IUVCDrawer).OnUVCStopEvent(this, info.device);
+					}
+				}
 			}
 		}
 
@@ -537,9 +550,25 @@ namespace Serenegiant.UVC {
 			{
 				OnDetachEventHandler = GetComponent(typeof(IOnUVCDetachHandler)) as IOnUVCDetachHandler;
 			}
-			if (UVCDrawer == null)
+			if ((UVCDrawers == null) || (UVCDrawers.Length == 0))
 			{
-				UVCDrawer = GetComponent(typeof(UVCDrawer)) as UVCDrawer;
+				UVCDrawers = new Component[1];
+			}
+			var hasDrawer = false;
+			foreach (var drawer in UVCDrawers)
+			{
+				if (drawer is IUVCDrawer)
+				{
+					hasDrawer = true;
+					break;
+				}
+			}
+			if (!hasDrawer)
+			{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}InitPlugin:has no IUVCDrawer, try to get from gameObject");
+#endif
+				UVCDrawers[0] = GetComponent(typeof(IUVCDrawer));
 			}
 			if (OnUVCSelectSizeHandler == null)
 			{
