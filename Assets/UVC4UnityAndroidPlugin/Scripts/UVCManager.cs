@@ -23,14 +23,14 @@ namespace Serenegiant.UVC {
 		/**
 		 * UVC機器が接続されたときのイベント
 		 * @param UVCManager
-		 * @param UVCInfo 接続されたUVC機器情報
+		 * @param UVCDevice 接続されたUVC機器情報
 		 * @return bool 接続されたUVC機器を使用するかどうか
 		 */
 		public IOnUVCAttachHandler OnAttachEventHandler;
 		/**
 		 * UVC機器が取り外されたときのイベント
 		 * @param UVCManager
-		 * @param UVCInfo 取り外されるUVC機器情報
+		 * @param UVCDevice 取り外されるUVC機器情報
 		 */
 		public IOnUVCDetachHandler OnDetachEventHandler;
 		/**
@@ -40,7 +40,7 @@ namespace Serenegiant.UVC {
 		/**
 		 * 映像取得開始時の処理
 		 * @param UVCManager
-		 * @param UVCInfo 取り外されるUVC機器情報
+		 * @param UVCDevice 取り外されるUVC機器情報
 		 * @param texture 映像を受け取るTextureオブジェクト
 		 */
 		public IOnUVCStartHandler OnStartPreviewEventHandler;
@@ -78,16 +78,16 @@ namespace Serenegiant.UVC {
 
 		public class CameraInfo
 		{
-			internal readonly UVCInfo info;
+			internal readonly UVCDevice device;
 			/**
 			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 			 */
 			internal Int32 activeCameraId;
 			internal Texture previewTexture;
 
-			internal CameraInfo(UVCInfo info)
+			internal CameraInfo(UVCDevice device)
 			{
-				this.info = info;
+				this.device = device;
 			}
 
 			/**
@@ -95,7 +95,7 @@ namespace Serenegiant.UVC {
 			 */
 			public string DeviceName
 			{
-				get { return info.deviceName;  }
+				get { return device.deviceName;  }
 			}
 
 			/**
@@ -103,7 +103,7 @@ namespace Serenegiant.UVC {
 			 */
 			public int Vid
 			{
-				get { return info.vid;  }
+				get { return device.vid;  }
 			}
 
 			/**
@@ -111,7 +111,7 @@ namespace Serenegiant.UVC {
 			 */
 			public int Pid
 			{
-				get { return info.pid;  }
+				get { return device.pid;  }
 			}
 
 			/**
@@ -298,7 +298,7 @@ namespace Serenegiant.UVC {
 			{   // argsはdeviceName
 				var info = CreateIfNotExist(args);
 				if ((OnAttachEventHandler == null) 
-					|| OnAttachEventHandler.OnUVCAttachEvent(this, info.info))
+					|| OnAttachEventHandler.OnUVCAttachEvent(this, info.device))
 				{
 					RequestUsbPermission(args);
 				} else
@@ -323,7 +323,7 @@ namespace Serenegiant.UVC {
 			var info = Get(args);
 			if ((info != null) && (OnDetachEventHandler != null))
 			{
-				OnDetachEventHandler.OnUVCDetachEvent(this, info.info);
+				OnDetachEventHandler.OnUVCDetachEvent(this, info.device);
 				Close(args);
 				Remove(args);
 			}
@@ -393,7 +393,7 @@ namespace Serenegiant.UVC {
 			var info = Get(args);
 			if ((info != null) && info.IsPreviewing && (OnStartPreviewEventHandler != null))
 			{
-				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.info, info.previewTexture);
+				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.device, info.previewTexture);
 			}
 		}
 
@@ -410,7 +410,7 @@ namespace Serenegiant.UVC {
 			if ((info != null) && (OnStopPreviewEventHandler != null))
 			{
 				info.SetSize(0, 0);
-				OnStopPreviewEventHandler.OnUVCStopEvent(this, info.info);
+				OnStopPreviewEventHandler.OnUVCStopEvent(this, info.device);
 			}
 		}
 
@@ -703,7 +703,7 @@ namespace Serenegiant.UVC {
 				// 解像度の選択処理
 				if (OnUVCSelectSizeHandler != null)
 				{
-					var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, info.info, supportedVideoSize);
+					var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, info.device, supportedVideoSize);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 					Console.WriteLine($"{TAG}StartPreview:selected={size}");
 #endif
@@ -743,7 +743,7 @@ namespace Serenegiant.UVC {
 				{   // 指定した解像度に対応していない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 					Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
-					Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
+					Console.WriteLine($"{TAG}Info={GetDevice(deviceName)}");
 					Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
 #endif
 					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
@@ -817,20 +817,20 @@ namespace Serenegiant.UVC {
 		}
 
 		/**
-		 * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
+		 * 指定したUVC機器の情報(今はvidとpid)をUVCDeviceとして取得する
 		 * @param deviceName UVC機器識別文字列
 		 */
-		private UVCInfo GetInfo(string deviceName)
+		private UVCDevice GetDevice(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}GetInfo:{deviceName}");
+			Console.WriteLine($"{TAG}GetDevice:{deviceName}");
 #endif
 
 			if (!String.IsNullOrEmpty(deviceName))
 			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
-					return UVCInfo.Parse(deviceName,
+					return UVCDevice.Parse(deviceName,
 						clazz.CallStatic<string>("getInfo",
 							AndroidUtils.GetCurrentActivity(), deviceName));
 				}
@@ -872,7 +872,7 @@ namespace Serenegiant.UVC {
 		{
 			if (!cameraInfos.ContainsKey(deviceName))
 			{
-				cameraInfos[deviceName] = new CameraInfo(GetInfo(deviceName));
+				cameraInfos[deviceName] = new CameraInfo(GetDevice(deviceName));
 			}
 			return cameraInfos[deviceName];
 		}

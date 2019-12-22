@@ -123,20 +123,20 @@ namespace Serenegiant.UVC
 		 * UVC機器が接続された
 		 * IOnUVCAttachHandlerの実装
 		 * @param manager 呼び出し元のUVCManager
-		 * @param info 対象となるUVC機器の情報
+		 * @param device 対象となるUVC機器の情報
 		 * @return true: UVC機器を使用する, false: UVC機器を使用しない
 		 */
-		public bool OnUVCAttachEvent(UVCManager manager, UVCInfo info)
+		public bool OnUVCAttachEvent(UVCManager manager, UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCAttachEvent:{info}");
+			Console.WriteLine($"{TAG}OnUVCAttachEvent:{device}");
 #endif
-			var result = !info.IsRicoh
-				|| (info.IsTHETA_S || info.IsTHETA_V);
+			var result = !device.IsRicoh
+				|| (device.IsTHETA_S || device.IsTHETA_V);
 
 			if (result)
 			{
-				CreateIfNotExist(info.deviceName);
+				CreateIfNotExist(device.deviceName);
 			}
 
 			return result;
@@ -146,36 +146,36 @@ namespace Serenegiant.UVC
 		 * UVC機器が取り外された
 		 * IOnUVCDetachEventHandlerの実装
 		 * @param manager 呼び出し元のUVCManager
-		 * @param info 対象となるUVC機器の情報
+		 * @param device 対象となるUVC機器の情報
 		 */
-		public void OnUVCDetachEvent(UVCManager manager, UVCInfo info)
+		public void OnUVCDetachEvent(UVCManager manager, UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCDetachEvent:{info}");
+			Console.WriteLine($"{TAG}OnUVCDetachEvent:{device}");
 #endif
-			Remove(info.deviceName);
+			Remove(device.deviceName);
 		}
 
 		/**
 		 * 解像度選択
 		 * IOnUVCSelectSizeHandlerの実装
 		 * @param manager 呼び出し元のUVCManager
-		 * @param info 対象となるUVC機器の情報
+		 * @param device 対象となるUVC機器の情報
 		 * @param formats 対応している解像度についての情報
 		 */
-		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCInfo info, SupportedFormats formats)
+		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCSelectSize:{info}");
+			Console.WriteLine($"{TAG}OnUVCSelectSize:{device}");
 #endif
-			if (info.IsTHETA_V)
+			if (device.IsTHETA_V)
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V");
 #endif
 				return FindSize(formats, 3840, 1920);
 			}
-			else if (info.IsTHETA_S)
+			else if (device.IsTHETA_S)
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA S");
@@ -185,7 +185,7 @@ namespace Serenegiant.UVC
 			else
 			{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{info}");
+				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{device}");
 #endif
 				return null;
 			}
@@ -195,29 +195,29 @@ namespace Serenegiant.UVC
 		 * 映像取得を開始した
 		 * IOnUVCStartEventHandlerの実装
 		 * @param manager 呼び出し元のUVCManager
-		 * @param info 対象となるUVC機器の情報
+		 * @param device 対象となるUVC機器の情報
 		 * @param tex UVC機器からの映像を受け取るTextureインスタンス
 		 */
-		public void OnUVCStartEvent(UVCManager manager, UVCInfo info, Texture tex)
+		public void OnUVCStartEvent(UVCManager manager, UVCDevice device, Texture tex)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCStartEvent:{info}");
+			Console.WriteLine($"{TAG}OnUVCStartEvent:{device}");
 #endif
-			HandleOnStartPreview(info.deviceName, tex);
+			HandleOnStartPreview(device.deviceName, tex);
 		}
 
 		/**
 		 * 映像取得を終了した
 		 * IOnUVCStopEventHandlerの実装
 		 * @param manager 呼び出し元のUVCManager
-		 * @param info 対象となるUVC機器の情報
+		 * @param device 対象となるUVC機器の情報
 		 */
-		public void OnUVCStopEvent(UVCManager manager, UVCInfo info)
+		public void OnUVCStopEvent(UVCManager manager, UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCStopEvent:{info}");
+			Console.WriteLine($"{TAG}OnUVCStopEvent:{device}");
 #endif
-			HandleOnStopPreview(info.deviceName);
+			HandleOnStopPreview(device.deviceName);
 		}
 
 		//================================================================================

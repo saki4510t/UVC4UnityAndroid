@@ -17,10 +17,10 @@ namespace Serenegiant.UVC
 			/**
 			 * UVC機器が接続された
 			 * @param manager 呼び出し元のUVCManager
-			 * @param info 接続されたUVC機器情報
+			 * @param device 接続されたUVC機器情報
 			 * @return true: UVC機器を使う, false: UVC機器を使わない
 			 */
-			bool OnUVCAttachEvent(UVCManager manager, UVCInfo info);
+			bool OnUVCAttachEvent(UVCManager manager, UVCDevice device);
 
 		} // interface OnAttachEventHandler
 
@@ -32,9 +32,9 @@ namespace Serenegiant.UVC
 			/**
 			 * UVC機器が取り外された
 			 * @param manager 呼び出し元のUVCManager
-			 * @param info 接続されたUVC機器情報
+			 * @param device 接続されたUVC機器情報
 			 */
-			void OnUVCDetachEvent(UVCManager manager, UVCInfo info);
+			void OnUVCDetachEvent(UVCManager manager, UVCDevice device);
 
 		} // interface IOnDetachEventHandler
 
@@ -46,11 +46,11 @@ namespace Serenegiant.UVC
 			/**
 			 * UVC機器が取り外された
 			 * @param manager 呼び出し元のUVCManager
-			 * @param info 接続されたUVC機器情報
+			 * @param device 接続されたUVC機器情報
 			 * @param formats: 対応解像度
 			 * @return 選択した解像度, nullなら呼び出し元UVCManagerのデフォルト値を使う
 			 */
-			SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCInfo info, SupportedFormats formats);
+			SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats);
 
 		} // interface IPreviewSizeSelect
 
@@ -62,10 +62,10 @@ namespace Serenegiant.UVC
 			/**
 			 * UVC機器からの映像取得を開始した
 			 * @param manager 呼び出し元のUVCManager
-			 * @param info 接続されたUVC機器情報
+			 * @param device 接続されたUVC機器情報
 			 * @param tex UVC機器からの映像を受け取るTextureオブジェクト
 			 */
-			void OnUVCStartEvent(UVCManager manager, UVCInfo info, Texture tex);
+			void OnUVCStartEvent(UVCManager manager, UVCDevice device, Texture tex);
 
 		} // interface IOnStartPreviewEventHandler
 
@@ -77,9 +77,9 @@ namespace Serenegiant.UVC
 			/**
 			 * UVC機器からの映像取得を終了した
 			 * @param manager 呼び出し元のUVCManager
-			 * @param info 接続されたUVC機器情報
+			 * @param device 接続されたUVC機器情報
 			 */
-			void OnUVCStopEvent(UVCManager manager, UVCInfo info);
+			void OnUVCStopEvent(UVCManager manager, UVCDevice device);
 
 		} // interface IOnStopPreviewEventHandler
 

@@ -12,19 +12,19 @@ namespace Serenegiant.UVC
 {
 
 	[Serializable]
-	public class UVCInfo
+	public class UVCDevice
 	{
 		public readonly string deviceName;
 		public readonly int vid;
 		public readonly int pid;
 		public readonly string name;
 
-		public static UVCInfo Parse(string deviceName, string jsonString)
+		public static UVCDevice Parse(string deviceName, string jsonString)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 		Console.WriteLine($"UVCInfo:{jsonString}");
 #endif
-			UVCInfo result;
+			UVCDevice result;
 			try
 			{
 				var element = JsonDocument.Parse(jsonString).RootElement;
@@ -38,7 +38,7 @@ namespace Serenegiant.UVC
 					name = null;
 				}
 
-				result = new UVCInfo(
+				result = new UVCDevice(
 					deviceName,
 					element.GetProperty("vid").GetInt32(),
 					element.GetProperty("pid").GetInt32(),
@@ -56,7 +56,7 @@ namespace Serenegiant.UVC
 			return result;
 		}
 
-		public UVCInfo(string deviceName, int vid, int pid, string name)
+		public UVCDevice(string deviceName, int vid, int pid, string name)
 		{
 			this.deviceName = deviceName;
 			this.vid = vid;
@@ -97,7 +97,7 @@ namespace Serenegiant.UVC
 			// THETA Vからのpid=872は動かない
 			get { return (vid == 1482) && (pid == 10002); }
 		}
-	} // UVCInfo
+	} // UVCDevice
 
 } // namespace Serenegiant.UVC
 

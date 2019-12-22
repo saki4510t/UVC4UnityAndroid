@@ -282,12 +282,12 @@ namespace Serenegiant
 		 * カメラ情報を取得
 		 * @param deviceName カメラの識別文字列
 		 */
-		public UVCInfo GetInfo(string deviceName)
+		public UVCDevice GetDevice(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}GetInfo:({deviceName})");
+			Console.WriteLine($"{TAG}GetDevice:({deviceName})");
 #endif
-			return new UVCInfo(deviceName, 0, 0, deviceName);
+			return new UVCDevice(deviceName, 0, 0, deviceName);
 		}
 
 		/**

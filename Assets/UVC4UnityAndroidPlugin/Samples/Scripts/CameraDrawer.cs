@@ -767,11 +767,11 @@ namespace Serenegiant
  * 指定したUVC機器の情報(今はvidとpid)をJSON文字列として取得する
  * @param deviceName UVC機器の識別文字列
  */
-		private UVCInfo GetInfo(string deviceName)
+		private UVCDevice GetDevice(string deviceName)
 		{
 			if (webCamController != null)
 			{
-				return webCamController.GetInfo(deviceName);
+				return webCamController.GetDevice(deviceName);
 			}
 			return null;
 		}
