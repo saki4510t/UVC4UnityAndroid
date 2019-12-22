@@ -211,6 +211,23 @@ namespace Serenegiant.UVC {
 			return result;
 		}
 
+		/**
+		 * 対応解像度を取得
+		 * @param camera 対応解像度を取得するUVC機器を指定
+		 * @return 対応解像度 既にカメラが取り外されている/closeしているのであればnull
+		 */
+		public SupportedFormats GetSupportedVideoSize(CameraInfo camera)
+		{
+			var info = (camera != null) ? Get(camera.DeviceName) : null;
+			if ((info != null) && info.IsOpen)
+			{
+				return GetSupportedVideoSize(info.DeviceName);
+			} else
+			{
+				return null;
+			}
+		}
+
 		//================================================================================
 		// Android固有の処理
 		// Java側からのイベントコールバック
