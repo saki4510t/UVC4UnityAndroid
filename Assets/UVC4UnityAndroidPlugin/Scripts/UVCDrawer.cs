@@ -28,7 +28,10 @@ namespace Serenegiant.UVC
 		 */
 		private class TargetInfo
 		{
-			public readonly int Count;
+			/**
+			 * 描画先のGameObject/Materialの個数
+			 */
+			internal readonly int Count;
 			/**
 			 * UVC機器からの映像の描画先Material
 			 * TargetGameObjectから取得する
@@ -39,18 +42,18 @@ namespace Serenegiant.UVC
 			 *	 > TargetGameObjectのMaterial
 			 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 			 */
-			public readonly UnityEngine.Object[] TargetMaterials;
+			internal readonly UnityEngine.Object[] TargetMaterials;
 			/**
 			 * オリジナルのテクスチャ
 			 * UVCカメラ映像受け取り用テクスチャをセットする前に
 			 * GetComponent<Renderer>().material.mainTextureに設定されていた値
 			 */
-			public readonly Texture[] SavedTextures;
+			internal readonly Texture[] SavedTextures;
 
-			public Quaternion[] quaternions;
-			public bool isActive = false;
+			internal Quaternion[] quaternions;
+			internal bool isActive = false;
 
-			public TargetInfo(int targetNums)
+			internal TargetInfo(int targetNums)
 			{
 				Count = targetNums;
 				TargetMaterials = new UnityEngine.Object[targetNums];
@@ -58,7 +61,7 @@ namespace Serenegiant.UVC
 				quaternions = new Quaternion[targetNums];
 			}
 
-			public void RestoreTexture()
+			internal void RestoreTexture()
 			{
 				for (int i = 0; i < Count; i++)
 				{
@@ -76,7 +79,7 @@ namespace Serenegiant.UVC
 				}
 			}
 
-			public void ClearTextures()
+			internal void ClearTextures()
 			{
 				for (int i = 0; i < SavedTextures.Length; i++)
 				{
@@ -116,6 +119,13 @@ namespace Serenegiant.UVC
 
 		//================================================================================
 
+		/**
+		 * UVC機器が接続された
+		 * IOnUVCAttachHandlerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param info 対象となるUVC機器の情報
+		 * @return true: UVC機器を使用する, false: UVC機器を使用しない
+		 */
 		public bool OnUVCAttachEvent(UVCManager manager, UVCInfo info)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -132,6 +142,12 @@ namespace Serenegiant.UVC
 			return result;
 		}
 
+		/**
+		 * UVC機器が取り外された
+		 * IOnUVCDetachEventHandlerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param info 対象となるUVC機器の情報
+		 */
 		public void OnUVCDetachEvent(UVCManager manager, UVCInfo info)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -140,6 +156,13 @@ namespace Serenegiant.UVC
 			Remove(info.deviceName);
 		}
 
+		/**
+		 * 解像度選択
+		 * IOnUVCSelectSizeHandlerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param info 対象となるUVC機器の情報
+		 * @param formats 対応している解像度についての情報
+		 */
 		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCInfo info, SupportedFormats formats)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -168,6 +191,13 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		/**
+		 * 映像取得を開始した
+		 * IOnUVCStartEventHandlerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param info 対象となるUVC機器の情報
+		 * @param tex UVC機器からの映像を受け取るTextureインスタンス
+		 */
 		public void OnUVCStartEvent(UVCManager manager, UVCInfo info, Texture tex)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -176,6 +206,12 @@ namespace Serenegiant.UVC
 			HandleOnStartPreview(info.deviceName, tex);
 		}
 
+		/**
+		 * 映像取得を終了した
+		 * IOnUVCStopEventHandlerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param info 対象となるUVC機器の情報
+		 */
 		public void OnUVCStopEvent(UVCManager manager, UVCInfo info)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
