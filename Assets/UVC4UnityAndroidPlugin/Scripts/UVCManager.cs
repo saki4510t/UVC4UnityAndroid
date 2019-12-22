@@ -140,26 +140,26 @@ namespace Serenegiant.UVC {
 			yield return Initialize();
 		}
 
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		void OnApplicationFocus()
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnApplicationFocus:");
-#endif
 		}
+#endif
 
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		void OnApplicationPause(bool pauseStatus)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnApplicationPause:{pauseStatus}");
-#endif
 		}
+#endif
 
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 		void OnApplicationQuits()
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnApplicationQuits:");
-#endif
 		}
+#endif
 
 		void OnDestroy()
 		{
