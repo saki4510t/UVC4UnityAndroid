@@ -129,7 +129,7 @@ namespace Serenegiant.UVC {
 			 */
 			public bool IsPreviewing
 			{
-				get { return previewTexture != null; }
+				get { return IsOpen && (previewTexture != null); }
 			}
 		
 			/**
