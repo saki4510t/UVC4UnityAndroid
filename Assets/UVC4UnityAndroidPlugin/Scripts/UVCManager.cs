@@ -569,6 +569,9 @@ namespace Serenegiant.UVC {
 		 */
 		private void CloseAll()
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}CloseAll:");
+#endif
 			List<string> keys = new List<string>(cameraInfos.Keys);
 			foreach (var deviceName in keys)
 			{
@@ -582,6 +585,9 @@ namespace Serenegiant.UVC {
 		 */
 		private void StartPreview(string deviceName)
 		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}StartPreview:{deviceName}");
+#endif
 			int width = DefaultWidth;
 			int height = DefaultHeight;
 
