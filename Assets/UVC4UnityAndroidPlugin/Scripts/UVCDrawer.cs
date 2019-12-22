@@ -15,6 +15,11 @@ namespace Serenegiant.UVC
 		UVCEventHandler.IUVCDrawer
 	{
 		/**
+		 * 接続時及び描画時のフィルタ用
+		 */
+		public UVCFilter[] UVCFilters;
+
+		/**
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
@@ -81,6 +86,8 @@ namespace Serenegiant.UVC
 			var result = !device.IsRicoh
 				|| (device.IsTHETA_S || device.IsTHETA_V);
 
+			result &= UVCFilter.Match(device, UVCFilters);
+
 			return result;
 		}
 
@@ -139,10 +146,8 @@ namespace Serenegiant.UVC
 		 * @param device 対象となるUVC機器の情報
 		 */
 		public bool CanDraw(UVCManager manager, UVCDevice device)
-		{	// XXX 今は全てのUVC機器の映像をこのUVCDrawerで描画する
-			// 必要であれば描画するUVC機器をフィルターすること
-			// FIXME UVC機器フィルタをインスペクタで設定できるようにする
-			return true;
+		{
+			return  UVCFilter.Match(device, UVCFilters);
 		}
 
 		/**

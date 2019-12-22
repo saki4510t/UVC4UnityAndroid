@@ -517,6 +517,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
+      propertyPath: UVCFilters.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
       propertyPath: CameraRenderSettings.Array.data[0].RenderTargets.Array.data[0]
       value: 
       objectReference: {fileID: 898263253}
@@ -525,6 +530,16 @@ PrefabInstance:
       propertyPath: RenderTargets.Array.data[0]
       value: 
       objectReference: {fileID: 898263253}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: UVCFilters.Array.data[0].Vid
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: UVCFilters.Array.data[0].Pid
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6011951749156047501, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: m_LocalPosition.x
