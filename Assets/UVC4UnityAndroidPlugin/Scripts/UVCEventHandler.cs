@@ -68,6 +68,12 @@ namespace Serenegiant.UVC
 		public interface IUVCDrawer : IUVCHandler
 		{
 			/**
+			 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
+			 * @param manager 呼び出し元のUVCManager
+			 * @param device 接続されたUVC機器情報
+			 */
+			bool CanDraw(UVCManager manager, UVCDevice device);
+			/**
 			 * UVC機器からの映像取得を開始した
 			 * @param manager 呼び出し元のUVCManager
 			 * @param device 接続されたUVC機器情報
