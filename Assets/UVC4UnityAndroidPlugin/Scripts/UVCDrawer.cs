@@ -196,7 +196,7 @@ namespace Serenegiant.UVC
 				{
 					if (target != null)
 					{
-						var material = TargetMaterials[i++] = GetTargetMaterial(target);
+						var material = TargetMaterials[i] = GetTargetMaterial(target);
 						if (material != null)
 						{
 							found = true;
