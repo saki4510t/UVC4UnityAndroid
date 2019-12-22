@@ -770,7 +770,7 @@ namespace Serenegiant.UVC {
 		/*Nullable*/
 		private CameraInfo Get(string deviceName)
 		{
-			return cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
+			return !String.IsNullOrEmpty(deviceName) && cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
 		}
 
 		/*Nullable*/
