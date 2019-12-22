@@ -77,32 +77,50 @@ namespace Serenegiant.UVC {
 		[DllImport("uvc-plugin")]
 		private static extern IntPtr GetRenderEventFunc();
 
-		private class CameraInfo
+		public class CameraInfo
 		{
 			public readonly UVCInfo info;
 			/**
 			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 			 */
-			public Int32 activeCameraId;
-			public Texture previewTexture;
+			internal Int32 activeCameraId;
+			internal Texture previewTexture;
 
-			public CameraInfo(UVCInfo info)
+			internal CameraInfo(UVCInfo info)
 			{
 				this.info = info;
+			}
+
+			/**
+			 * カメラをopenしているか
+			 * 映像取得中かどうかはIsPreviewingを使うこと
+			 */
+			public bool IsOpen
+			{
+				get { return (activeCameraId != 0); }
+			}
+
+			/**
+			 * 映像取得中かどうか
+			 */
+			public bool IsPreviewing
+			{
+				get { return previewTexture != null; }
 			}
 		
 			/**
 			 * レンダーイベント処理用
 			 * コールーチンとして実行される
 			 */
-			public IEnumerator OnRender()
+			internal IEnumerator OnRender()
 			{
 				var renderEventFunc = GetRenderEventFunc();
-				for (; ; )
+				for (; activeCameraId != 0; )
 				{
 					yield return new WaitForEndOfFrame();
 					GL.IssuePluginEvent(renderEventFunc, activeCameraId);
 				}
+				yield break;
 			}
 		}
 
@@ -153,36 +171,6 @@ namespace Serenegiant.UVC {
 		}
 
 		//================================================================================
-		/**
-		 * カメラをopenしているか
-		 * 映像取得中かどうかはIsPreviewingを使うこと
-		 */
-		public bool IsOpen(string deviceName)
-		{
-			var info = Get(deviceName);
-			return (info != null) && (info.activeCameraId != 0);
-		}
-
-		/**
-		 * 映像取得中かどうか
-		 */
-		public bool IsPreviewing(string deviceName)
-		{
-			var info = Get(deviceName);
-			return (info != null) && (info.activeCameraId != 0) && (info.previewTexture != null);
-		}
-
-		/**
-		 * 映像取得用のTextureオブジェクトを取得する
-		 * @return Textureオブジェクト, プレビュー中でなければnull
-		 */
-		public Texture GetTexture(string deviceName)
-		{
-			var info = Get(deviceName);
-			return info != null ? info.previewTexture : null;
-		}
-
-		//================================================================================
 		// Android固有の処理
 		// Java側からのイベントコールバック
 
@@ -190,7 +178,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器が接続された
 		 * @param args UVC機器識別文字列
 		 */
-		public void OnEventAttach(string args)
+		void OnEventAttach(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
@@ -216,7 +204,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器が取り外された
 		 * @param args UVC機器識別文字列
 		 */
-		public void OnEventDetach(string args)
+		void OnEventDetach(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventDetach:({args})");
@@ -234,7 +222,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器へのアクセスのためのパーミッションを取得できた
 		 * @param args UVC機器の識別文字列
 		 */
-		public void OnEventPermission(string args)
+		void OnEventPermission(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventPermission:({args})");
@@ -249,7 +237,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器をオープンした
 		 * @param args UVC機器の識別文字列
 		 */
-		public void OnEventConnect(string args)
+		void OnEventConnect(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventConnect:({args})");
@@ -260,7 +248,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器をクローズした
 		 * @param args UVC機器の識別文字列
 		 */
-		public void OnEventDisconnect(string args)
+		void OnEventDisconnect(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventDisconnect:({args})");
@@ -274,7 +262,7 @@ namespace Serenegiant.UVC {
  * 映像を受け取れるようになった
  * @param args UVC機器の識別文字列
  */
-		public void OnEventReady(string args)
+		void OnEventReady(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnEventReady:({args})");
@@ -286,15 +274,15 @@ namespace Serenegiant.UVC {
 		 * UVC機器からの映像取得を開始した
 		 * @param args UVC機器の識別文字列
 		 */
-		public void OnStartPreview(string args)
+		void OnStartPreview(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && (OnStartPreviewEventHandler != null))
+			if ((info != null) && info.IsPreviewing && (OnStartPreviewEventHandler != null))
 			{
-				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.info, GetTexture(args));
+				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.info, info.previewTexture);
 			}
 		}
 
@@ -302,7 +290,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器からの映像取得を終了した
 		 * @param args UVC機器の識別文字列
 		 */
-		public void OnStopPreview(string args)
+		void OnStopPreview(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnStopPreview:({args})");
@@ -318,7 +306,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器からのステータスイベントを受信した
 		 * @param args UVC機器識別文字列＋ステータス
 		 */
-		public void OnReceiveStatus(string args)
+		void OnReceiveStatus(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnReceiveStatus:({args})");
@@ -329,7 +317,7 @@ namespace Serenegiant.UVC {
 		 * UVC機器からのボタンイベントを受信した
 		 * @param args UVC機器識別文字列＋ボタンイベント
 		 */
-		public void OnButtonEvent(string args)
+		void OnButtonEvent(string args)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnButtonEvent:({args})");
@@ -339,7 +327,7 @@ namespace Serenegiant.UVC {
 		/**
 		 * onResumeイベント
 		 */
-		public IEnumerator OnResumeEvent()
+		IEnumerator OnResumeEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnResumeEvent:" +
@@ -381,7 +369,7 @@ namespace Serenegiant.UVC {
 		/**
 		 * onPauseイベント
 		 */
-		public void OnPauseEvent()
+		void OnPauseEvent()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnPauseEvent:");
@@ -390,7 +378,7 @@ namespace Serenegiant.UVC {
 		}
 
 		//--------------------------------------------------------------------------------
-		public IEnumerator Initialize()
+		private IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Initialize:");
@@ -540,7 +528,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器をcloseする
 		 * @param deviceName UVC機器識別文字列
 		 */
-		public void Close(string deviceName)
+		private void Close(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Close:{deviceName}");
@@ -639,11 +627,11 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
 #endif
-			if (!IsPreviewing(deviceName))
-			{
-				var info = Get(deviceName);
-				if (info != null)
-				{
+			var info = Get(deviceName);
+			if (info != null)
+			{	// 接続されているとき
+				if (info.IsOpen && !info.IsPreviewing)
+				{	// openされているけど映像取得中ではないとき
 					info.previewTexture = new Texture2D(
 							width, height,
 							TextureFormat.ARGB32,
@@ -658,16 +646,16 @@ namespace Serenegiant.UVC {
 						clazz.CallStatic("setPreviewTexture",
 							AndroidUtils.GetCurrentActivity(), deviceName,
 							nativeTexPtr.ToInt32(),
-							-1,	// PreviewMode, -1:自動選択(Open時に指定したPreferH264フラグが有効になる)
+							-1, // PreviewMode, -1:自動選択(Open時に指定したPreferH264フラグが有効になる)
 							width, height);
 					}
 
 					StartCoroutine(info.OnRender());
 				}
-				else
-				{
-					throw new ArgumentException("device name is empty/null");
-				}
+			}
+			else
+			{
+				throw new ArgumentException("device name is empty/null");
 			}
 		}
 
@@ -684,8 +672,8 @@ namespace Serenegiant.UVC {
 			if (info != null)
 			{
 				StopCoroutine(info.OnRender());
+				RequestStopPreview(deviceName);
 			}
-			RequestStopPreview(deviceName);
 		}
 
 		/**
@@ -737,7 +725,7 @@ namespace Serenegiant.UVC {
 		 * 指定したUVC機器の対応解像度を取得する
 		 * @param deviceName UVC機器識別文字列
 		 */
-		public SupportedFormats GetSupportedVideoSize(string deviceName)
+		private SupportedFormats GetSupportedVideoSize(string deviceName)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}GetSupportedVideoSize:{deviceName}");
