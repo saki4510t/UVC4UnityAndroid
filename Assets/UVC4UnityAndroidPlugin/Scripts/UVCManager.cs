@@ -49,7 +49,6 @@ namespace Serenegiant.UVC {
 		 */
 		public IOnUVCStopHandler OnStopPreviewEventHandler;
 
-
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
