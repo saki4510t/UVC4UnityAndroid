@@ -18,86 +18,30 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像の描画先Materialを保持しているGameObject
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
-		public List<RenderTargetSettings> CameraRenderSettings;
+		public List<GameObject> RenderTargets;
 
 		//--------------------------------------------------------------------------------
 		private const string TAG = "UVCDrawer#";
 
 		/**
-		 * カメラ毎の設定保持用
+		 * UVC機器からの映像の描画先Material
+		 * TargetGameObjectから取得する
+		 * 優先順位：
+		 *	 TargetGameObjectのSkybox
+		 *	 > TargetGameObjectのRenderer
+		 *	 > TargetGameObjectのRawImage
+		 *	 > TargetGameObjectのMaterial
+		 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
 		 */
-		private class TargetInfo
-		{
-			/**
-			 * 描画先のGameObject/Materialの個数
-			 */
-			internal readonly int Count;
-			/**
-			 * UVC機器からの映像の描画先Material
-			 * TargetGameObjectから取得する
-			 * 優先順位：
-			 *	 TargetGameObjectのSkybox
-			 *	 > TargetGameObjectのRenderer
-			 *	 > TargetGameObjectのRawImage
-			 *	 > TargetGameObjectのMaterial
-			 * いずれの方法でも取得できなければStartでUnityExceptionを投げる
-			 */
-			internal readonly UnityEngine.Object[] TargetMaterials;
-			/**
-			 * オリジナルのテクスチャ
-			 * UVCカメラ映像受け取り用テクスチャをセットする前に
-			 * GetComponent<Renderer>().material.mainTextureに設定されていた値
-			 */
-			internal readonly Texture[] SavedTextures;
-
-			internal Quaternion[] quaternions;
-			internal bool isActive = false;
-
-			internal TargetInfo(int targetNums)
-			{
-				Count = targetNums;
-				TargetMaterials = new UnityEngine.Object[targetNums];
-				SavedTextures = new Texture[targetNums];
-				quaternions = new Quaternion[targetNums];
-			}
-
-			internal void RestoreTexture()
-			{
-				for (int i = 0; i < Count; i++)
-				{
-					var target = TargetMaterials[i];
-					if (target is Material)
-					{
-						(target as Material).mainTexture = SavedTextures[i];
-					}
-					else if (target is RawImage)
-					{
-						(target as RawImage).texture = SavedTextures[i];
-					}
-					SavedTextures[i] = null;
-					quaternions[i] = Quaternion.identity;
-				}
-			}
-
-			internal void ClearTextures()
-			{
-				for (int i = 0; i < SavedTextures.Length; i++)
-				{
-					SavedTextures[i] = null;
-				}
-			}
-		}
-
+		private UnityEngine.Object[] TargetMaterials;
 		/**
-		 * カメラ毎の設定値
+		 * オリジナルのテクスチャ
+		 * UVCカメラ映像受け取り用テクスチャをセットする前に
+		 * GetComponent<Renderer>().material.mainTextureに設定されていた値
 		 */
-		private TargetInfo[] targetInfos;
+		private Texture[] SavedTextures;
 
-		/**
-		 * ハンドリングしているカメラとTargetInfoを結びつけるための連想配列
-		 * string(deviceName) - index ペアを保持する
-		 */
-		private Dictionary<string, int> cameraIndies = new Dictionary<string, int>();
+		private Quaternion[] quaternions;
 
 		//================================================================================
 
@@ -131,13 +75,11 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCAttachEvent:{device}");
 #endif
+			// XXX 今の実装では基本的に全てのUVC機器を受け入れる
+			// ただしTHETA SとTHETA Vは映像を取得できないインターフェースがあるのでオミットする
+			// CanDrawと同様にUVC機器フィルターをインスペクタで設定できるようにする
 			var result = !device.IsRicoh
 				|| (device.IsTHETA_S || device.IsTHETA_V);
-
-			if (result)
-			{
-				CreateIfNotExist(device.deviceName);
-			}
 
 			return result;
 		}
@@ -153,7 +95,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCDetachEvent:{device}");
 #endif
-			Remove(device.deviceName);
 		}
 
 		/**
@@ -192,6 +133,19 @@ namespace Serenegiant.UVC
 		}
 
 		/**
+		 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
+		 * IUVCDrawerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 対象となるUVC機器の情報
+		 */
+		public bool CanDraw(UVCManager manager, UVCDevice device)
+		{	// XXX 今は全てのUVC機器の映像をこのUVCDrawerで描画する
+			// 必要であれば描画するUVC機器をフィルターすること
+			// FIXME UVC機器フィルタをインスペクタで設定できるようにする
+			return true;
+		}
+
+		/**
 		 * 映像取得を開始した
 		 * IUVCDrawerの実装
 		 * @param manager 呼び出し元のUVCManager
@@ -227,39 +181,37 @@ namespace Serenegiant.UVC
 		private void UpdateTarget()
 		{
 			bool found = false;
-			if ((CameraRenderSettings != null) && (CameraRenderSettings.Count > 0))
+			if ((RenderTargets != null) && (RenderTargets.Count > 0))
 			{
-				targetInfos = new TargetInfo[CameraRenderSettings.Count];
-				int j = 0;
-				foreach (var targets in CameraRenderSettings)
+				TargetMaterials = new UnityEngine.Object[RenderTargets.Count];
+				SavedTextures = new Texture[RenderTargets.Count];
+				quaternions = new Quaternion[RenderTargets.Count];
+				int i = 0;
+				foreach (var target in RenderTargets)
 				{
-					if (targets != null)
+					if (target != null)
 					{
-						targetInfos[j] = new TargetInfo(targets.RenderTargets.Count);
-						int i = 0;
-						foreach (var target in targets.RenderTargets)
+						var material = TargetMaterials[i++] = GetTargetMaterial(target);
+						if (material != null)
 						{
-							var material = targetInfos[j].TargetMaterials[i++] = GetTargetMaterial(target);
-							if (material != null)
-							{
-								found = true;
-							}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-							Console.WriteLine($"{TAG}UpdateTarget:material={material}");
-#endif
+							found = true;
 						}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+						Console.WriteLine($"{TAG}UpdateTarget:material={material}");
+#endif
 					}
-					j++;
+					i++;
 				}
 			}
 			if (!found)
 			{   // 描画先が1つも見つからなかったときはこのスクリプトが
 				// AddComponentされているGameObjectからの取得を試みる
 				// XXX RenderTargetsにgameObjectをセットする？
-				targetInfos = new TargetInfo[1];
-				targetInfos[0] = new TargetInfo(1);
-				targetInfos[0].TargetMaterials[0] = GetTargetMaterial(gameObject);
-				found = targetInfos[0].TargetMaterials[0] != null;
+				TargetMaterials = new UnityEngine.Object[1];
+				SavedTextures = new Texture[1];
+				quaternions = new Quaternion[1];
+				TargetMaterials[0] = GetTargetMaterial(gameObject);
+				found = TargetMaterials[0] != null;
 			}
 
 			if (!found)
@@ -326,43 +278,30 @@ namespace Serenegiant.UVC
 			return null;
 		}
 
-		//--------------------------------------------------------------------------------
-		private int FindCameraIx(string deviceName)
+		private void RestoreTexture()
 		{
-			return cameraIndies.ContainsKey(deviceName) ? cameraIndies[deviceName] : -1;
-		}
-
-		/*NonNull*/
-		private int CreateIfNotExist(string deviceName)
-		{
-			if (!cameraIndies.ContainsKey(deviceName))
+			for (int i = 0; i < TargetMaterials.Length; i++)
 			{
-				int n = cameraIndies.Count;
-				int cameraIx = 0;
-				foreach (var index in cameraIndies.Values)
+				var target = TargetMaterials[i];
+				if (target is Material)
 				{
-					if (index == cameraIx)
-					{
-						cameraIx++;
-					}
+					(target as Material).mainTexture = SavedTextures[i];
 				}
-				cameraIndies[deviceName] = cameraIx;
+				else if (target is RawImage)
+				{
+					(target as RawImage).texture = SavedTextures[i];
+				}
+				SavedTextures[i] = null;
+				quaternions[i] = Quaternion.identity;
 			}
-			return cameraIndies[deviceName];
 		}
 
-		/*Nullable*/
-		private int Remove(string deviceName)
+		private void ClearTextures()
 		{
-			int index = -1;
-
-			if (cameraIndies.ContainsKey(deviceName))
+			for (int i = 0; i < SavedTextures.Length; i++)
 			{
-				index = cameraIndies[deviceName];
-				cameraIndies.Remove(deviceName);
+				SavedTextures[i] = null;
 			}
-
-			return index;
 		}
 
 		//--------------------------------------------------------------------------------
@@ -380,35 +319,19 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStartPreview:({tex})");
 #endif
-			var cameraIx = FindCameraIx(deviceName);
-			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
+			int i = 0;
+			foreach (var target in TargetMaterials)
 			{
-				targetInfos[cameraIx].isActive = true;
-				if (targetInfos[cameraIx].Count > 0)
+				if (target is Material)
 				{
-					int i = 0;
-					foreach (var target in targetInfos[cameraIx].TargetMaterials)
-					{
-						if (target is Material)
-						{
-							targetInfos[cameraIx].SavedTextures[i++] = (target as Material).mainTexture;
-							(target as Material).mainTexture = tex;
-						}
-						else if (target is RawImage)
-						{
-							targetInfos[cameraIx].SavedTextures[i++] = (target as RawImage).texture;
-							(target as RawImage).texture = tex;
-						}
-					}
+					SavedTextures[i++] = (target as Material).mainTexture;
+					(target as Material).mainTexture = tex;
 				}
-				else
+				else if (target is RawImage)
 				{
-					targetInfos[cameraIx].ClearTextures();
+					SavedTextures[i++] = (target as RawImage).texture;
+					(target as RawImage).texture = tex;
 				}
-			}
-			else
-			{
-				throw new ArgumentOutOfRangeException();
 			}
 		}
 
@@ -421,13 +344,8 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:{deviceName}");
 #endif
-			var cameraIx = FindCameraIx(deviceName);
 			// 描画先のテクスチャをもとに戻す
-			if ((cameraIx < targetInfos.Length) && (targetInfos[cameraIx] != null))
-			{
-				targetInfos[cameraIx].isActive = false;
-				targetInfos[cameraIx].RestoreTexture();
-			}
+			RestoreTexture();
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:finished");
 #endif

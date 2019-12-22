@@ -57,6 +57,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e3fa0f7bdc68444abad301469f7cf7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UVCDrawers: []
   DefaultWidth: 1280
   DefaultHeight: 720
   PreferH264: 1
@@ -72,3 +73,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efb1bc18f15fa0546b998062ea4861a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RenderTargets:
+  - {fileID: 0}

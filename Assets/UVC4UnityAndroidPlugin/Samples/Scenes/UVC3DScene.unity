@@ -299,12 +299,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
+      propertyPath: RenderTargets.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
       propertyPath: CameraRenderSettings.Array.data[0].RenderTargets.Array.data[0]
       value: 
       objectReference: {fileID: 1922705223}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: CameraRenderSettings.Array.data[0].RenderTargets.Array.data[1]
+      value: 
+      objectReference: {fileID: 800007506}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: RenderTargets.Array.data[1]
+      value: 
+      objectReference: {fileID: 800007506}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: RenderTargets.Array.data[0]
       value: 
       objectReference: {fileID: 800007506}
     - target: {fileID: 6011951749156047501, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,

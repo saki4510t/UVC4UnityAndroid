@@ -520,6 +520,11 @@ PrefabInstance:
       propertyPath: CameraRenderSettings.Array.data[0].RenderTargets.Array.data[0]
       value: 
       objectReference: {fileID: 898263253}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: RenderTargets.Array.data[0]
+      value: 
+      objectReference: {fileID: 898263253}
     - target: {fileID: 6011951749156047501, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -573,6 +578,11 @@ PrefabInstance:
     - target: {fileID: 6011951749156047501, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7716261784260357304, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: UVCDrawers.Array.size
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7953172909807438327, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
