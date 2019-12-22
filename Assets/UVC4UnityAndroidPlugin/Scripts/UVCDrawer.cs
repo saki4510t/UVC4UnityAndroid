@@ -193,7 +193,7 @@ namespace Serenegiant.UVC
 
 		/**
 		 * 映像取得を開始した
-		 * IOnUVCStartEventHandlerの実装
+		 * IUVCDrawerの実装
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 * @param tex UVC機器からの映像を受け取るTextureインスタンス
@@ -208,7 +208,7 @@ namespace Serenegiant.UVC
 
 		/**
 		 * 映像取得を終了した
-		 * IOnUVCStopEventHandlerの実装
+		 * IUVCDrawerの実装
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */
