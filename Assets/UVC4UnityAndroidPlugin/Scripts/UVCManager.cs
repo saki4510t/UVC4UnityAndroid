@@ -546,13 +546,10 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}Close:{deviceName}");
 #endif
 			var info = Get(deviceName);
-			if (info != null)
+			if ((info != null) && (info.activeCameraId != 0))
 			{
 				info.activeCameraId = 0;
 				info.previewTexture = null;
-			}
-			if (!String.IsNullOrEmpty(deviceName))
-			{
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 				{
 					clazz.CallStatic("closeDevice",
