@@ -63,9 +63,9 @@ namespace Serenegiant.UVC
 		} // interface IPreviewSizeSelect
 
 		/**
-		 * UVC機器からの映像取得を開始したときのイベントインターフェース
+		 * UVCからの映像描画クラスを示すインターフェース
 		 */
-		public interface IOnUVCStartHandler : IUVCHandler
+		public interface IUVCDrawer : IUVCHandler
 		{
 			/**
 			 * UVC機器からの映像取得を開始した
@@ -74,28 +74,12 @@ namespace Serenegiant.UVC
 			 * @param tex UVC機器からの映像を受け取るTextureオブジェクト
 			 */
 			void OnUVCStartEvent(UVCManager manager, UVCDevice device, Texture tex);
-
-		} // interface IOnStartPreviewEventHandler
-
-		/**
-		 * UVC機器からの映像取得を終了したときのイベントインターフェース
-		 */
-		public interface IOnUVCStopHandler : IUVCHandler
-		{
 			/**
 			 * UVC機器からの映像取得を終了した
 			 * @param manager 呼び出し元のUVCManager
 			 * @param device 接続されたUVC機器情報
 			 */
 			void OnUVCStopEvent(UVCManager manager, UVCDevice device);
-
-		} // interface IOnStopPreviewEventHandler
-
-		/**
-		 * UVCからの映像描画クラスを示すインターフェース
-		 */
-		public interface IUVCDrawer : IOnUVCStartHandler, IOnUVCStopHandler
-		{
 
 		}
 

@@ -38,17 +38,9 @@ namespace Serenegiant.UVC {
 		 */
 		public IOnUVCSelectSizeHandler OnUVCSelectSizeHandler;
 		/**
-		 * 映像取得開始時の処理
-		 * @param UVCManager
-		 * @param UVCDevice 取り外されるUVC機器情報
-		 * @param texture 映像を受け取るTextureオブジェクト
+		 * 映像描画処理
 		 */
-		public IOnUVCStartHandler OnStartPreviewEventHandler;
-		/**
-		 * 映像取得終了時の処理
-		 */
-		public IOnUVCStopHandler OnStopPreviewEventHandler;
-
+		public IUVCDrawer UVCDrawer;
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
@@ -391,9 +383,9 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (OnStartPreviewEventHandler != null))
+			if ((info != null) && info.IsPreviewing && (UVCDrawer != null))
 			{
-				OnStartPreviewEventHandler.OnUVCStartEvent(this, info.device, info.previewTexture);
+				UVCDrawer.OnUVCStartEvent(this, info.device, info.previewTexture);
 			}
 		}
 
@@ -407,10 +399,10 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStopPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && (OnStopPreviewEventHandler != null))
+			if ((info != null) && (UVCDrawer != null))
 			{
 				info.SetSize(0, 0);
-				OnStopPreviewEventHandler.OnUVCStopEvent(this, info.device);
+				UVCDrawer.OnUVCStopEvent(this, info.device);
 			}
 		}
 
@@ -545,13 +537,9 @@ namespace Serenegiant.UVC {
 			{
 				OnDetachEventHandler = GetComponent(typeof(IOnUVCDetachHandler)) as IOnUVCDetachHandler;
 			}
-			if (OnStartPreviewEventHandler == null)
+			if (UVCDrawer == null)
 			{
-				OnStartPreviewEventHandler = GetComponent(typeof(IOnUVCStartHandler)) as IOnUVCStartHandler;
-			}
-			if (OnStopPreviewEventHandler == null)
-			{
-				OnStopPreviewEventHandler = GetComponent(typeof(IOnUVCStopHandler)) as IOnUVCStopHandler;
+				UVCDrawer = GetComponent(typeof(UVCDrawer)) as UVCDrawer;
 			}
 			if (OnUVCSelectSizeHandler == null)
 			{
