@@ -10,8 +10,6 @@ using UnityEngine;
 using UnityEngine.Android;
 #endif
 
-using static Serenegiant.UVC.UVCEventHandler;
-
 namespace Serenegiant.UVC {
 
 	[RequireComponent(typeof(AndroidUtils))]
@@ -41,27 +39,10 @@ namespace Serenegiant.UVC {
 		 */
 		public bool PreferH264 = true;
 		/**
-		 * UVC機器が接続されたときのイベント
-		 * @param UVCManager
-		 * @param UVCDevice 接続されたUVC機器情報
-		 * @return bool 接続されたUVC機器を使用するかどうか
+		 * UVC関係のイベンドハンドラー
 		 */
-		public IOnUVCAttachHandler OnAttachEventHandler;
-		/**
-		 * UVC機器が取り外されたときのイベント
-		 * @param UVCManager
-		 * @param UVCDevice 取り外されるUVC機器情報
-		 */
-		public IOnUVCDetachHandler OnDetachEventHandler;
-		/**
-		 * 解像度の選択処理
-		 */
-		public IOnUVCSelectSizeHandler OnUVCSelectSizeHandler;
-		/**
-		 * 映像描画処理
-		 */
-		[SerializeField, ComponentRestriction(typeof(IUVCDrawer))]
-		public Component[] UVCDrawers;
+		[SerializeField, ComponentRestriction(typeof(IUVCHandler))]
+		public Component[] UVCHandlers;
 
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
@@ -290,8 +271,7 @@ namespace Serenegiant.UVC {
 			if (!String.IsNullOrEmpty(args))
 			{   // argsはdeviceName
 				var info = CreateIfNotExist(args);
-				if ((OnAttachEventHandler == null) 
-					|| OnAttachEventHandler.OnUVCAttachEvent(this, info.device))
+				if (HandleOnAttachEvent(info))
 				{
 					RequestUsbPermission(args);
 				} else
@@ -314,9 +294,9 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnEventDetach:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && (OnDetachEventHandler != null))
+			if (info != null)
 			{
-				OnDetachEventHandler.OnUVCDetachEvent(this, info.device);
+				HandleOnDetachEvent(info);
 				Close(args);
 				Remove(args);
 			}
@@ -384,13 +364,13 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
+			if ((info != null) && info.IsPreviewing && (UVCHandlers != null))
 			{
-				foreach (var drawer in UVCDrawers)
+				foreach (var drawer in UVCHandlers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					if ((drawer is IUVCHandler) && (drawer as IUVCHandler).CanDraw(this, info.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStartEvent(this, info.device, info.previewTexture);
+						(drawer as IUVCHandler).OnUVCStartEvent(this, info.device, info.previewTexture);
 					}
 				}
 			}
@@ -406,14 +386,14 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStopPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
+			if ((info != null) && info.IsPreviewing && (UVCHandlers != null))
 			{
 				info.SetSize(0, 0);
-				foreach (var drawer in UVCDrawers)
+				foreach (var drawer in UVCHandlers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					if ((drawer is IUVCHandler) && (drawer as IUVCHandler).CanDraw(this, info.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStopEvent(this, info.device);
+						(drawer as IUVCHandler).OnUVCStopEvent(this, info.device);
 					}
 				}
 			}
@@ -542,48 +522,37 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:");
 #endif
-			if (OnAttachEventHandler == null)
+			// IUVCHandlerが割り当てられているかどうかをチェック
+			var hasHandler = false;
+			if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
 			{
-				OnAttachEventHandler = GetComponent(typeof(IOnUVCAttachHandler)) as IOnUVCAttachHandler;
-			}
-			if (OnDetachEventHandler == null)
-			{
-				OnDetachEventHandler = GetComponent(typeof(IOnUVCDetachHandler)) as IOnUVCDetachHandler;
-			}
-			// UVCDrawerが割り当てられているかどうかをチェック
-			var hasDrawer = false;
-			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
-			{
-				foreach (var drawer in UVCDrawers)
+				foreach (var drawer in UVCHandlers)
 				{
-					if (drawer is IUVCDrawer)
+					if (drawer is IUVCHandler)
 					{
-						hasDrawer = true;
+						hasHandler = true;
 						break;
 					}
 				}
 			}
-			if (!hasDrawer)
+			if (!hasHandler)
 			{	// インスペクタでUVCDrawerが設定されていないときは
 				// このスクリプトがaddされているゲームオブジェクトからの取得を試みる
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}InitPlugin:has no IUVCDrawer, try to get from gameObject");
 #endif
-				var drawers = GetComponents(typeof(IUVCDrawer));
+				var drawers = GetComponents(typeof(IUVCHandler));
 				if ((drawers != null) && (drawers.Length > 0))
 				{
-					UVCDrawers = new Component[drawers.Length];
+					UVCHandlers = new Component[drawers.Length];
 					int i = 0;
 					foreach (var drawer in drawers)
 					{
-						UVCDrawers[i++] = drawer;
+						UVCHandlers[i++] = drawer;
 					}
 				}
 			}
-			if (OnUVCSelectSizeHandler == null)
-			{
-				OnUVCSelectSizeHandler = GetComponent(typeof(IOnUVCSelectSizeHandler)) as IOnUVCSelectSizeHandler;
-			}
+
 			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
 			{
 				clazz.CallStatic("initDeviceDetector",
@@ -728,16 +697,23 @@ namespace Serenegiant.UVC {
 				}
 
 				// 解像度の選択処理
-				if (OnUVCSelectSizeHandler != null)
+				if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
 				{
-					var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, info.device, supportedVideoSize);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"{TAG}StartPreview:selected={size}");
-#endif
-					if (size != null)
+					foreach (var handler in UVCHandlers)
 					{
-						width = size.Width;
-						height = size.Height;
+						if ((handler is IUVCHandler) && ((handler as IUVCHandler).CanDraw(this, info.device)))
+						{
+							var size = (handler as IUVCHandler).OnUVCSelectSize(this, info.device, supportedVideoSize);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+							Console.WriteLine($"{TAG}StartPreview:selected={size}");
+#endif
+							if (size != null)
+							{   // 一番最初に見つかった描画可能なIUVCHandlerがnull以外を返せばそれを使う
+								width = size.Width;
+								height = size.Height;
+								break;
+							}
+						}
 					}
 				}
 
@@ -923,7 +899,44 @@ namespace Serenegiant.UVC {
 	
 			return info;
 		}
-	
+
+		private bool HandleOnAttachEvent(CameraInfo info/*NonNull*/)
+		{
+			if ((UVCHandlers == null) || (UVCHandlers.Length == 0))
+			{
+				return true;
+			}
+			else
+			{
+				bool hasHandler = false;
+				foreach (var handler in UVCHandlers)
+				{
+					if (handler is IUVCHandler)
+					{
+						hasHandler = true;
+						if ((handler as IUVCHandler).OnUVCAttachEvent(this, info.device))
+						{
+							return true;
+						}
+					}
+				}
+				return !hasHandler;
+			}
+		}
+
+		private void HandleOnDetachEvent(CameraInfo info/*NonNull*/)
+		{
+			if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
+			{
+				foreach (var handler in UVCHandlers)
+				{
+					if (handler is IUVCHandler)
+					{
+						(handler as IUVCHandler).OnUVCDetachEvent(this, info.device);
+					}
+				}
+			}
+		}
 
 	} // UVCManager
 

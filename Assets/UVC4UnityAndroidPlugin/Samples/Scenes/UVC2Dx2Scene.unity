@@ -706,6 +706,16 @@ PrefabInstance:
       propertyPath: UVCDrawers.Array.size
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7716261784260357304, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: DefaultWidth
+      value: 1280
+      objectReference: {fileID: 0}
+    - target: {fileID: 7716261784260357304, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: DefaultHeight
+      value: 720
+      objectReference: {fileID: 0}
     - target: {fileID: 7953172909807438327, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: m_Name

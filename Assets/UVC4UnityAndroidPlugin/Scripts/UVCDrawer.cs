@@ -9,10 +9,7 @@ using UnityEngine.UI;
 namespace Serenegiant.UVC
 {
 
-	public class UVCDrawer : MonoBehaviour,
-		UVCEventHandler.IOnUVCAttachHandler, UVCEventHandler.IOnUVCDetachHandler,
-		UVCEventHandler.IOnUVCSelectSizeHandler,
-		UVCEventHandler.IUVCDrawer
+	public class UVCDrawer : MonoBehaviour, IUVCHandler
 	{
 		/**
 		 * 接続時及び描画時のフィルタ用
