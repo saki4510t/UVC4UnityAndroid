@@ -170,6 +170,23 @@ namespace Serenegiant.UVC {
 		}
 
 		//================================================================================
+		/**
+		 * 接続中のUVC機器一覧を取得
+		 * @return 接続中のUVC機器一覧List
+		 */
+		public List<CameraInfo> GetAttachedDevices()
+		{
+			var result = new List<CameraInfo>(cameraInfos.Count);
+
+			foreach (var info in cameraInfos.Values)
+			{
+				result.Add(info);
+			}
+	
+			return result;
+		}
+
+		//================================================================================
 		// Android固有の処理
 		// Java側からのイベントコールバック
 
