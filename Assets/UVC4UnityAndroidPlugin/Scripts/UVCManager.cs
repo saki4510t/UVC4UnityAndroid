@@ -78,7 +78,7 @@ namespace Serenegiant.UVC {
 
 		public class CameraInfo
 		{
-			public readonly UVCInfo info;
+			internal readonly UVCInfo info;
 			/**
 			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
 			 */
@@ -89,6 +89,31 @@ namespace Serenegiant.UVC {
 			{
 				this.info = info;
 			}
+
+			/**
+			 * 機器名を取得
+			 */
+			public string DeviceName
+			{
+				get { return info.deviceName;  }
+			}
+
+			/**
+			 * ベンダーIDを取得
+			 */
+			public int Vid
+			{
+				get { return info.vid;  }
+			}
+
+			/**
+			 * プロダクトIDを取得
+			 */
+			public int Pid
+			{
+				get { return info.pid;  }
+			}
+
 
 			/**
 			 * カメラをopenしているか
