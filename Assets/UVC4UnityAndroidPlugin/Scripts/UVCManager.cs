@@ -114,7 +114,6 @@ namespace Serenegiant.UVC {
 				get { return info.pid;  }
 			}
 
-
 			/**
 			 * カメラをopenしているか
 			 * 映像取得中かどうかはIsPreviewingを使うこと
@@ -131,7 +130,38 @@ namespace Serenegiant.UVC {
 			{
 				get { return IsOpen && (previewTexture != null); }
 			}
-		
+
+			/**
+			 * 現在の解像度(幅)
+			 * プレビュー中でなければ0
+			 */
+			public int CurrentWidth
+			{
+				get { return currentWidth;  }
+			}
+
+			/**
+			 * 現在の解像度(高さ)
+			 * プレビュー中でなければ0
+			 */
+			public int CurrentHeight
+			{
+				get { return currentHeight; }
+			}
+
+			private int currentWidth;
+			private int currentHeight;
+			/**
+			 * 現在の解像度を変更
+			 * @param width
+			 * @param height
+			 */
+			internal void SetSize(int width, int height)
+			{
+				currentWidth = width;
+				currentHeight = height;
+			}
+	
 			/**
 			 * レンダーイベント処理用
 			 * コールーチンとして実行される
@@ -228,6 +258,29 @@ namespace Serenegiant.UVC {
 			}
 		}
 
+		/**
+		 * 解像度を変更
+		 * @param 解像度を変更するUVC機器を指定
+		 * @param 変更する解像度を指定, nullならデフォルトに戻す
+		 * @param 解像度が変更されたかどうか
+		 */
+		public bool SetVideoSize(CameraInfo camera, SupportedFormats.Size size)
+		{
+			var info = (camera != null) ? Get(camera.DeviceName) : null;
+			var width = size != null ? size.Width : DefaultWidth;
+			var height = size != null ? size.Height : DefaultHeight;
+			if ((info != null) && info.IsPreviewing)
+			{
+				if ((width != info.CurrentWidth) || (height != info.CurrentHeight))
+				{	// 解像度が変更になるとき
+					StopPreview(info.DeviceName);
+					StartPreview(info.DeviceName, width, height);
+					return true;
+				}
+			}
+			return false;
+		}
+	
 		//================================================================================
 		// Android固有の処理
 		// Java側からのイベントコールバック
@@ -356,6 +409,7 @@ namespace Serenegiant.UVC {
 			var info = Get(args);
 			if ((info != null) && (OnStopPreviewEventHandler != null))
 			{
+				info.SetSize(0, 0);
 				OnStopPreviewEventHandler.OnUVCStopEvent(this, info.info);
 			}
 		}
@@ -596,6 +650,7 @@ namespace Serenegiant.UVC {
 			var info = Get(deviceName);
 			if ((info != null) && (info.activeCameraId != 0))
 			{
+				info.SetSize(0, 0);
 				info.activeCameraId = 0;
 				info.previewTexture = null;
 				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
@@ -659,24 +714,12 @@ namespace Serenegiant.UVC {
 					}
 				}
 
-				// 対応解像度のチェック
-				if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
-				{   // 指定した解像度に対応していない
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
-					Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
-					Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
-#endif
-					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
-				}
 				StartPreview(deviceName, width, height);
 			}
 		}
 
 		/**
 		 * UVC機器からの映像受け取り開始要求をする
-		 * この関数では指定したサイズに対応しているかどうかのチェックをしないので
-		 * 呼び出し元でチェックすること
 		 * 通常はStartPreview(string deviceName)経由で呼び出す
 		 * @param deviceName UVC機器識別文字列
 		 * @param width
@@ -689,9 +732,26 @@ namespace Serenegiant.UVC {
 #endif
 			var info = Get(deviceName);
 			if (info != null)
-			{	// 接続されているとき
+			{   // 接続されているとき
+				var supportedVideoSize = GetSupportedVideoSize(deviceName);
+				if (supportedVideoSize == null)
+				{
+					throw new ArgumentException("fauled to get supported video size");
+				}
+				// 対応解像度のチェック
+				if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+				{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
+					Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
+					Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
+#endif
+					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+				}
+
 				if (info.IsOpen && !info.IsPreviewing)
-				{	// openされているけど映像取得中ではないとき
+				{   // openされているけど映像取得中ではないとき
+					info.SetSize(width, height);
 					info.previewTexture = new Texture2D(
 							width, height,
 							TextureFormat.ARGB32,
@@ -731,6 +791,7 @@ namespace Serenegiant.UVC {
 			var info = Get(deviceName);
 			if (info != null)
 			{
+				info.SetSize(0, 0);
 				StopCoroutine(info.OnRender());
 				RequestStopPreview(deviceName);
 			}
