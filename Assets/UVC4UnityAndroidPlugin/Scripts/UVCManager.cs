@@ -327,6 +327,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnReceiveStatus:({args})");
 #endif
+			// FIXME 未実装
 		}
 
 		/**
@@ -338,6 +339,7 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnButtonEvent:({args})");
 #endif
+			// FIXME 未実装
 		}
 
 		/**
