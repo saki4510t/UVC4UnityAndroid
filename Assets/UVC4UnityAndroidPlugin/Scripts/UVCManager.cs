@@ -585,40 +585,44 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StartPreview:{deviceName}");
 #endif
-			int width = DefaultWidth;
-			int height = DefaultHeight;
-
-			var supportedVideoSize = GetSupportedVideoSize(deviceName);
-			if (supportedVideoSize == null)
+			var info = Get(deviceName);
+			if ((info != null) && (info.activeCameraId != 0))
 			{
-				throw new ArgumentException("fauled to get supported video size");
-			}
+				int width = DefaultWidth;
+				int height = DefaultHeight;
 
-			// 解像度の選択処理
-			if (OnUVCSelectSizeHandler != null)
-			{
-				var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, GetInfo(deviceName), supportedVideoSize);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}StartPreview:selected={size}");
-#endif
-				if (size != null)
+				var supportedVideoSize = GetSupportedVideoSize(deviceName);
+				if (supportedVideoSize == null)
 				{
-					width = size.Width;
-					height = size.Height;
+					throw new ArgumentException("fauled to get supported video size");
 				}
-			}
 
-			// 対応解像度のチェック
-			if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
-			{   // 指定した解像度に対応していない
+				// 解像度の選択処理
+				if (OnUVCSelectSizeHandler != null)
+				{
+					var size = OnUVCSelectSizeHandler.OnUVCSelectSize(this, info.info, supportedVideoSize);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
-				Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
-				Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
+					Console.WriteLine($"{TAG}StartPreview:selected={size}");
 #endif
-				throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+					if (size != null)
+					{
+						width = size.Width;
+						height = size.Height;
+					}
+				}
+
+				// 対応解像度のチェック
+				if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
+				{   // 指定した解像度に対応していない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
+					Console.WriteLine($"{TAG}Info={GetInfo(deviceName)}");
+					Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
+#endif
+					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
+				}
+				StartPreview(deviceName, width, height);
 			}
-			StartPreview(deviceName, width, height);
 		}
 
 		/**
