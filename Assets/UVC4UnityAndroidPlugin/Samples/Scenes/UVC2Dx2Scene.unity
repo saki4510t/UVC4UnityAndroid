@@ -130,7 +130,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efb1bc18f15fa0546b998062ea4861a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UVCFilters: []
+  UVCFilters:
+  - Vid: 1133
+    Pid: 2093
+    DeviceName: 
+    IsExclude: 0
   RenderTargets:
   - {fileID: 1898103480}
 --- !u!1 &548459541
@@ -610,7 +614,7 @@ PrefabInstance:
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: UVCFilters.Array.size
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
@@ -630,12 +634,12 @@ PrefabInstance:
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: UVCFilters.Array.data[0].Vid
-      value: 0
+      value: 1133
       objectReference: {fileID: 0}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: UVCFilters.Array.data[0].Pid
-      value: 0
+      value: 2140
       objectReference: {fileID: 0}
     - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
