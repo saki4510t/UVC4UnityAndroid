@@ -10,9 +10,17 @@ namespace Serenegiant.UVC
 	{
 
 		/**
+		 * UVC機器イベント処理インターフェースのマーカー
+		 */
+		public interface IUVCHandler
+		{
+
+		}
+
+		/**
 		 * UVC機器が接続されたときのイベントインターフェース
 		 */
-		public interface IOnUVCAttachHandler
+		public interface IOnUVCAttachHandler : IUVCHandler
 		{
 			/**
 			 * UVC機器が接続された
@@ -27,7 +35,7 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器が取り外されたときのイベントインターフェース
 		 */
-		public interface IOnUVCDetachHandler
+		public interface IOnUVCDetachHandler : IUVCHandler
 		{
 			/**
 			 * UVC機器が取り外された
@@ -41,7 +49,7 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器がからの映像取得の際に解像度を選択するためのイベントインターフェース
 		 */
-		public interface IOnUVCSelectSizeHandler
+		public interface IOnUVCSelectSizeHandler : IUVCHandler
 		{
 			/**
 			 * UVC機器が取り外された
@@ -57,7 +65,7 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器からの映像取得を開始したときのイベントインターフェース
 		 */
-		public interface IOnUVCStartHandler
+		public interface IOnUVCStartHandler : IUVCHandler
 		{
 			/**
 			 * UVC機器からの映像取得を開始した
@@ -72,7 +80,7 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器からの映像取得を終了したときのイベントインターフェース
 		 */
-		public interface IOnUVCStopHandler
+		public interface IOnUVCStopHandler : IUVCHandler
 		{
 			/**
 			 * UVC機器からの映像取得を終了した
@@ -82,6 +90,14 @@ namespace Serenegiant.UVC
 			void OnUVCStopEvent(UVCManager manager, UVCDevice device);
 
 		} // interface IOnStopPreviewEventHandler
+
+		/**
+		 * UVCからの映像描画クラスを示すインターフェース
+		 */
+		public interface IUVCDrawer : IOnUVCStartHandler, IOnUVCStopHandler
+		{
+
+		}
 
 	} // class UVCEventHandler
 
