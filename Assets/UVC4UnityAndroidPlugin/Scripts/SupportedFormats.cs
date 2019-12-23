@@ -407,7 +407,6 @@ namespace Serenegiant.UVC
 		/**
 		 * 指定した解像度に対応しているSizeを返す
 		 * 対応していなければnullを返す
-		 * FIXME 今はフレームレートは無視する
 		 * @param width
 		 * @param height
 		 * @param minFps(default=0.1f)
