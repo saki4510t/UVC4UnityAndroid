@@ -37,7 +37,7 @@ namespace Serenegiant.UVC {
 		 * true:	H.264 > MJPEG > YUV
 		 * false:	MJPEG > H.264 > YUV
 		 */
-		public bool PreferH264 = true;
+		public bool PreferH264 = false;
 		/**
 		 * UVC関係のイベンドハンドラー
 		 */
