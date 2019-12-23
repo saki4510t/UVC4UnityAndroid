@@ -8,7 +8,7 @@ namespace Serenegiant.UVC
 	/**
 	 * UVC関係のイベントハンドリングインターフェース
 	 */
-	public interface IUVCHandler
+	public interface IUVCDrawer
 	{
 		/**
 		 * UVC機器が接続された

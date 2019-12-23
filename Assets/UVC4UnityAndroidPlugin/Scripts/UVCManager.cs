@@ -41,8 +41,8 @@ namespace Serenegiant.UVC {
 		/**
 		 * UVC関係のイベンドハンドラー
 		 */
-		[SerializeField, ComponentRestriction(typeof(IUVCHandler))]
-		public Component[] UVCHandlers;
+		[SerializeField, ComponentRestriction(typeof(IUVCDrawer))]
+		public Component[] UVCDrawers;
 
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
@@ -364,13 +364,13 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStartPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCHandlers != null))
+			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
 			{
-				foreach (var drawer in UVCHandlers)
+				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCHandler) && (drawer as IUVCHandler).CanDraw(this, info.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
 					{
-						(drawer as IUVCHandler).OnUVCStartEvent(this, info.device, info.previewTexture);
+						(drawer as IUVCDrawer).OnUVCStartEvent(this, info.device, info.previewTexture);
 					}
 				}
 			}
@@ -386,14 +386,14 @@ namespace Serenegiant.UVC {
 			Console.WriteLine($"{TAG}OnStopPreview:({args})");
 #endif
 			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCHandlers != null))
+			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
 			{
 				info.SetSize(0, 0);
-				foreach (var drawer in UVCHandlers)
+				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCHandler) && (drawer as IUVCHandler).CanDraw(this, info.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
 					{
-						(drawer as IUVCHandler).OnUVCStopEvent(this, info.device);
+						(drawer as IUVCDrawer).OnUVCStopEvent(this, info.device);
 					}
 				}
 			}
@@ -522,33 +522,33 @@ namespace Serenegiant.UVC {
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:");
 #endif
-			// IUVCHandlerが割り当てられているかどうかをチェック
-			var hasHandler = false;
-			if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
+			// IUVCDrawersが割り当てられているかどうかをチェック
+			var hasDrawer = false;
+			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
 			{
-				foreach (var drawer in UVCHandlers)
+				foreach (var drawer in UVCDrawers)
 				{
-					if (drawer is IUVCHandler)
+					if (drawer is IUVCDrawer)
 					{
-						hasHandler = true;
+						hasDrawer = true;
 						break;
 					}
 				}
 			}
-			if (!hasHandler)
-			{	// インスペクタでUVCDrawerが設定されていないときは
+			if (!hasDrawer)
+			{	// インスペクタでIUVCDrawerが設定されていないときは
 				// このスクリプトがaddされているゲームオブジェクトからの取得を試みる
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}InitPlugin:has no IUVCDrawer, try to get from gameObject");
 #endif
-				var drawers = GetComponents(typeof(IUVCHandler));
+				var drawers = GetComponents(typeof(IUVCDrawer));
 				if ((drawers != null) && (drawers.Length > 0))
 				{
-					UVCHandlers = new Component[drawers.Length];
+					UVCDrawers = new Component[drawers.Length];
 					int i = 0;
 					foreach (var drawer in drawers)
 					{
-						UVCHandlers[i++] = drawer;
+						UVCDrawers[i++] = drawer;
 					}
 				}
 			}
@@ -697,18 +697,18 @@ namespace Serenegiant.UVC {
 				}
 
 				// 解像度の選択処理
-				if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
+				if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
 				{
-					foreach (var handler in UVCHandlers)
+					foreach (var drawer in UVCDrawers)
 					{
-						if ((handler is IUVCHandler) && ((handler as IUVCHandler).CanDraw(this, info.device)))
+						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).CanDraw(this, info.device)))
 						{
-							var size = (handler as IUVCHandler).OnUVCSelectSize(this, info.device, supportedVideoSize);
+							var size = (drawer as IUVCDrawer).OnUVCSelectSize(this, info.device, supportedVideoSize);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 							Console.WriteLine($"{TAG}StartPreview:selected={size}");
 #endif
 							if (size != null)
-							{   // 一番最初に見つかった描画可能なIUVCHandlerがnull以外を返せばそれを使う
+							{   // 一番最初に見つかった描画可能なIUVCDrawersがnull以外を返せばそれを使う
 								width = size.Width;
 								height = size.Height;
 								break;
@@ -870,6 +870,12 @@ namespace Serenegiant.UVC {
 			}
 		}
 
+		/**
+		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
+		 * まだ登録させていなければ新規作成する
+		 * @param deviceName UVC機器識別文字列
+		 * @param CameraInfoを返す
+		 */
 		/*NonNull*/
 		private CameraInfo CreateIfNotExist(string deviceName)
 		{
@@ -880,12 +886,22 @@ namespace Serenegiant.UVC {
 			return cameraInfos[deviceName];
 		}
 
+		/**
+		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
+		 * @param deviceName UVC機器識別文字列
+		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
+		 */
 		/*Nullable*/
 		private CameraInfo Get(string deviceName)
 		{
 			return !String.IsNullOrEmpty(deviceName) && cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
 		}
 
+		/**
+		 * 指定したUVC機器のCameraInfoを取り除く
+		 * @param deviceName UVC機器識別文字列
+		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
+		 */
 		/*Nullable*/
 		private CameraInfo Remove(string deviceName)
 		{
@@ -900,39 +916,49 @@ namespace Serenegiant.UVC {
 			return info;
 		}
 
+		/**
+		 * UVC機器が接続されたときの処理の実体
+		 * @param info
+		 * @return true: 接続されたUVC機器を使用する, false: 接続されたUVC機器を使用しない
+		 */
 		private bool HandleOnAttachEvent(CameraInfo info/*NonNull*/)
 		{
-			if ((UVCHandlers == null) || (UVCHandlers.Length == 0))
-			{
+			if ((UVCDrawers == null) || (UVCDrawers.Length == 0))
+			{	// IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
 				return true;
 			}
 			else
 			{
-				bool hasHandler = false;
-				foreach (var handler in UVCHandlers)
+				bool hasDrawer = false;
+				foreach (var drawer in UVCDrawers)
 				{
-					if (handler is IUVCHandler)
+					if (drawer is IUVCDrawer)
 					{
-						hasHandler = true;
-						if ((handler as IUVCHandler).OnUVCAttachEvent(this, info.device))
-						{
+						hasDrawer = true;
+						if ((drawer as IUVCDrawer).OnUVCAttachEvent(this, info.device))
+						{   // どれか1つのIUVCDrawerがtrueを返せばtrue(接続されたUVC機器を使用する)を返す
 							return true;
 						}
 					}
 				}
-				return !hasHandler;
+				// IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
+				return !hasDrawer;
 			}
 		}
 
+		/**
+		 * UVC機器が取り外されたときの処理の実体
+		 * @param info
+		 */
 		private void HandleOnDetachEvent(CameraInfo info/*NonNull*/)
 		{
-			if ((UVCHandlers != null) && (UVCHandlers.Length > 0))
+			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
 			{
-				foreach (var handler in UVCHandlers)
+				foreach (var drawer in UVCDrawers)
 				{
-					if (handler is IUVCHandler)
+					if (drawer is IUVCDrawer)
 					{
-						(handler as IUVCHandler).OnUVCDetachEvent(this, info.device);
+						(drawer as IUVCDrawer).OnUVCDetachEvent(this, info.device);
 					}
 				}
 			}

@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace Serenegiant.UVC
 {
 
-	public class UVCDrawer : MonoBehaviour, IUVCHandler
+	public class UVCDrawer : MonoBehaviour, IUVCDrawer
 	{
 		/**
 		 * IUVCSelectorがセットされていないとき
