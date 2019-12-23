@@ -130,8 +130,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efb1bc18f15fa0546b998062ea4861a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DefaultWidth: 1280
+  DefaultHeight: 720
   UVCFilters:
-  - Vid: 1133
+  - Description: C920R
+    Vid: 1133
     Pid: 2093
     DeviceName: 
     IsExclude: 0
@@ -646,6 +649,11 @@ PrefabInstance:
       propertyPath: RenderTargets.Array.data[1]
       value: 
       objectReference: {fileID: 1898103480}
+    - target: {fileID: 464229095961303548, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
+        type: 3}
+      propertyPath: UVCFilters.Array.data[0].Description
+      value: C922
+      objectReference: {fileID: 0}
     - target: {fileID: 6011951749156047501, guid: fa65cd0b0e2ffad4180eabf8fe755f9a,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -12,6 +12,19 @@ namespace Serenegiant.UVC
 	public class UVCDrawer : MonoBehaviour, IUVCHandler
 	{
 		/**
+		 * IUVCSelectorがセットされていないとき
+		 * またはIUVCSelectorが解像度選択時にnullを
+		 * 返したときのデフォルトの解像度(幅)
+		 */
+		public int DefaultWidth = 1280;
+		/**
+		 * IUVCSelectorがセットされていないとき
+		 * またはIUVCSelectorが解像度選択時にnullを
+		 * 返したときのデフォルトの解像度(高さ)
+		 */
+		public int DefaultHeight = 720;
+
+		/**
 		 * 接続時及び描画時のフィルタ用
 		 */
 		public UVCFilter[] UVCFilters;
@@ -132,7 +145,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{device}");
 #endif
-				return null;
+				return formats.Find(DefaultWidth, DefaultHeight);
 			}
 		}
 

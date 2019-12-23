@@ -16,6 +16,10 @@ namespace Serenegiant.UVC
 		private const string TAG = "UVCFilter#";
 
 		/**
+		 * インスペクタでフィルターのコメントを表示するための文字列(スクリプトでは使わない)
+		 */
+		public string Description;
+		/**
 		 * マッチするベンダーID
 		 * 0なら全てにマッチする
 		 */
