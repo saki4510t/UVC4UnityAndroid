@@ -1,4 +1,7 @@
-﻿#if NDEBUG
+﻿/*
+ * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
+ */
+#if NDEBUG
 
 /*
  * Debug.Log等によるコンソールへの出力を抑制する場合には

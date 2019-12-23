@@ -1,4 +1,7 @@
-﻿using Serenegiant;
+﻿/*
+ * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
+ */
+using Serenegiant;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static Serenegiant.TouchEventManager;

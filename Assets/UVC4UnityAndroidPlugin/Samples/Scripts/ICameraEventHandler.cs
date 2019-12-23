@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿/*
+ * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
+ */
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;

@@ -1,4 +1,7 @@
-﻿using System;
+﻿/*
+ * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
+ */
+using System;
 using UnityEngine;
 
 [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
