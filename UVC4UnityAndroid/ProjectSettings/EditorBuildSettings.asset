@@ -8,16 +8,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVC2DScene.unity
     guid: d9c653ce29884b648bd83d4066fe46c0
-  - enabled: 1
+  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVC2Dx2Scene.unity
     guid: c6f1bcfdae2398947a9a34689ff6c415
-  - enabled: 1
+  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/UVC3DScene.unity
     guid: 534dbb7308777da4688d42c039024ab4
-  - enabled: 1
+  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaSScene.unity
     guid: 8912afb67f655ac448848e33282d23f6
-  - enabled: 1
+  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaVScene.unity
     guid: 428ccd87848a9894b8338e6564451bc5
   m_configObjects: {}
