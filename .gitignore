@@ -2,16 +2,16 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Mm]emoryCaptures/
+/UVC4UnityAndroid/[Ll]ibrary/
+/UVC4UnityAndroid/[Tt]emp/
+/UVC4UnityAndroid/[Oo]bj/
+/UVC4UnityAndroid/[Bb]uild/
+/UVC4UnityAndroid/[Bb]uilds/
+/UVC4UnityAndroid/[Ll]ogs/
+/UVC4UnityAndroid/[Mm]emoryCaptures/
 
 # Never ignore Asset meta data
-!/[Aa]ssets/**/*.meta
+!/UVC4UnityAndroid/[Aa]ssets/**/*.meta
 
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # /[Aa]ssets/AssetStoreTools*

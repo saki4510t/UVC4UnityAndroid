@@ -13,13 +13,15 @@ using UnityEngine;
 using UnityEngine.Android;
 #endif
 
-namespace Serenegiant.UVC {
+namespace Serenegiant.UVC
+{
 
 	[RequireComponent(typeof(AndroidUtils))]
 	public class UVCManager : MonoBehaviour
 	{
 		private const string TAG = "UVCManager#";
 		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
+		private const string FQCN_UVC = "com.serenegiant.usb.uvc.IUVCCameraControl";
 
 		/**
 		 * IUVCSelectorがセットされていないとき
