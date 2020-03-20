@@ -326,8 +326,8 @@ namespace Serenegiant
 			}
 		}
 
+#endif // #if UNITY_ANDROID
+
 	} // class AndroidUtils
 
 } // namespace Serenegiant
-
-#endif // #if UNITY_ANDROID
