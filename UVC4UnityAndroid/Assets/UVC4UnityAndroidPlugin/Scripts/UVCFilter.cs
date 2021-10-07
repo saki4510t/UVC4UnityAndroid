@@ -48,7 +48,8 @@ namespace Serenegiant.UVC
 		 * 引数のUVC機器にマッチするかどうかを取得
 		 * @param device
 		 */
-		public bool Match(UVCDevice device) {
+		public bool Match(UVCDevice device)
+		{
 			bool result = device != null;
 
 			if (result)
@@ -56,9 +57,9 @@ namespace Serenegiant.UVC
 				result &= ((Vid <= 0) || (Vid == device.vid))
 					&& ((Pid <= 0) || (Pid == device.pid))
 					&& (String.IsNullOrEmpty(DeviceName)
-						|| DeviceName.Equals(device.deviceName)
 						|| DeviceName.Equals(device.name)
-						|| (String.IsNullOrEmpty(device.deviceName) || device.deviceName.Contains(DeviceName))
+						|| DeviceName.Equals(device.name)
+						|| (String.IsNullOrEmpty(device.name) || device.name.Contains(DeviceName))
 						|| (String.IsNullOrEmpty(device.name) || device.name.Contains(DeviceName))
 					);
 			}
@@ -102,15 +103,17 @@ namespace Serenegiant.UVC
 					{
 						var b = filter.Match(device);
 						if (b && filter.IsExclude)
-						{	// 除外フィルターにヒットしたときはその時点でフィルタ処理を終了
+						{   // 除外フィルターにヒットしたときはその時点でフィルタ処理を終了
 							result = false;
 							break;
 						}
 						else
-						{	// どれか一つにヒットすればいい
+						{   // どれか一つにヒットすればいい
 							result |= b;
 						}
-					} else {
+					}
+					else
+					{
 						// 空フィルターはマッチしたことにする
 						result = true;
 					}

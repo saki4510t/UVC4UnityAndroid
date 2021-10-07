@@ -27,14 +27,6 @@ namespace Serenegiant.UVC
 		 */
 		void OnUVCDetachEvent(UVCManager manager, UVCDevice device);
 		/**
-		 * UVC機器がからの映像取得の際に解像度を選択する
-		 * @param manager 呼び出し元のUVCManager
-		 * @param device 接続されたUVC機器情報
-		 * @param formats: 対応解像度
-		 * @return 選択した解像度, nullなら呼び出し元UVCManagerのデフォルト値を使う
-		 */
-		SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats);
-		/**
 		 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 接続されたUVC機器情報
@@ -54,6 +46,6 @@ namespace Serenegiant.UVC
 		 */
 		void OnUVCStopEvent(UVCManager manager, UVCDevice device);
 
-	} // interface IUVCDrawer
+	}   // interface IUVCDrawer
 
-} // namespace Serenegiant.UVC
+}	// namespace Serenegiant.UVC

@@ -1,4 +1,4 @@
-﻿//#define ENABLE_LOG
+﻿#define ENABLE_LOG
 /*
  * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
  */
@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
 
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
@@ -15,26 +16,25 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC
 {
-
 	[RequireComponent(typeof(AndroidUtils))]
 	public class UVCManager : MonoBehaviour
 	{
 		private const string TAG = "UVCManager#";
-		private const string FQCN_PLUGIN = "com.serenegiant.uvcplugin.DeviceDetector";
-		private const string FQCN_UVC = "com.serenegiant.usb.uvc.IUVCCameraControl";
-
+		private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
+		private const int DEFAULT_FRAME_TYPE = 0x07;
+	
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(幅)
-		 */
-		public int DefaultWidth = 1280;
+		*/
+		public Int32 DefaultWidth = 1280;
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(高さ)
 		 */
-		public int DefaultHeight = 720;
+		public Int32 DefaultHeight = 720;
 		/**
 		 * UVC機器とのネゴシエーション時に
 		 * H.264を優先してネゴシエーションするかどうか
@@ -43,6 +43,7 @@ namespace Serenegiant.UVC
 		 * false:	MJPEG > H.264 > YUV
 		 */
 		public bool PreferH264 = false;
+
 		/**
 		 * UVC関係のイベンドハンドラー
 		 */
@@ -50,19 +51,16 @@ namespace Serenegiant.UVC
 		public Component[] UVCDrawers;
 
 		/**
-		 * プラグインでのレンダーイベント取得用native(c/c++)関数
+		 * 使用中のカメラ情報を保持するホルダークラス
 		 */
-		[DllImport("uvc-plugin")]
-		private static extern IntPtr GetRenderEventFunc();
-
 		public class CameraInfo
 		{
 			internal readonly UVCDevice device;
-			/**
-			 * プレビュー中のUVCカメラ識別子, レンダーイベント用
-			 */
-			internal Int32 activeCameraId;
 			internal Texture previewTexture;
+			internal Int32 activeId;
+			private Int32 currentWidth;
+			private Int32 currentHeight;
+
 
 			internal CameraInfo(UVCDevice device)
 			{
@@ -70,11 +68,18 @@ namespace Serenegiant.UVC
 			}
 
 			/**
+			 * 機器idを取得
+			 */
+			public Int32 Id{
+				get { return device.id;  }
+			}
+	
+			/**
 			 * 機器名を取得
 			 */
 			public string DeviceName
 			{
-				get { return device.deviceName;  }
+				get { return device.name; }
 			}
 
 			/**
@@ -82,7 +87,7 @@ namespace Serenegiant.UVC
 			 */
 			public int Vid
 			{
-				get { return device.vid;  }
+				get { return device.vid; }
 			}
 
 			/**
@@ -90,16 +95,7 @@ namespace Serenegiant.UVC
 			 */
 			public int Pid
 			{
-				get { return device.pid;  }
-			}
-
-			/**
-			 * カメラをopenしているか
-			 * 映像取得中かどうかはIsPreviewingを使うこと
-			 */
-			public bool IsOpen
-			{
-				get { return (activeCameraId != 0); }
+				get { return device.pid; }
 			}
 
 			/**
@@ -107,40 +103,43 @@ namespace Serenegiant.UVC
 			 */
 			public bool IsPreviewing
 			{
-				get { return IsOpen && (previewTexture != null); }
+				get { return (activeId != 0) && (previewTexture != null); }
 			}
 
 			/**
 			 * 現在の解像度(幅)
 			 * プレビュー中でなければ0
 			 */
-			public int CurrentWidth
+			public Int32 CurrentWidth
 			{
-				get { return currentWidth;  }
+				get { return currentWidth; }
 			}
 
 			/**
 			 * 現在の解像度(高さ)
 			 * プレビュー中でなければ0
 			 */
-			public int CurrentHeight
+			public Int32 CurrentHeight
 			{
 				get { return currentHeight; }
 			}
 
-			private int currentWidth;
-			private int currentHeight;
 			/**
 			 * 現在の解像度を変更
 			 * @param width
 			 * @param height
 			 */
-			internal void SetSize(int width, int height)
+			internal void SetSize(Int32 width, Int32 height)
 			{
 				currentWidth = width;
 				currentHeight = height;
 			}
-	
+
+			public override string ToString()
+			{
+				return $"{base.ToString()}({currentWidth}x{currentHeight},id={Id},activeId={activeId},IsPreviewing={IsPreviewing})";
+			}
+
 			/**
 			 * レンダーイベント処理用
 			 * コールーチンとして実行される
@@ -148,29 +147,46 @@ namespace Serenegiant.UVC
 			internal IEnumerator OnRender()
 			{
 				var renderEventFunc = GetRenderEventFunc();
-				for (; activeCameraId != 0; )
+				for (; activeId != 0;)
 				{
 					yield return new WaitForEndOfFrame();
-					GL.IssuePluginEvent(renderEventFunc, activeCameraId);
+					GL.IssuePluginEvent(renderEventFunc, activeId);
 				}
 				yield break;
 			}
 		}
 
 		/**
-		 * ハンドリングしているカメラ情報を保持
-		 * string(deviceName) - CameraInfo ペアを保持する
+		 * メインスレッド上で実行するためのSynchronizationContextインスタンス
 		 */
-		private Dictionary<string, CameraInfo> cameraInfos = new Dictionary<string, CameraInfo>();
+		private SynchronizationContext mainContext;
+		/**
+		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
+		 */
+		private OnDeviceChangedFunc callback;
+		/**
+		 * 端末に接続されたUVC機器利すると
+		 */
+		private List<UVCDevice> attachedDevices = new List<UVCDevice>();
+		/**
+		 * 映像取得中のUVC機器のマップ
+		 * 機器識別用のid - CameraInfoペアを保持する
+		 */
+		private Dictionary<Int32, CameraInfo> cameraInfos = new Dictionary<int, CameraInfo>();
 
-		//================================================================================
+		//--------------------------------------------------------------------------------
 		// UnityEngineからの呼び出し
-
+		//--------------------------------------------------------------------------------
+		// Start is called before the first frame update
 		IEnumerator Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Start:");
 #endif
+			mainContext = SynchronizationContext.Current;
+			callback = new OnDeviceChangedFunc(OnDeviceChanged);
+			Register(callback);
+	
 			yield return Initialize();
 		}
 
@@ -200,7 +216,45 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnDestroy:");
 #endif
-			CloseAll();
+			StopAll();
+			Unregister(callback);
+			callback = null;
+		}
+
+		//--------------------------------------------------------------------------------
+		// UVC機器接続状態が変化したときのプラグインからのコールバック関数
+		//--------------------------------------------------------------------------------
+		public void OnDeviceChanged(IntPtr devicePtr, bool attached)
+		{
+			var id = UVCDevice.GetId(devicePtr);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnDeviceChanged:id={id},attached={attached}");
+#endif
+			if (attached)
+			{
+				UVCDevice device = new UVCDevice(devicePtr);
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}OnDeviceChanged:device={device.ToString()}");
+#endif
+				if (HandleOnAttachEvent(device))
+				{
+					attachedDevices.Add(device);
+					StartPreview(device);
+				}
+			}
+			else
+			{
+				var found = attachedDevices.Find(item =>
+				{
+					return item != null && item.id == id;
+				});
+				if (found != null)
+				{
+					HandleOnDetachEvent(found);
+					StopPreview(found);
+					attachedDevices.Remove(found);
+				}
+			}
 		}
 
 		//================================================================================
@@ -216,159 +270,196 @@ namespace Serenegiant.UVC
 			{
 				result.Add(info);
 			}
-	
+
 			return result;
 		}
 
-		/**
-		 * 対応解像度を取得
-		 * @param camera 対応解像度を取得するUVC機器を指定
-		 * @return 対応解像度 既にカメラが取り外されている/closeしているのであればnull
-		 */
-		public SupportedFormats GetSupportedVideoSize(CameraInfo camera)
+//		/**
+//		 * 対応解像度を取得
+//		 * @param camera 対応解像度を取得するUVC機器を指定
+//		 * @return 対応解像度 既にカメラが取り外されている/closeしているのであればnull
+//		 */
+//		public SupportedFormats GetSupportedVideoSize(CameraInfo camera)
+//		{
+//			var info = (camera != null) ? Get(camera.DeviceName) : null;
+//			if ((info != null) && info.IsOpen)
+//			{
+//				return GetSupportedVideoSize(info.DeviceName);
+//			}
+//			else
+//			{
+//				return null;
+//			}
+//		}
+
+//		/**
+//		 * 解像度を変更
+//		 * @param 解像度を変更するUVC機器を指定
+//		 * @param 変更する解像度を指定, nullならデフォルトに戻す
+//		 * @param 解像度が変更されたかどうか
+//		 */
+//		public bool SetVideoSize(CameraInfo camera, SupportedFormats.Size size)
+//		{
+//			var info = (camera != null) ? Get(camera.DeviceName) : null;
+//			var width = size != null ? size.Width : DefaultWidth;
+//			var height = size != null ? size.Height : DefaultHeight;
+//			if ((info != null) && info.IsPreviewing)
+//			{
+//				if ((width != info.CurrentWidth) || (height != info.CurrentHeight))
+//				{   // 解像度が変更になるとき
+//					StopPreview(info.DeviceName);
+//					StartPreview(info.DeviceName, width, height);
+//					return true;
+//				}
+//			}
+//			return false;
+//		}
+
+		private void StartPreview(UVCDevice device)
 		{
-			var info = (camera != null) ? Get(camera.DeviceName) : null;
-			if ((info != null) && info.IsOpen)
-			{
-				return GetSupportedVideoSize(info.DeviceName);
-			} else
-			{
-				return null;
+			var info = CreateIfNotExist(device);
+			if ((info != null) && !info.IsPreviewing) {
+
+				int width = DefaultWidth;
+				int height = DefaultHeight;
+
+//				var supportedVideoSize = GetSupportedVideoSize(deviceName);
+//				if (supportedVideoSize == null)
+//				{
+//					throw new ArgumentException("fauled to get supported video size");
+//				}
+
+//				// 解像度の選択処理
+//				if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
+//				{
+//					foreach (var drawer in UVCDrawers)
+//					{
+//						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).CanDraw(this, info.device)))
+//						{
+//							var size = (drawer as IUVCDrawer).OnUVCSelectSize(this, info.device, supportedVideoSize);
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//							Console.WriteLine($"{TAG}StartPreview:selected={size}");
+//#endif
+//							if (size != null)
+//							{   // 一番最初に見つかった描画可能なIUVCDrawersがnull以外を返せばそれを使う
+//								width = size.Width;
+//								height = size.Height;
+//								break;
+//							}
+//						}
+//					}
+//				}
+
+				// FIXME 対応解像度の確認処理
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}StartPreview:({width}x{height}),id={device.id}");
+#endif
+				Resize(device.id, DEFAULT_FRAME_TYPE, width, height);
+				info.SetSize(width, height);
+				info.activeId = device.id;
+				mainContext.Post(__ =>
+				{   // テクスチャの生成はメインスレッドで行わないといけない
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"{TAG}映像受け取り用テクスチャ生成:({width}x{height})");
+#endif
+					Texture2D tex = new Texture2D(
+							width, height,
+							TextureFormat.ARGB32,
+							false, /* mipmap */
+							true /* linear */);
+					tex.filterMode = FilterMode.Point;
+					tex.Apply();
+					info.previewTexture = tex;
+					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
+					Start(device.id, nativeTexPtr.ToInt32());
+					HandleOnStartPreviewEvent(info);
+					StartCoroutine(info.OnRender());
+				}, null);
 			}
 		}
 
-		/**
-		 * 解像度を変更
-		 * @param 解像度を変更するUVC機器を指定
-		 * @param 変更する解像度を指定, nullならデフォルトに戻す
-		 * @param 解像度が変更されたかどうか
-		 */
-		public bool SetVideoSize(CameraInfo camera, SupportedFormats.Size size)
-		{
-			var info = (camera != null) ? Get(camera.DeviceName) : null;
-			var width = size != null ? size.Width : DefaultWidth;
-			var height = size != null ? size.Height : DefaultHeight;
+		private void StopPreview(UVCDevice device) {
+			var info = Get(device);
 			if ((info != null) && info.IsPreviewing)
 			{
-				if ((width != info.CurrentWidth) || (height != info.CurrentHeight))
-				{	// 解像度が変更になるとき
-					StopPreview(info.DeviceName);
-					StartPreview(info.DeviceName, width, height);
-					return true;
-				}
-			}
-			return false;
-		}
-	
-		//================================================================================
-		// Android固有の処理
-		// Java側からのイベントコールバック
-
-		/**
-		 * UVC機器が接続された
-		 * @param args UVC機器識別文字列
-		 */
-		void OnEventAttach(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:(" + args + ")");
-#endif
-			if (!String.IsNullOrEmpty(args))
-			{   // argsはdeviceName
-				var info = CreateIfNotExist(args);
-				if (HandleOnAttachEvent(info))
+				mainContext.Post(__ =>
 				{
-					RequestUsbPermission(args);
-				} else
-				{
-					Remove(args);
-				}
+					HandleOnStopPreviewEvent(info);
+					Stop(device.id);
+					StopCoroutine(info.OnRender());
+					info.SetSize(0, 0);
+					info.activeId = 0;
+				}, null);
 			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventAttach[{Time.frameCount}]:finished");
-#endif
 		}
 
-		/**
-		 * UVC機器が取り外された
-		 * @param args UVC機器識別文字列
-		 */
-		void OnEventDetach(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventDetach:({args})");
-#endif
-			var info = Get(args);
-			if (info != null)
+
+		private void StopAll() {
+			List<CameraInfo> values = new List<CameraInfo>(cameraInfos.Values);
+			foreach (var info in values)
 			{
-				HandleOnDetachEvent(info);
-				Close(args);
-				Remove(args);
+				StopPreview(info.device);
+			}
+		}
+
+		//--------------------------------------------------------------------------------
+		/**
+		 * UVC機器が接続されたときの処理の実体
+		 * @param info
+		 * @return true: 接続されたUVC機器を使用する, false: 接続されたUVC機器を使用しない
+		 */
+		private bool HandleOnAttachEvent(UVCDevice device/*NonNull*/)
+		{
+			if ((UVCDrawers == null) || (UVCDrawers.Length == 0))
+			{   // IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
+				return true;
+			}
+			else
+			{
+				bool hasDrawer = false;
+				foreach (var drawer in UVCDrawers)
+				{
+					if (drawer is IUVCDrawer)
+					{
+						hasDrawer = true;
+						if ((drawer as IUVCDrawer).OnUVCAttachEvent(this, device))
+						{   // どれか1つのIUVCDrawerがtrueを返せばtrue(接続されたUVC機器を使用する)を返す
+							return true;
+						}
+					}
+				}
+				// IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
+				return !hasDrawer;
 			}
 		}
 
 		/**
-		 * UVC機器へのアクセスのためのパーミッションを取得できた
-		 * @param args UVC機器の識別文字列
+		 * UVC機器が取り外されたときの処理の実体
+		 * @param info
 		 */
-		void OnEventPermission(string args)
+		private void HandleOnDetachEvent(UVCDevice device/*NonNull*/)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventPermission:({args})");
-#endif
-			if (!String.IsNullOrEmpty(args))
-			{   // argsはdeviceName
-				Open(args);
+			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
+			{
+				foreach (var drawer in UVCDrawers)
+				{
+					if (drawer is IUVCDrawer)
+					{
+						(drawer as IUVCDrawer).OnUVCDetachEvent(this, device);
+					}
+				}
 			}
-		}
-
-		/**
-		 * UVC機器をオープンした
-		 * @param args UVC機器の識別文字列
-		 */
-		void OnEventConnect(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventConnect:({args})");
-#endif
-		}
-
-		/**
-		 * UVC機器をクローズした
-		 * @param args UVC機器の識別文字列
-		 */
-		void OnEventDisconnect(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventDisconnect:({args})");
-#endif
-			// このイベントはUnity側からclose要求を送ったとき以外でも発生するので
-			// 念のためにCloseを呼んでおく
-			Close(args);
-		}
-
-		/**
- * 映像を受け取れるようになった
- * @param args UVC機器の識別文字列
- */
-		void OnEventReady(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnEventReady:({args})");
-#endif
-			StartPreview(args);
 		}
 
 		/**
 		 * UVC機器からの映像取得を開始した
 		 * @param args UVC機器の識別文字列
 		 */
-		void OnStartPreview(string args)
+		void HandleOnStartPreviewEvent(CameraInfo info)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnStartPreview:({args})");
+			Console.WriteLine($"{TAG}HandleOnStartPreviewEvent:({info})");
 #endif
-			var info = Get(args);
 			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
 			{
 				foreach (var drawer in UVCDrawers)
@@ -378,6 +469,10 @@ namespace Serenegiant.UVC
 						(drawer as IUVCDrawer).OnUVCStartEvent(this, info.device, info.previewTexture);
 					}
 				}
+			} else {
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}HandleOnStartPreviewEvent:No UVCDrawers");
+#endif
 			}
 		}
 
@@ -385,15 +480,13 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像取得を終了した
 		 * @param args UVC機器の識別文字列
 		 */
-		void OnStopPreview(string args)
+		void HandleOnStopPreviewEvent(CameraInfo info)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnStopPreview:({args})");
+			Console.WriteLine($"{TAG}HandleOnStopPreviewEvent:({info})");
 #endif
-			var info = Get(args);
-			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
+			if (UVCDrawers != null)
 			{
-				info.SetSize(0, 0);
 				foreach (var drawer in UVCDrawers)
 				{
 					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
@@ -404,84 +497,40 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		//--------------------------------------------------------------------------------
 		/**
-		 * UVC機器からのステータスイベントを受信した
-		 * @param args UVC機器識別文字列＋ステータス
+		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
+		 * まだ登録させていなければ新規作成する
+		 * @param deviceName UVC機器識別文字列
+		 * @param CameraInfoを返す
 		 */
-		void OnReceiveStatus(string args)
+		/*NonNull*/
+		private CameraInfo CreateIfNotExist(UVCDevice device)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnReceiveStatus:({args})");
-#endif
-			// FIXME 未実装
-		}
-
-		/**
-		 * UVC機器からのボタンイベントを受信した
-		 * @param args UVC機器識別文字列＋ボタンイベント
-		 */
-		void OnButtonEvent(string args)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnButtonEvent:({args})");
-#endif
-			// FIXME 未実装
-		}
-
-		/**
-		 * onResumeイベント
-		 */
-		IEnumerator OnResumeEvent()
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnResumeEvent:" +
-				$"isPermissionRequesting={AndroidUtils.isPermissionRequesting}");
-#endif
-			if (!AndroidUtils.isPermissionRequesting
-				&& AndroidUtils.CheckAndroidVersion(28)
-				&& !AndroidUtils.HasPermission(AndroidUtils.PERMISSION_CAMERA))
+			if (!cameraInfos.ContainsKey(device.id))
 			{
-				yield return Initialize();
+				cameraInfos[device.id] = new CameraInfo(device);
 			}
-
-			KeyValuePair<string, CameraInfo>? found = null;
-			foreach (var elm in cameraInfos)
-			{
-				if (elm.Value.activeCameraId == 0)
-				{   // アタッチされたけどオープンされていない機器があるとき
-					found = elm;
-					break;
-				}
-			}
-			if (found != null)
-			{	// アタッチされたけどオープンされていない機器があるとき
-				var deviceName = found?.Key;
-				if (!AndroidUtils.isPermissionRequesting)
-				{ // パーミッション要求中ではないとき
-					RequestUsbPermission(deviceName);
-				}
-				else if (HasUsbPermission(deviceName))
-				{ // すでにパーミッションがあるとき
-					AndroidUtils.isPermissionRequesting = false;
-					OnEventPermission(deviceName);
-				}
-			}
-
-			yield break;
+			return cameraInfos[device.id];
 		}
 
 		/**
-		 * onPauseイベント
+		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
+		 * @param deviceName UVC機器識別文字列
+		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
 		 */
-		void OnPauseEvent()
+		/*Nullable*/
+		private CameraInfo Get(UVCDevice device)
 		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnPauseEvent:");
-#endif
-			CloseAll();
+			return cameraInfos.ContainsKey(device.id) ? cameraInfos[device.id] : null;
 		}
+
 
 		//--------------------------------------------------------------------------------
+		/**
+		 * プラグインを初期化
+		 * パーミッションの確認を行って取得できれば実際のプラグイン初期化処理#InitPluginを呼び出す
+		 */
 		private IEnumerator Initialize()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -510,7 +559,8 @@ namespace Serenegiant.UVC
 							break;
 					}
 				});
-			} else
+			}
+			else
 			{
 				InitPlugin();
 			}
@@ -518,9 +568,9 @@ namespace Serenegiant.UVC
 			yield break;
 		}
 
-		// uvc-plugin-unityへの処理要求
 		/**
 		 * プラグインを初期化
+		 * uvc-plugin-unityへの処理要求
 		 */
 		private void InitPlugin()
 		{
@@ -541,7 +591,7 @@ namespace Serenegiant.UVC
 				}
 			}
 			if (!hasDrawer)
-			{	// インスペクタでIUVCDrawerが設定されていないときは
+			{   // インスペクタでIUVCDrawerが設定されていないときは
 				// このスクリプトがaddされているゲームオブジェクトからの取得を試みる
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}InitPlugin:has no IUVCDrawer, try to get from gameObject");
@@ -557,418 +607,54 @@ namespace Serenegiant.UVC
 					}
 				}
 			}
-
-			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-			{
-				clazz.CallStatic("initDeviceDetector",
-					AndroidUtils.GetCurrentActivity(), gameObject.name);
-			}
-		}
-
-		/**
-		 * 指定したUSB機器をアクセスするパーミッションを持っているかどうかを取得
-		 * @param deviceName UVC機器識別文字列
-		 */
-		private bool HasUsbPermission(string deviceName)
-		{
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					return clazz.CallStatic<bool>("hasPermission",
-						AndroidUtils.GetCurrentActivity(), deviceName);
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		/**
-		 * USB機器アクセスのパーミッション要求
-		 * @param deviceName UVC機器識別文字列
-		 */
-		private void RequestUsbPermission(string deviceName)
-		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}RequestUsbPermission[{Time.frameCount}]:({deviceName})");
+			Console.WriteLine($"{TAG}InitPlugin:num drawers={UVCDrawers.Length}");
 #endif
-			if (!String.IsNullOrEmpty(deviceName))
+			// aandusbのDeviceDetectorを読み込み要求
+			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_DETECTOR))
 			{
-				AndroidUtils.isPermissionRequesting = true;
-
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					clazz.CallStatic("requestPermission",
-						AndroidUtils.GetCurrentActivity(), deviceName);
-				}
+				clazz.CallStatic("initUVCDeviceDetector",
+					AndroidUtils.GetCurrentActivity());
 			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}RequestUsbPermission[{Time.frameCount}]:finsihed");
-#endif
 		}
 
+		//--------------------------------------------------------------------------------
+		// ネイティブプラグイン関係の定義・宣言
+		//--------------------------------------------------------------------------------
+		//コールバック関数の型を宣言
+		[UnmanagedFunctionPointer(CallingConvention.StdCall)]
+		delegate void OnDeviceChangedFunc(IntPtr devicePtr, bool attached);
+
 		/**
-		 * 指定したUVC機器をopenする
-		 * @param deviceName UVC機器識別文字列
+		 * プラグインでのレンダーイベント取得用native(c/c++)関数
 		 */
-		private void Open(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Open:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{
-				AndroidUtils.isPermissionRequesting = false;
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					info.activeCameraId = clazz.CallStatic<Int32>("openDevice",
-						AndroidUtils.GetCurrentActivity(), deviceName,
-						DefaultWidth, DefaultHeight, PreferH264);
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-		}
-
+		[DllImport("unityuvcplugin")]
+		private static extern IntPtr GetRenderEventFunc();
 		/**
-		 * 指定したUVC機器をcloseする
-		 * @param deviceName UVC機器識別文字列
+		 * プラグインのnative側登録関数
 		 */
-		private void Close(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Close:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if ((info != null) && (info.activeCameraId != 0))
-			{
-				info.SetSize(0, 0);
-				info.activeCameraId = 0;
-				info.previewTexture = null;
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					clazz.CallStatic("closeDevice",
-						AndroidUtils.GetCurrentActivity(), deviceName);
-				}
-			}
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}Close:finished");
-#endif
-		}
-
+		[DllImport("unityuvcplugin")]
+		private static extern IntPtr Register(OnDeviceChangedFunc callback);
 		/**
-		 * OpenしているすべてのUVC機器をCloseする
+		 * プラグインのnative側登録解除関数
 		 */
-		private void CloseAll()
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}CloseAll:");
-#endif
-			List<string> keys = new List<string>(cameraInfos.Keys);
-			foreach (var deviceName in keys)
-			{
-				Close(deviceName);
-			}
-		}
-
+		[DllImport("unityuvcplugin")]
+		private static extern IntPtr Unregister(OnDeviceChangedFunc callback);
 		/**
-		 * UVC機器からの映像受け取り開始要求をする
-		 * @param deviceName UVC機器識別文字列
+		 * 映像取得開始
 		 */
-		private void StartPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}StartPreview:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if ((info != null) && (info.activeCameraId != 0))
-			{
-				int width = DefaultWidth;
-				int height = DefaultHeight;
-
-				var supportedVideoSize = GetSupportedVideoSize(deviceName);
-				if (supportedVideoSize == null)
-				{
-					throw new ArgumentException("fauled to get supported video size");
-				}
-
-				// 解像度の選択処理
-				if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
-				{
-					foreach (var drawer in UVCDrawers)
-					{
-						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).CanDraw(this, info.device)))
-						{
-							var size = (drawer as IUVCDrawer).OnUVCSelectSize(this, info.device, supportedVideoSize);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-							Console.WriteLine($"{TAG}StartPreview:selected={size}");
-#endif
-							if (size != null)
-							{   // 一番最初に見つかった描画可能なIUVCDrawersがnull以外を返せばそれを使う
-								width = size.Width;
-								height = size.Height;
-								break;
-							}
-						}
-					}
-				}
-
-				StartPreview(deviceName, width, height);
-			}
-		}
-
+		[DllImport("unityuvcplugin", EntryPoint ="Start")]
+		private static extern Int32 Start(Int32 deviceId, Int32 tex);
 		/**
-		 * UVC機器からの映像受け取り開始要求をする
-		 * 通常はStartPreview(string deviceName)経由で呼び出す
-		 * @param deviceName UVC機器識別文字列
-		 * @param width
-		 * @param height
+		 * 映像取得終了
 		 */
-		private void StartPreview(string deviceName, int width, int height)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}StartPreview:{deviceName}({width}x{height})");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{   // 接続されているとき
-				var supportedVideoSize = GetSupportedVideoSize(deviceName);
-				if (supportedVideoSize == null)
-				{
-					throw new ArgumentException("fauled to get supported video size");
-				}
-				// 対応解像度のチェック
-				if (supportedVideoSize.Find(width, height/*,minFps=0.1f, maxFps=121.0f*/) == null)
-				{   // 指定した解像度に対応していない
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"{TAG}StartPreview:{width}x{height} is NOT supported.");
-					Console.WriteLine($"{TAG}Info={GetDevice(deviceName)}");
-					Console.WriteLine($"{TAG}supportedVideoSize={supportedVideoSize}");
-#endif
-					throw new ArgumentOutOfRangeException($"{width}x{height} is NOT supported.");
-				}
-
-				if (info.IsOpen && !info.IsPreviewing)
-				{   // openされているけど映像取得中ではないとき
-					info.SetSize(width, height);
-					info.previewTexture = new Texture2D(
-							width, height,
-							TextureFormat.ARGB32,
-							false, /* mipmap */
-							true /* linear */);
-					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"{TAG}RequestStartPreview:tex={nativeTexPtr}");
-#endif
-					using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-					{
-						clazz.CallStatic("setPreviewTexture",
-							AndroidUtils.GetCurrentActivity(), deviceName,
-							nativeTexPtr.ToInt32(),
-							-1, // PreviewMode, -1:自動選択(Open時に指定したPreferH264フラグが有効になる)
-							width, height);
-					}
-
-					StartCoroutine(info.OnRender());
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-		}
-
+		[DllImport("unityuvcplugin", EntryPoint ="Stop")]
+		private static extern Int32 Stop(Int32 deviceId);
 		/**
- * UVC機器/カメラからの映像受けとりを終了要求をする
- * @param deviceName UVC機器識別文字列
- */
-		private void StopPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}StopPreview:{deviceName}");
-#endif
-			var info = Get(deviceName);
-			if (info != null)
-			{
-				info.SetSize(0, 0);
-				StopCoroutine(info.OnRender());
-				RequestStopPreview(deviceName);
-			}
-		}
-
-		/**
-		 * UVC機器からの映像受けとりを終了要求をする
-		 * @param deviceName UVC機器識別文字列
+		 * 映像サイズ設定
 		 */
-		private void RequestStopPreview(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}RequestStopPreviewUVC:{deviceName}");
-#endif
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					clazz.CallStatic("stopPreview",
-						AndroidUtils.GetCurrentActivity(), deviceName);
-				}
-			}
-		}
-
-		/**
-		 * 指定したUVC機器の情報(今はvidとpid)をUVCDeviceとして取得する
-		 * @param deviceName UVC機器識別文字列
-		 */
-		private UVCDevice GetDevice(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}GetDevice:{deviceName}");
-#endif
-
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					return UVCDevice.Parse(deviceName,
-						clazz.CallStatic<string>("getInfo",
-							AndroidUtils.GetCurrentActivity(), deviceName));
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-
-		}
-
-		/**
-		 * 指定したUVC機器の対応解像度を取得する
-		 * @param deviceName UVC機器識別文字列
-		 */
-		private SupportedFormats GetSupportedVideoSize(string deviceName)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}GetSupportedVideoSize:{deviceName}");
-#endif
-
-			if (!String.IsNullOrEmpty(deviceName))
-			{
-				using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_PLUGIN))
-				{
-					return SupportedFormats.Parse(
-						clazz.CallStatic<string>("getSupportedVideoSize",
-							AndroidUtils.GetCurrentActivity(), deviceName));
-				}
-			}
-			else
-			{
-				throw new ArgumentException("device name is empty/null");
-			}
-		}
-
-		/**
-		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
-		 * まだ登録させていなければ新規作成する
-		 * @param deviceName UVC機器識別文字列
-		 * @param CameraInfoを返す
-		 */
-		/*NonNull*/
-		private CameraInfo CreateIfNotExist(string deviceName)
-		{
-			if (!cameraInfos.ContainsKey(deviceName))
-			{
-				cameraInfos[deviceName] = new CameraInfo(GetDevice(deviceName));
-			}
-			return cameraInfos[deviceName];
-		}
-
-		/**
-		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
-		 * @param deviceName UVC機器識別文字列
-		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
-		 */
-		/*Nullable*/
-		private CameraInfo Get(string deviceName)
-		{
-			return !String.IsNullOrEmpty(deviceName) && cameraInfos.ContainsKey(deviceName) ? cameraInfos[deviceName] : null;
-		}
-
-		/**
-		 * 指定したUVC機器のCameraInfoを取り除く
-		 * @param deviceName UVC機器識別文字列
-		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
-		 */
-		/*Nullable*/
-		private CameraInfo Remove(string deviceName)
-		{
-			CameraInfo info = null;
-
-			if (cameraInfos.ContainsKey(deviceName))
-			{
-				info = cameraInfos[deviceName];
-				cameraInfos.Remove(deviceName);
-			}
-	
-			return info;
-		}
-
-		/**
-		 * UVC機器が接続されたときの処理の実体
-		 * @param info
-		 * @return true: 接続されたUVC機器を使用する, false: 接続されたUVC機器を使用しない
-		 */
-		private bool HandleOnAttachEvent(CameraInfo info/*NonNull*/)
-		{
-			if ((UVCDrawers == null) || (UVCDrawers.Length == 0))
-			{	// IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
-				return true;
-			}
-			else
-			{
-				bool hasDrawer = false;
-				foreach (var drawer in UVCDrawers)
-				{
-					if (drawer is IUVCDrawer)
-					{
-						hasDrawer = true;
-						if ((drawer as IUVCDrawer).OnUVCAttachEvent(this, info.device))
-						{   // どれか1つのIUVCDrawerがtrueを返せばtrue(接続されたUVC機器を使用する)を返す
-							return true;
-						}
-					}
-				}
-				// IUVCDrawerが割り当てられていないときはtrue(接続されたUVC機器を使用する)を返す
-				return !hasDrawer;
-			}
-		}
-
-		/**
-		 * UVC機器が取り外されたときの処理の実体
-		 * @param info
-		 */
-		private void HandleOnDetachEvent(CameraInfo info/*NonNull*/)
-		{
-			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
-			{
-				foreach (var drawer in UVCDrawers)
-				{
-					if (drawer is IUVCDrawer)
-					{
-						(drawer as IUVCDrawer).OnUVCDetachEvent(this, info.device);
-					}
-				}
-			}
-		}
-
-	} // UVCManager
+		[DllImport("unityuvcplugin")]
+		private static extern Int32 Resize(Int32 deviceId, Int32 frameType, Int32 width, Int32 height);
+	}   // UVCManager
 
 }   // namespace Serenegiant.UVC

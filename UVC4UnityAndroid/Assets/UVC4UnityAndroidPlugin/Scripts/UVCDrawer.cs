@@ -117,40 +117,40 @@ namespace Serenegiant.UVC
 #endif
 		}
 
-		/**
-		 * 解像度選択
-		 * IOnUVCSelectSizeHandlerの実装
-		 * @param manager 呼び出し元のUVCManager
-		 * @param device 対象となるUVC機器の情報
-		 * @param formats 対応している解像度についての情報
-		 */
-		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats)
-		{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnUVCSelectSize:{device}");
-#endif
-			if (device.IsTHETA_V)
-			{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V");
-#endif
-				return FindSize(formats, 3840, 1920);
-			}
-			else if (device.IsTHETA_S)
-			{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA S");
-#endif
-				return FindSize(formats, 1920, 1080);
-			}
-			else
-			{
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{device}");
-#endif
-				return formats.Find(DefaultWidth, DefaultHeight);
-			}
-		}
+//		/**
+//		 * 解像度選択
+//		 * IOnUVCSelectSizeHandlerの実装
+//		 * @param manager 呼び出し元のUVCManager
+//		 * @param device 対象となるUVC機器の情報
+//		 * @param formats 対応している解像度についての情報
+//		 */
+//		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats)
+//		{
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//			Console.WriteLine($"{TAG}OnUVCSelectSize:{device}");
+//#endif
+//			if (device.IsTHETA_V)
+//			{
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V");
+//#endif
+//				return FindSize(formats, 3840, 1920);
+//			}
+//			else if (device.IsTHETA_S)
+//			{
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA S");
+//#endif
+//				return FindSize(formats, 1920, 1080);
+//			}
+//			else
+//			{
+//#if (!NDEBUG && DEBUG && ENABLE_LOG)
+//				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{device}");
+//#endif
+//				return formats.Find(DefaultWidth, DefaultHeight);
+//			}
+//		}
 
 		/**
 		 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
@@ -160,7 +160,7 @@ namespace Serenegiant.UVC
 		 */
 		public bool CanDraw(UVCManager manager, UVCDevice device)
 		{
-			return  UVCFilter.Match(device, UVCFilters);
+			return UVCFilter.Match(device, UVCFilters);
 		}
 
 		/**
@@ -175,7 +175,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCStartEvent:{device}");
 #endif
-			HandleOnStartPreview(device.deviceName, tex);
+			HandleOnStartPreview(tex);
 		}
 
 		/**
@@ -189,7 +189,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCStopEvent:{device}");
 #endif
-			HandleOnStopPreview(device.deviceName);
+			HandleOnStopPreview();
 		}
 
 		//================================================================================
@@ -301,13 +301,20 @@ namespace Serenegiant.UVC
 			for (int i = 0; i < TargetMaterials.Length; i++)
 			{
 				var target = TargetMaterials[i];
-				if (target is Material)
+				try
 				{
-					(target as Material).mainTexture = SavedTextures[i];
+					if (target is Material)
+					{
+						(target as Material).mainTexture = SavedTextures[i];
+					}
+					else if (target is RawImage)
+					{
+						(target as RawImage).texture = SavedTextures[i];
+					}
 				}
-				else if (target is RawImage)
+				catch
 				{
-					(target as RawImage).texture = SavedTextures[i];
+					Console.WriteLine($"{TAG}RestoreTexture:Exception cought");
 				}
 				SavedTextures[i] = null;
 				quaternions[i] = Quaternion.identity;
@@ -322,17 +329,11 @@ namespace Serenegiant.UVC
 			}
 		}
 
-		//--------------------------------------------------------------------------------
-		private SupportedFormats.Size FindSize(SupportedFormats formats, int width, int height)
-		{
-			return formats.Find(width, height);
-		}
-
 		/**
- * 映像取得開始時の処理
- * @param tex 映像を受け取るテクスチャ
- */
-		private void HandleOnStartPreview(string deviceName, Texture tex)
+		 * 映像取得開始時の処理
+		 * @param tex 映像を受け取るテクスチャ
+		 */
+		private void HandleOnStartPreview(Texture tex)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStartPreview:({tex})");
@@ -342,11 +343,17 @@ namespace Serenegiant.UVC
 			{
 				if (target is Material)
 				{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"{TAG}HandleOnStartPreview:assign Texture to Material({target})");
+#endif
 					SavedTextures[i++] = (target as Material).mainTexture;
 					(target as Material).mainTexture = tex;
 				}
 				else if (target is RawImage)
 				{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+					Console.WriteLine($"{TAG}HandleOnStartPreview:assign Texture to RawImage({target})");
+#endif
 					SavedTextures[i++] = (target as RawImage).texture;
 					(target as RawImage).texture = tex;
 				}
@@ -355,12 +362,11 @@ namespace Serenegiant.UVC
 
 		/**
 		 * 映像取得が終了したときのUnity側の処理
-		 * @param deviceName カメラの識別文字列
 		 */
-		private void HandleOnStopPreview(string deviceName)
+		private void HandleOnStopPreview()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}HandleOnStopPreview:{deviceName}");
+			Console.WriteLine($"{TAG}HandleOnStopPreview:");
 #endif
 			// 描画先のテクスチャをもとに戻す
 			RestoreTexture();

@@ -23,7 +23,8 @@ namespace Serenegiant
 		public const string FQCN_UNITY_PLAYER = "com.unity3d.player.UnityPlayer";
 		public const string PERMISSION_CAMERA = "android.permission.CAMERA";
 
-		public enum PermissionGrantResult {
+		public enum PermissionGrantResult
+		{
 			PERMISSION_GRANT = 0,
 			PERMISSION_DENY = -1,
 			PERMISSION_DENY_AND_NEVER_ASK_AGAIN = -2
@@ -63,7 +64,7 @@ namespace Serenegiant
 			Console.WriteLine($"{TAG}Awake:");
 #endif
 #if UNITY_ANDROID
-			Input.backButtonLeavesApp = true;	// 端末のバックキーでアプリを終了できるようにする
+			Input.backButtonLeavesApp = true;   // 端末のバックキーでアプリを終了できるようにする
 			Initialize();
 #endif
 		}
