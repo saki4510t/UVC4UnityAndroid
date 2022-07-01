@@ -3,6 +3,7 @@
  * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
  */
 
+using AOT;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,12 +17,14 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC
 {
-	[RequireComponent(typeof(AndroidUtils))]
+    [RequireComponent(typeof(AndroidUtils))]
 	public class UVCManager : MonoBehaviour
 	{
 		private const string TAG = "UVCManager#";
 		private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
-		private const int DEFAULT_FRAME_TYPE = 0x07;
+        private const int FRAME_TYPE_MJPEG = 0x000007;
+        private const int FRAME_TYPE_H264 = 0x000014;
+        private const int FRAME_TYPE_H264_FRAME = 0x030011;
 	
 		/**
 		 * IUVCSelectorがセットされていないとき
@@ -57,6 +60,7 @@ namespace Serenegiant.UVC
 		{
 			internal readonly UVCDevice device;
 			internal Texture previewTexture;
+            internal int frameType;
 			internal Int32 activeId;
 			private Int32 currentWidth;
 			private Int32 currentHeight;
@@ -163,7 +167,7 @@ namespace Serenegiant.UVC
 		/**
 		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
 		 */
-		private OnDeviceChangedFunc callback;
+		private OnDeviceChangedCallbackManager.OnDeviceChangedFunc callback;
 		/**
 		 * 端末に接続されたUVC機器利すると
 		 */
@@ -174,18 +178,17 @@ namespace Serenegiant.UVC
 		 */
 		private Dictionary<Int32, CameraInfo> cameraInfos = new Dictionary<int, CameraInfo>();
 
-		//--------------------------------------------------------------------------------
-		// UnityEngineからの呼び出し
-		//--------------------------------------------------------------------------------
-		// Start is called before the first frame update
-		IEnumerator Start()
+        //--------------------------------------------------------------------------------
+        // UnityEngineからの呼び出し
+        //--------------------------------------------------------------------------------
+        // Start is called before the first frame update
+        IEnumerator Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Start:");
 #endif
 			mainContext = SynchronizationContext.Current;
-			callback = new OnDeviceChangedFunc(OnDeviceChanged);
-			Register(callback);
+            callback = OnDeviceChangedCallbackManager.Add(this);
 	
 			yield return Initialize();
 		}
@@ -217,52 +220,51 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnDestroy:");
 #endif
 			StopAll();
-			Unregister(callback);
-			callback = null;
+            OnDeviceChangedCallbackManager.Remove(this);
 		}
 
 		//--------------------------------------------------------------------------------
 		// UVC機器接続状態が変化したときのプラグインからのコールバック関数
 		//--------------------------------------------------------------------------------
-		public void OnDeviceChanged(IntPtr devicePtr, bool attached)
-		{
-			var id = UVCDevice.GetId(devicePtr);
+        public void OnDeviceChanged(IntPtr devicePtr, bool attached)
+        {
+            var id = UVCDevice.GetId(devicePtr);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}OnDeviceChanged:id={id},attached={attached}");
+            Console.WriteLine($"{TAG}OnDeviceChangedInternal:id={id},attached={attached}");
 #endif
-			if (attached)
-			{
-				UVCDevice device = new UVCDevice(devicePtr);
+            if (attached)
+            {
+                UVCDevice device = new UVCDevice(devicePtr);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}OnDeviceChanged:device={device.ToString()}");
+                Console.WriteLine($"{TAG}OnDeviceChangedInternal:device={device.ToString()}");
 #endif
-				if (HandleOnAttachEvent(device))
-				{
-					attachedDevices.Add(device);
-					StartPreview(device);
-				}
-			}
-			else
-			{
-				var found = attachedDevices.Find(item =>
-				{
-					return item != null && item.id == id;
-				});
-				if (found != null)
-				{
-					HandleOnDetachEvent(found);
-					StopPreview(found);
-					attachedDevices.Remove(found);
-				}
-			}
-		}
-
-		//================================================================================
-		/**
+                if (HandleOnAttachEvent(device))
+                {
+                    attachedDevices.Add(device);
+                    StartPreview(device);
+                }
+            }
+            else
+            {
+                var found = attachedDevices.Find(item =>
+                {
+                    return item != null && item.id == id;
+                });
+                if (found != null)
+                {
+                    HandleOnDetachEvent(found);
+                    StopPreview(found);
+                    attachedDevices.Remove(found);
+                }
+            }
+        }
+   
+        //================================================================================
+        /**
 		 * 接続中のUVC機器一覧を取得
 		 * @return 接続中のUVC機器一覧List
 		 */
-		public List<CameraInfo> GetAttachedDevices()
+        public List<CameraInfo> GetAttachedDevices()
 		{
 			var result = new List<CameraInfo>(cameraInfos.Count);
 
@@ -354,7 +356,19 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}StartPreview:({width}x{height}),id={device.id}");
 #endif
-				Resize(device.id, DEFAULT_FRAME_TYPE, width, height);
+                int[] frameTypes = {
+                    PreferH264 ? FRAME_TYPE_H264 : FRAME_TYPE_MJPEG,
+                    PreferH264 ? FRAME_TYPE_MJPEG : FRAME_TYPE_H264,
+                };
+                foreach (var frameType in frameTypes)
+                {
+                    if (Resize(device.id, frameType, width, height) == 0)
+                    {
+                        info.frameType = frameType;
+                        break;
+                    }
+                }
+                    
 				info.SetSize(width, height);
 				info.activeId = device.id;
 				mainContext.Post(__ =>
@@ -618,32 +632,23 @@ namespace Serenegiant.UVC
 			}
 		}
 
-		//--------------------------------------------------------------------------------
-		// ネイティブプラグイン関係の定義・宣言
-		//--------------------------------------------------------------------------------
-		//コールバック関数の型を宣言
-		[UnmanagedFunctionPointer(CallingConvention.StdCall)]
-		delegate void OnDeviceChangedFunc(IntPtr devicePtr, bool attached);
-
+        //--------------------------------------------------------------------------------
+        // ネイティブプラグイン関係の定義・宣言
+        //--------------------------------------------------------------------------------
 		/**
 		 * プラグインでのレンダーイベント取得用native(c/c++)関数
 		 */
 		[DllImport("unityuvcplugin")]
 		private static extern IntPtr GetRenderEventFunc();
-		/**
-		 * プラグインのnative側登録関数
+        /**
+		 * 初期設定
 		 */
-		[DllImport("unityuvcplugin")]
-		private static extern IntPtr Register(OnDeviceChangedFunc callback);
-		/**
-		 * プラグインのnative側登録解除関数
-		 */
-		[DllImport("unityuvcplugin")]
-		private static extern IntPtr Unregister(OnDeviceChangedFunc callback);
-		/**
+        [DllImport("unityuvcplugin", EntryPoint = "Config")]
+        private static extern Int32 Config(Int32 deviceId, Int32 enabled, Int32 useFirstConfig);
+        /**
 		 * 映像取得開始
 		 */
-		[DllImport("unityuvcplugin", EntryPoint ="Start")]
+        [DllImport("unityuvcplugin", EntryPoint ="Start")]
 		private static extern Int32 Start(Int32 deviceId, Int32 tex);
 		/**
 		 * 映像取得終了
@@ -656,5 +661,64 @@ namespace Serenegiant.UVC
 		[DllImport("unityuvcplugin")]
 		private static extern Int32 Resize(Int32 deviceId, Int32 frameType, Int32 width, Int32 height);
 	}   // UVCManager
+
+    /**
+     * IL2Cppだとc/c++からのコールバックにつかうデリゲーターをマーシャリングできないので
+     * staticなクラス・関数で処理をしないといけない。
+     * だだしそれだと呼び出し元のオブジェクトの関数を呼び出せないのでマネージャークラスを作成
+     * とりあえずはUVCManagerだけを受け付けるのでインターフェースにはしていない
+     */
+    public static class OnDeviceChangedCallbackManager
+    {
+        //コールバック関数の型を宣言
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void OnDeviceChangedFunc(Int32 id, IntPtr devicePtr, bool attached);
+
+        /**
+		 * プラグインのnative側登録関数
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc callback);
+        /**
+		 * プラグインのnative側登録解除関数
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern IntPtr Unregister(Int32 id);
+
+        private static Dictionary<Int32, UVCManager> sManagers = new Dictionary<Int32, UVCManager>();
+  
+        /**
+         * 指定したUVCManagerを接続機器変化コールバックに追加
+         */
+        public static OnDeviceChangedFunc Add(UVCManager manager)
+        {
+            Int32 id = manager.GetHashCode();
+            OnDeviceChangedFunc callback = new OnDeviceChangedFunc(OnDeviceChanged);
+            sManagers.Add(id, manager);
+            Register(id, callback);
+            return callback;
+        }
+
+        /**
+         * 指定したUVCManagerを接続機器変化コールバックから削除
+         */
+        public static void Remove(UVCManager manager)
+        {
+            Int32 id = manager.GetHashCode();
+            Unregister(id);
+            sManagers.Remove(id);
+        }
+
+        [MonoPInvokeCallback(typeof(OnDeviceChangedFunc))]
+        public static void OnDeviceChanged(Int32 id, IntPtr devicePtr, bool attached)
+        {
+            var manager = sManagers.ContainsKey(id) ? sManagers[id] : null;
+            if (manager != null)
+            {
+                manager.OnDeviceChanged(devicePtr, attached);
+            }
+        }
+    } // OnDeviceChangedCallbackManager
+
 
 }   // namespace Serenegiant.UVC
