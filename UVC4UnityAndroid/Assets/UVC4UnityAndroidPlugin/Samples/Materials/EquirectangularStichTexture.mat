@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: EquirectangularStichTexture
   m_Shader: {fileID: 4800000, guid: 91b8677abe2e60d48a8941053cf517ff, type: 3}
-  m_ShaderKeywords: _DRAW_BOTH _MODE_THETA_S_1080P
+  m_ShaderKeywords: _DRAW_BOTH _MODE_THETA_S
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -65,7 +65,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
-    - _Mode: 0
+    - _Mode: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _Radius: 0.445
@@ -78,3 +78,4 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _UVOffset: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
