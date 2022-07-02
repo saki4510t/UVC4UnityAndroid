@@ -7,8 +7,9 @@ using System;
 using System.Runtime.InteropServices;
 
 /*
- * THETA V
- * {"vid":1482,"pid":872}
+ * THETA S  vid:1482, pid:1001
+ * THETA V  vid:1482, pid:1002
+ * THETA Z1 vid:1482, pid:1005
  */
 
 namespace Serenegiant.UVC
@@ -51,9 +52,16 @@ namespace Serenegiant.UVC
 			get { return (vid == 1482); }
 		}
 
+        /**
+		 * THETA S/V/Z1のいずれかかどうか
+		 */
+        public bool IsTHETA
+        {
+            get { return IsTHETA_S || IsTHETA_V || IsTHETA_Z1; }
+        }
+   
 		/**
 		 * THETA Sかどうか
-		 * @param info
 		 */
 		public bool IsTHETA_S
 		{
@@ -62,21 +70,30 @@ namespace Serenegiant.UVC
 
 		/**
 		 * THETA Vかどうか
-		 * @param info
 		 */
 		public bool IsTHETA_V
 		{
-			// THETA Vからのpid=872は動かない
+			// THETA Vからのpid=872はUVCでなくて動かないので注意(THETA側は静止画/動画モード)
 			get { return (vid == 1482) && (pid == 10002); }
 		}
 
-		//--------------------------------------------------------------------------------
-		// プラグインのインターフェース関数
-		//--------------------------------------------------------------------------------
-		/**
+        /**
+		 * THETA Z1かどうか
+		 * @param info
+		 */
+        public bool IsTHETA_Z1
+        {
+            // THETA Z1からのpid=877はUVCではなくて動かないので注意(THETA側は静止画/動画モード)
+            get { return (vid == 1482) && (pid == 10005); }
+        }
+
+        //--------------------------------------------------------------------------------
+        // プラグインのインターフェース関数
+        //--------------------------------------------------------------------------------
+        /**
 		 * 機器idを取得(これだけはpublicにする)
 		 */
-		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_id")]
+        [DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_id")]
 		public static extern Int32 GetId(IntPtr devicePtr);
 
 		/**

@@ -94,10 +94,9 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnUVCAttachEvent:{device}");
 #endif
 			// XXX 今の実装では基本的に全てのUVC機器を受け入れる
-			// ただしTHETA SとTHETA Vは映像を取得できないインターフェースがあるのでオミットする
+			// ただしTHETA SとTHETA VとTHETA Z1は映像を取得できないインターフェースがあるのでオミットする
 			// CanDrawと同様にUVC機器フィルターをインスペクタで設定できるようにする
-			var result = !device.IsRicoh
-				|| (device.IsTHETA_S || device.IsTHETA_V);
+			var result = !device.IsRicoh || device.IsTHETA;
 
 			result &= UVCFilter.Match(device, UVCFilters);
 
@@ -129,10 +128,10 @@ namespace Serenegiant.UVC
 //#if (!NDEBUG && DEBUG && ENABLE_LOG)
 //			Console.WriteLine($"{TAG}OnUVCSelectSize:{device}");
 //#endif
-//			if (device.IsTHETA_V)
+//			if (device.IsTHETA_V || device.IsTHETA_Z1)
 //			{
 //#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V");
+//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V/Z1");
 //#endif
 //				return FindSize(formats, 3840, 1920);
 //			}
