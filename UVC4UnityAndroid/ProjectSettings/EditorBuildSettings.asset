@@ -18,11 +18,11 @@ EditorBuildSettings:
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaSScene.unity
     guid: 8912afb67f655ac448848e33282d23f6
   - enabled: 0
-    path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaVScene.unity
-    guid: 428ccd87848a9894b8338e6564451bc5
-  - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaS1080pScene.unity
     guid: 3e6d87784cae8c94788533a2d77f733f
+  - enabled: 0
+    path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaVScene.unity
+    guid: 428ccd87848a9894b8338e6564451bc5
   - enabled: 0
     path: Assets/UVC4UnityAndroidPlugin/Samples/Scenes/ThetaZ1Scene.unity
     guid: ff3c74b77a7823147b9544bb43b1ce56
