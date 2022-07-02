@@ -1,6 +1,6 @@
 ﻿//#define ENABLE_LOG
 /*
- * Copyright (c) 2014 - 2019 t_saki@serenegiant.com 
+ * Copyright (c) 2014 - 2022 t_saki@serenegiant.com 
  */
 
 using UnityEngine;
