@@ -45,6 +45,7 @@ Files under `UVC4UnityAndroid/Assets/UVC4UnityAndroidPlugin/Samples/` may have d
 * Streaming with H.264 needs Android 8 and later devices (required API>=26 but API>=29 will be better for performance)
 * Android system never send attach event for THETA V and THETA Z1(becauseof issues on Android system itself), as a result app can never start automatically. Please launch app by manually.
 * Be sure to confirm THETA V and Z1 is in `live streaming` mode. THETA V and Z1 will report `USB Image Class` when they are in `camera mode` or `video mode` and app will detecte it. But this `USB Image Class` is not av `UVC(USB Video Class)` and have no video control interface and video control interface and can't get video images from it. 
+* Currently only supports OpenGL|ES as Graphic API. Vulkan is not supported now. If you can't see video images, please confirm settings of Graphic API on player settings.
 
 ## Dependancies:
 
@@ -61,9 +62,10 @@ Files under `UVC4UnityAndroid/Assets/UVC4UnityAndroidPlugin/Samples/` may have d
    3. Search `System.Text.Json` from search box.
    4. Select `System.Text.Json` and install it.
 3. Import release package of `UVC4UnityAndroid`
-4. Open one of sample scene from `UVC4UnityAndroid/Samples/Scenes` folder.
-5. Build and run apk on your real Android device.
-6. Connect UVC device(s) with Android Device. Some UVC devices / some Android devices may need powered USB hub between UVC device and Android device.
+4. Confirm Graphic API setting on player settings, only OpenGL|ES is supported.
+5. Open one of sample scene from `UVC4UnityAndroid/Samples/Scenes` folder.
+6. Build and run apk on your real Android device.
+7. Connect UVC device(s) with Android Device. Some UVC devices / some Android devices may need powered USB hub between UVC device and Android device.
 
 ## Note:
 
