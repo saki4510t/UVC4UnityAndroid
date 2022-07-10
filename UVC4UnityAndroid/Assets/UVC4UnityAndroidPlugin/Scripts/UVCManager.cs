@@ -169,7 +169,7 @@ namespace Serenegiant.UVC
 		 */
 		private OnDeviceChangedCallbackManager.OnDeviceChangedFunc callback;
 		/**
-		 * 端末に接続されたUVC機器利すると
+		 * 端末に接続されたUVC機器リスト
 		 */
 		private List<UVCDevice> attachedDevices = new List<UVCDevice>();
 		/**
