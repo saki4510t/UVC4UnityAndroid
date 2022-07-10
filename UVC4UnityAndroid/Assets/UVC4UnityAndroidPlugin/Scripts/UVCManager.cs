@@ -46,7 +46,11 @@ namespace Serenegiant.UVC
 		 * false:	MJPEG > H.264 > YUV
 		 */
 		public bool PreferH264 = false;
-
+        /**
+         * シーンレンダリングの前にUVC機器映像のテクスチャへのレンダリング要求を行うかどうか
+         */
+        public bool RenderBeforeSceneRendering = false;
+   
 		/**
 		 * UVC関係のイベンドハンドラー
 		 */
@@ -64,9 +68,11 @@ namespace Serenegiant.UVC
 			internal Int32 activeId;
 			private Int32 currentWidth;
 			private Int32 currentHeight;
+            private bool isRenderBeforeSceneRendering;
+            private bool isRendering;
 
 
-			internal CameraInfo(UVCDevice device)
+            internal CameraInfo(UVCDevice device)
 			{
 				this.device = device;
 			}
@@ -144,26 +150,82 @@ namespace Serenegiant.UVC
 				return $"{base.ToString()}({currentWidth}x{currentHeight},id={Id},activeId={activeId},IsPreviewing={IsPreviewing})";
 			}
 
-			/**
+            /**
+             * UVC機器からの映像のレンダリングを開始
+             * @param manager
+             */
+            internal Coroutine StartRender(UVCManager manager, bool renderBeforeSceneRendering)
+            {
+                StopRender(manager);
+                isRenderBeforeSceneRendering = renderBeforeSceneRendering;
+                isRendering = true;
+                if (renderBeforeSceneRendering)
+                {
+                    return manager.StartCoroutine(OnRenderBeforeSceneRendering());
+                } else
+                {
+                    return manager.StartCoroutine(OnRender());
+                }
+            }
+
+            /**
+             * UVC機器からの映像のレンダリングを終了
+             * @param manager
+             */
+            internal void StopRender(UVCManager manager)
+            {
+                if (isRendering)
+                {
+                    isRendering = false;
+                    if (isRenderBeforeSceneRendering)
+                    {
+                        manager.StopCoroutine(OnRenderBeforeSceneRendering());
+                    }
+                    else
+                    {
+                        manager.StopCoroutine(OnRender());
+                    }
+                }
+            }
+
+            /**
 			 * レンダーイベント処理用
 			 * コールーチンとして実行される
+             * シーンレンダリングの前にUVC機器からの映像をテクスチャへレンダリング要求する
 			 */
-			internal IEnumerator OnRender()
+            private IEnumerator OnRenderBeforeSceneRendering()
 			{
 				var renderEventFunc = GetRenderEventFunc();
 				for (; activeId != 0;)
 				{
-					yield return new WaitForEndOfFrame();
+					yield return null;
 					GL.IssuePluginEvent(renderEventFunc, activeId);
 				}
 				yield break;
 			}
-		}
 
-		/**
+            /**
+             * レンダーイベント処理用
+             * コールーチンとして実行される
+             * レンダリング後にUVC機器からの映像をテクスチャへレンダリング要求する
+             */
+            private IEnumerator OnRender()
+            {
+                var renderEventFunc = GetRenderEventFunc();
+                for (; activeId != 0;)
+                {
+                    yield return new WaitForEndOfFrame();
+                    GL.IssuePluginEvent(renderEventFunc, activeId);
+                }
+                yield break;
+            }
+
+        }
+
+        /**
 		 * メインスレッド上で実行するためのSynchronizationContextインスタンス
 		 */
-		private SynchronizationContext mainContext;
+        private SynchronizationContext mainContext;
 		/**
 		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
 		 */
@@ -387,7 +449,7 @@ namespace Serenegiant.UVC
 					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
 					Start(device.id, nativeTexPtr.ToInt32());
 					HandleOnStartPreviewEvent(info);
-					StartCoroutine(info.OnRender());
+					info.StartRender(this, RenderBeforeSceneRendering);
 				}, null);
 			}
 		}
@@ -400,7 +462,7 @@ namespace Serenegiant.UVC
 				{
 					HandleOnStopPreviewEvent(info);
 					Stop(device.id);
-					StopCoroutine(info.OnRender());
+					info.StopRender(this);
 					info.SetSize(0, 0);
 					info.activeId = 0;
 				}, null);
