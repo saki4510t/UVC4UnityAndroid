@@ -83,3 +83,4 @@ Files under `UVC4UnityAndroid/Assets/UVC4UnityAndroidPlugin/Samples/` may have d
 * r0.1.0 on 24 Dec. 2019
    * First release.
 * r0.2.0 on 3 July. 2022
+* r0.2.1 on 10 July. 2022
