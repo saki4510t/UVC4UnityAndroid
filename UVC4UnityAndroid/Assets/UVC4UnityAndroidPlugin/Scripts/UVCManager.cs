@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
-
 #if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
 using UnityEngine.Android;
 #endif
@@ -18,20 +17,134 @@ using UnityEngine.Android;
 namespace Serenegiant.UVC
 {
     [RequireComponent(typeof(AndroidUtils))]
-	public class UVCManager : MonoBehaviour
-	{
-		private const string TAG = "UVCManager#";
-		private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
+    public class UVCManager : MonoBehaviour
+    {
+        private const string TAG = "UVCManager#";
+        private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
+
+        //--------------------------------------------------------------------------------
         private const int FRAME_TYPE_MJPEG = 0x000007;
         private const int FRAME_TYPE_H264 = 0x000014;
         private const int FRAME_TYPE_H264_FRAME = 0x030011;
-	
-		/**
+
+        //--------------------------------------------------------------------------------
+        // Camera Terminal DescriptorのbmControlsフィールドのビットマスク
+        private const UInt64 CTRL_SCANNING		= 0x00000001;	// D0:  Scanning Mode
+        private const UInt64 CTRL_AE			= 0x00000002;	// D1:  Auto-Exposure Mode
+        private const UInt64 CTRL_AE_PRIORITY	= 0x00000004;	// D2:  Auto-Exposure Priority
+        private const UInt64 CTRL_AE_ABS		= 0x00000008;	// D3:  Exposure Time (Absolute)
+        private const UInt64 CTRL_AE_REL		= 0x00000010;	// D4:  Exposure Time (Relative)
+        private const UInt64 CTRL_FOCUS_ABS		= 0x00000020;	// D5:  Focus (Absolute)
+        private const UInt64 CTRL_FOCUS_REL		= 0x00000040;	// D6:  Focus (Relative)
+        private const UInt64 CTRL_IRIS_ABS		= 0x00000080;	// D7:  Iris (Absolute)
+        private const UInt64 CTRL_IRIS_REL		= 0x00000100;	// D8:  Iris (Relative)
+        private const UInt64 CTRL_ZOOM_ABS		= 0x00000200;	// D9:  Zoom (Absolute)
+        private const UInt64 CTRL_ZOOM_REL		= 0x00000400;	// D10: Zoom (Relative)
+        private const UInt64 CTRL_PANTILT_ABS	= 0x00000800;	// D11: PanTilt (Absolute)
+        private const UInt64 CTRL_PAN_ABS		= 0x01000800;	// D11: PanTilt (Absolute)
+        private const UInt64 CTRL_TILT_ABS		= 0x02000800;	// D11: PanTilt (Absolute)
+        private const UInt64 CTRL_PANTILT_REL	= 0x00001000;	// D12: PanTilt (Relative)
+        private const UInt64 CTRL_PAN_REL		= 0x01001000;	// D12: PanTilt (Relative)
+        private const UInt64 CTRL_TILT_REL		= 0x02001000;	// D12: PanTilt (Relative)
+        private const UInt64 CTRL_ROLL_ABS		= 0x00002000;	// D13: Roll (Absolute)
+        private const UInt64 CTRL_ROLL_REL		= 0x00004000;	// D14: Roll (Relative)
+        private const UInt64 CTRL_D15			= 0x00008000;	// D15: Reserved
+        private const UInt64 CTRL_D16			= 0x00010000;	// D16: Reserved
+        private const UInt64 CTRL_FOCUS_AUTO	= 0x00020000;	// D17: Focus, Auto
+        private const UInt64 CTRL_PRIVACY		= 0x00040000;	// D18: Privacy
+        private const UInt64 CTRL_FOCUS_SIMPLE	= 0x00080000;	// D19: Focus, Simple
+        private const UInt64 CTRL_WINDOW		= 0x00100000;	// D20: Window
+        private const UInt64 CTRL_ROI			= 0x00200000;	// D21: ROI
+        private const UInt64 CTRL_D22			= 0x00400000;	// D22: Reserved
+        private const UInt64 CTRL_D23			= 0x00800000;	// D23: Reserved
+
+        // Processing Unit DescriptorのbmControlsフィールドのビットマスク
+        private const UInt64 PU_BRIGHTNESS		= 0x00000001;	// D0: Brightness
+        private const UInt64 PU_CONTRAST		= 0x00000002;	// D1: Contrast
+        private const UInt64 PU_HUE				= 0x00000004;	// D2: Hue
+        private const UInt64 PU_SATURATION		= 0x00000008;	// D3: Saturation
+        private const UInt64 PU_SHARPNESS		= 0x00000010;	// D4: Sharpness
+        private const UInt64 PU_GAMMA			= 0x00000020;	// D5: Gamma
+        private const UInt64 PU_WB_TEMP			= 0x00000040;	// D6: White Balance Temperature
+        private const UInt64 PU_WB_COMPO		= 0x00000080;	// D7: White Balance Component
+        private const UInt64 PU_BACKLIGHT		= 0x00000100;	// D8: Backlight Compensation
+        private const UInt64 PU_GAIN			= 0x00000200;	// D9: Gain
+        private const UInt64 PU_POWER_LF		= 0x00000400;	// D10: Power Line Frequency
+        private const UInt64 PU_HUE_AUTO		= 0x00000800;	// D11: Hue, Auto
+        private const UInt64 PU_WB_TEMP_AUTO	= 0x00001000;	// D12: White Balance Temperature, Auto
+        private const UInt64 PU_WB_COMPO_AUTO	= 0x00002000;	// D13: White Balance Component, Auto
+        private const UInt64 PU_DIGITAL_MULT	= 0x00004000;	// D14: Digital Multiplier
+        private const UInt64 PU_DIGITAL_LIMIT	= 0x00008000;	// D15: Digital Multiplier Limit
+        private const UInt64 PU_AVIDEO_STD		= 0x00010000;	// D16: Analog Video Standard
+        private const UInt64 PU_AVIDEO_LOCK		= 0x00020000;	// D17: Analog Video Lock Status
+        private const UInt64 PU_CONTRAST_AUTO	= 0x00040000;	// D18: Contrast, Auto
+        private const UInt64 PU_D19				= 0x00080000;	// D19: Reserved
+        private const UInt64 PU_D20				= 0x00100000;	// D20: Reserved
+        private const UInt64 PU_D21				= 0x00200000;	// D21: Reserved
+        private const UInt64 PU_D22				= 0x00400000;	// D22: Reserved
+        private const UInt64 PU_D23				= 0x00800000;   // D23: Reserved
+
+        // プロセッシングユニットのコントロールタイプを識別するために最上位ビットを立てる
+        private const UInt64 PU_MASK = 0x80000000;
+
+        //--------------------------------------------------------------------------------
+        private static readonly UInt64[] SUPPORTED_CTRLS = {
+            CTRL_SCANNING,
+            CTRL_AE,
+            CTRL_AE_PRIORITY,
+            CTRL_AE_ABS,
+            //CTRL_AE_REL,
+            CTRL_FOCUS_ABS,
+            //CTRL_FOCUS_REL,
+            CTRL_IRIS_ABS,
+            //CTRL_IRIS_REL,
+            CTRL_ZOOM_ABS,
+            //CTRL_ZOOM_REL,
+            //CTRL_PANTILT_ABS,
+            CTRL_PAN_ABS,
+            CTRL_TILT_ABS,
+            //CTRL_PANTILT_REL,
+            //CTRL_PAN_REL,
+            //CTRL_TILT_REL,
+            CTRL_ROLL_ABS,
+            //CTRL_ROLL_REL,
+            CTRL_FOCUS_AUTO,
+            //CTRL_PRIVACY,
+            //CTRL_FOCUS_SIMPLE,
+            //CTRL_WINDOW,
+            //CTRL_ROI,
+        };
+        private static readonly UInt64[] SUPPORTED_PROCS =
+        {
+            PU_BRIGHTNESS,
+            PU_CONTRAST,
+            PU_HUE,
+            PU_SATURATION,
+            PU_SHARPNESS,
+            PU_GAMMA,
+            PU_WB_TEMP,
+            PU_WB_COMPO,
+            PU_BACKLIGHT,
+            PU_GAIN,
+            PU_POWER_LF,
+            PU_HUE_AUTO,
+            PU_WB_TEMP_AUTO,
+            PU_WB_COMPO_AUTO,
+            PU_DIGITAL_MULT,
+            PU_DIGITAL_LIMIT,
+            PU_AVIDEO_STD,
+            PU_AVIDEO_LOCK,
+            PU_CONTRAST_AUTO,
+
+        };
+    
+        //--------------------------------------------------------------------------------
+        /**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(幅)
 		*/
-		public Int32 DefaultWidth = 1280;
+        public Int32 DefaultWidth = 1280;
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
@@ -70,9 +183,9 @@ namespace Serenegiant.UVC
 			private Int32 currentHeight;
             private bool isRenderBeforeSceneRendering;
             private bool isRendering;
+			private Dictionary<UInt64, UVCCtrlInfo> ctrlInfos = new Dictionary<UInt64, UVCCtrlInfo>();
 
-
-            internal CameraInfo(UVCDevice device)
+			internal CameraInfo(UVCDevice device)
 			{
 				this.device = device;
 			}
@@ -143,6 +256,136 @@ namespace Serenegiant.UVC
 			{
 				currentWidth = width;
 				currentHeight = height;
+			}
+
+			/**
+			 * サポートしているUVCコントロール/プロセッシング機能の情報を更新する
+			 */
+			public void UpdateCtrls()
+			{
+				ctrlInfos.Clear();
+				var ctrls = GetCtrlSupports(Id);
+				foreach (UInt64 ctrl in SUPPORTED_CTRLS)
+				{
+					if ((ctrls & ctrl) == ctrl)
+					{
+						UVCCtrlInfo info = new UVCCtrlInfo();
+						info.type = ctrl;
+						if (GetCtrlInfo(Id, ref info) == 0)
+						{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+							Console.WriteLine($"{TAG}ctrl({ctrl:X}):={info}");
+#endif
+							ctrlInfos.Add(info.type, info);
+						}
+					}
+				}
+				ctrls = GetProcSupports(Id);
+				foreach (UInt64 ctrl in SUPPORTED_PROCS)
+				{
+					if ((ctrls & ctrl) == ctrl)
+					{
+						UVCCtrlInfo info = new UVCCtrlInfo();
+						info.type = ctrl | PU_MASK;
+						if (GetCtrlInfo(Id, ref info) == 0)
+						{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+							Console.WriteLine($"{TAG}proc({ctrl:X}):={info}");
+#endif
+							ctrlInfos.Add(info.type, info);
+						}
+					}
+				}
+			}
+
+			/**
+			 * 対応しているUVCコントロール/プロセッシング機能のtype一覧を取得
+			 */
+			public List<UInt64> GetCtrls()
+			{
+				return new List<UInt64>(ctrlInfos.Keys);
+			}
+
+			/**
+			 * 指定したUVCコントロール/プロセッシング機能の情報を取得
+			 * @param type
+			 * @return UVCCtrlInfo
+			 * @throws ArgumentOutOfRangeException
+			 */
+			public UVCCtrlInfo GetInfo(UInt64 type)
+			{
+				if (ctrlInfos.ContainsKey(type))
+				{
+					return ctrlInfos.GetValueOrDefault(type, new UVCCtrlInfo());
+				} else
+				{
+					throw new ArgumentOutOfRangeException($"Not supported control type{type:X}");
+				}
+			}
+
+			/**
+			 * UVCコントロール/プロセッシング機能の設定値を取得
+			 * @param type
+			 * @return 変更後の値
+			 * @throws ArgumentOutOfRangeException
+			 * @throws Exception
+			 */
+			public Int32 GetValue(UInt64 type)
+			{
+				if (ctrlInfos.ContainsKey(type))
+				{
+					Int32 value = 0;
+					var r = GetCtrlValue(Id, type, ref value);
+					if (r == 0)
+					{
+						return value;
+					} else
+					{
+						throw new Exception($"Failed to get control value,type={type},err={r}");
+					}
+				} else
+				{
+					throw new ArgumentOutOfRangeException($"Not supported control type{type:X}");
+				}
+			}
+
+			/**
+			 * UVCコントロール/プロセッシング機能の設定変更
+			 * @param type
+			 * @param value
+			 * @return 変更後の値
+			 * @throws ArgumentOutOfRangeException
+			 * @throws Exception
+			 */
+			public Int32 SetValue(UInt64 type, Int32 value)
+			{
+				if (ctrlInfos.ContainsKey(type))
+				{
+					var r = SetCtrlValue(Id, type, value);
+					if (r == 0)
+					{
+						r = GetCtrlValue(Id, type, ref value);
+						if (r == 0)
+						{
+							var info = ctrlInfos.GetValueOrDefault(type, new UVCCtrlInfo());
+							info.current = value;
+							ctrlInfos[type] = info;
+							return value;
+						}
+						else
+						{
+							throw new Exception($"Failed to get control value,type={type},err={r}");
+						}
+					}
+					else
+					{
+						throw new Exception($"Failed to set control value,type={type},err={r}");
+					}
+				}
+				else
+				{
+					throw new ArgumentOutOfRangeException($"Not supported control type{type:X}");
+				}
 			}
 
 			public override string ToString()
@@ -220,16 +463,16 @@ namespace Serenegiant.UVC
                 yield break;
             }
 
-        }
+		} // CameraInfo
 
-        /**
+		/**
 		 * メインスレッド上で実行するためのSynchronizationContextインスタンス
 		 */
-        private SynchronizationContext mainContext;
+		private SynchronizationContext mainContext;
 		/**
 		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
 		 */
-		private OnDeviceChangedCallbackManager.PluginCallback callback;
+		private PluginCallbackManager.PluginCallback callback;
 		/**
 		 * 端末に接続されたUVC機器リスト
 		 */
@@ -250,7 +493,7 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}Start:");
 #endif
 			mainContext = SynchronizationContext.Current;
-            callback = OnDeviceChangedCallbackManager.Add(this);
+            callback = PluginCallbackManager.Add(this);
 	
 			yield return Initialize();
 		}
@@ -282,7 +525,7 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnDestroy:");
 #endif
 			StopAll();
-            OnDeviceChangedCallbackManager.Remove(this);
+            PluginCallbackManager.Remove(this);
 		}
 
 		//--------------------------------------------------------------------------------
@@ -441,6 +684,7 @@ namespace Serenegiant.UVC
                     
 				info.SetSize(width, height);
 				info.activeId = device.id;
+				info.UpdateCtrls();
 				mainContext.Post(__ =>
 				{   // テクスチャの生成はメインスレッドで行わないといけない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -730,7 +974,47 @@ namespace Serenegiant.UVC
 		 */
 		[DllImport("unityuvcplugin")]
 		private static extern Int32 Resize(Int32 deviceId, Int32 frameType, Int32 width, Int32 height);
-	}   // UVCManager
+        /**
+		 * 対応するUVCコントロール機能マスクを取得
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern UInt64 GetCtrlSupports(Int32 deviceId);
+        /**
+		 * 対応するUVCプロセッシング機能マスクを取得
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern UInt64 GetProcSupports(Int32 deviceId);
+        /**
+		 * 対応するUVCコントロール/プロセッシング機能情報を取得
+		 */
+        [DllImport("unityuvcplugin", CallingConvention=CallingConvention.StdCall)]
+        private static extern Int32 GetCtrlInfo(Int32 deviceId, ref UVCCtrlInfo info);
+        /**
+		 * 対応するUVCコントロール/プロセッシング機能設定値を取得
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern Int32 GetCtrlValue(Int32 deviceId, UInt64 ctrl, ref Int32 value);
+        /**
+		 * 対応するUVCコントロール/プロセッシング機能設定値を設定
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern Int32 SetCtrlValue(Int32 deviceId, UInt64 ctrl, Int32 value);
+        /**
+		 * UACからの音声取得開始
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern Int32 StartUAC(Int32 deviceId);
+        /**
+		 * UACからの音声取得終了
+		 */
+        [DllImport("unityuvcplugin")]
+        private static extern Int32 StopUAC(Int32 deviceId);
+        /**
+		 * 対応するUVCコントロール/プロセッシング機能情報を取得
+		 */
+        [DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
+        private static extern Int32 GetUACInfo(Int32 deviceId, UInt64 ctrl, ref UACInfo info);
+    }   // UVCManager
 
     /**
      * IL2Cppだとc/c++からのコールバックにつかうデリゲーターをマーシャリングできないので
@@ -738,7 +1022,7 @@ namespace Serenegiant.UVC
      * だだしそれだと呼び出し元のオブジェクトの関数を呼び出せないのでマネージャークラスを作成
      * とりあえずはUVCManagerだけを受け付けるのでインターフェースにはしていない
      */
-    public static class OnDeviceChangedCallbackManager
+    public static class PluginCallbackManager
     {
         //コールバック関数の型を宣言
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -809,7 +1093,7 @@ namespace Serenegiant.UVC
                 manager.OnUACFrame(deviceId, dataPtr, dataLen, ptsUs);
             }
         }
-    } // OnDeviceChangedCallbackManager
+    } // PluginCallbackManager
 
 
 }   // namespace Serenegiant.UVC
