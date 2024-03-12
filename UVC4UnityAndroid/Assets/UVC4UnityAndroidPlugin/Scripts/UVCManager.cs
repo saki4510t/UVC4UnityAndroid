@@ -229,7 +229,7 @@ namespace Serenegiant.UVC
 		/**
 		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
 		 */
-		private OnDeviceChangedCallbackManager.OnDeviceChangedFunc callback;
+		private OnDeviceChangedCallbackManager.PluginCallback callback;
 		/**
 		 * 端末に接続されたUVC機器リスト
 		 */
@@ -320,7 +320,15 @@ namespace Serenegiant.UVC
                 }
             }
         }
-   
+
+        //--------------------------------------------------------------------------------
+        // UAC機器から音声データを受け取ったときのプラグインからのコールバック関数
+        //--------------------------------------------------------------------------------
+        public void OnUACFrame(Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs)
+        {
+            // FIXME 未実装
+        }
+    
         //================================================================================
         /**
 		 * 接続中のUVC機器一覧を取得
@@ -735,12 +743,21 @@ namespace Serenegiant.UVC
         //コールバック関数の型を宣言
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void OnDeviceChangedFunc(Int32 id, IntPtr devicePtr, bool attached);
+        //コールバック関数の型を宣言
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate void OnUACFrameFunc(Int32 id, Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs);
 
+        // Addでコールバック関数を2つ返したいので構造体に
+        public class PluginCallback {
+            public OnDeviceChangedFunc onDeviceChanged;
+            public OnUACFrameFunc onUACFrame;
+        }
+    
         /**
 		 * プラグインのnative側登録関数
 		 */
         [DllImport("unityuvcplugin")]
-        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc callback);
+        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc deviceChanged, OnUACFrameFunc uacFrame);
         /**
 		 * プラグインのnative側登録解除関数
 		 */
@@ -752,12 +769,14 @@ namespace Serenegiant.UVC
         /**
          * 指定したUVCManagerを接続機器変化コールバックに追加
          */
-        public static OnDeviceChangedFunc Add(UVCManager manager)
+        public static PluginCallback Add(UVCManager manager)
         {
             Int32 id = manager.GetHashCode();
-            OnDeviceChangedFunc callback = new OnDeviceChangedFunc(OnDeviceChanged);
+            PluginCallback callback = new PluginCallback();
+            callback.onDeviceChanged = new OnDeviceChangedFunc(OnDeviceChanged);
+            callback.onUACFrame = new OnUACFrameFunc(OnUACFrame);
             sManagers.Add(id, manager);
-            Register(id, callback);
+            Register(id, callback.onDeviceChanged, callback.onUACFrame);
             return callback;
         }
 
@@ -778,6 +797,16 @@ namespace Serenegiant.UVC
             if (manager != null)
             {
                 manager.OnDeviceChanged(devicePtr, attached);
+            }
+        }
+
+        [MonoPInvokeCallback(typeof(OnUACFrameFunc))]
+        public static void OnUACFrame(Int32 id, Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs)
+        {
+            var manager = sManagers.ContainsKey(id) ? sManagers[id] : null;
+            if (manager != null)
+            {
+                manager.OnUACFrame(deviceId, dataPtr, dataLen, ptsUs);
             }
         }
     } // OnDeviceChangedCallbackManager
