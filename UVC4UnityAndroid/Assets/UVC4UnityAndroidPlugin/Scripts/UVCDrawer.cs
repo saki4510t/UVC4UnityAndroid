@@ -26,7 +26,10 @@ namespace Serenegiant.UVC
 		 * 返したときのデフォルトの解像度(高さ)
 		 */
 		public int DefaultHeight = 720;
-
+		/**
+		 * 可能な場合にUACから音声取得を行うかどうか
+		 */
+		public bool UACEnabled = false;
 		/**
 		 * 接続時及び描画時のフィルタ用
 		 */
@@ -100,7 +103,7 @@ namespace Serenegiant.UVC
 #endif
 			// XXX 今の実装では基本的に全てのUVC機器を受け入れる
 			// ただしTHETA SとTHETA VとTHETA Z1は映像を取得できないインターフェースがあるのでオミットする
-			// CanDrawと同様にUVC機器フィルターをインスペクタで設定できるようにする
+			// IsUVCEnabledと同様にUVC機器フィルターをインスペクタで設定できるようにする
 			var result = !device.IsRicoh || device.IsTHETA;
 
 			result &= UVCFilter.Match(device, UVCFilters);
@@ -162,7 +165,7 @@ namespace Serenegiant.UVC
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */
-		public bool CanDraw(UVCManager manager, UVCDevice device)
+		public bool IsUVCEnabled(UVCManager manager, UVCDevice device)
 		{
 			return UVCFilter.Match(device, UVCFilters);
 		}
@@ -194,6 +197,18 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnUVCStopEvent:{device}");
 #endif
 			HandleOnStopPreview();
+		}
+
+		/**
+		 * IUVCDrawerが指定したUAC機器kからの音声を取得を有効にするかどうか取得
+		 * XXX とりあえずUACに対応した機器であればtrueを返す, 必要に応じて書き換えること
+		 * IUVCDrawerの実装
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 対象となるUAC機器の情報
+		 */
+		public bool IsUACEnabled(UVCManager manager, UVCDevice device)
+		{
+			return UACEnabled && device.isUAC;
 		}
 
 		/**

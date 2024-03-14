@@ -160,6 +160,10 @@ namespace Serenegiant.UVC
 		 * false:	MJPEG > H.264 > YUV
 		 */
 		public bool PreferH264 = false;
+		/**
+		 * 可能な場合にUACから音声取得を行うかどうか
+		 */
+		public bool UACEnabled = false;
         /**
          * シーンレンダリングの前にUVC機器映像のテクスチャへのレンダリング要求を行うかどうか
          */
@@ -548,7 +552,9 @@ namespace Serenegiant.UVC
 				manager.StopAudio(device);
 			}
 
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
 			private int readCnt = 0;
+#endif
 
 			/**
 			 * AudioClipからのコールバック
@@ -687,7 +693,10 @@ namespace Serenegiant.UVC
                 {
                     attachedDevices.Add(device);
                     StartPreview(device);
-					StartAudio(device);
+					if (UACEnabled)
+					{	// UVCManagerのUAC機能が有効な場合
+						StartAudio(device);
+					}
 				}
             }
             else
@@ -778,7 +787,7 @@ namespace Serenegiant.UVC
 //				{
 //					foreach (var drawer in UVCDrawers)
 //					{
-//						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).CanDraw(this, info.device)))
+//						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).IsUVCEnabled(this, info.device)))
 //						{
 //							var size = (drawer as IUVCDrawer).OnUVCSelectSize(this, info.device, supportedVideoSize);
 //#if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -798,7 +807,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 				Console.WriteLine($"{TAG}StartPreview:({width}x{height}),id={device.id}");
 #endif
-                int[] frameTypes = {
+				int[] frameTypes = {
                     PreferH264 ? FRAME_TYPE_H264 : FRAME_TYPE_MJPEG,
                     PreferH264 ? FRAME_TYPE_MJPEG : FRAME_TYPE_H264,
                 };
@@ -964,7 +973,7 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, camera.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(this, camera.device))
 					{
 						(drawer as IUVCDrawer).OnUVCStartEvent(this, camera.device, camera.previewTexture);
 					}
@@ -989,7 +998,7 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, camera.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(this, camera.device))
 					{
 						(drawer as IUVCDrawer).OnUVCStopEvent(this, camera.device);
 					}
@@ -1006,7 +1015,10 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					(drawer as IUVCDrawer).OnUACStartEvent(this, audio.device, audioClip);
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(this, audio.device))
+					{   // IsUACEnabledがtrueを返したIUVCDrawerだけOnUACStartEventを呼び出す
+						(drawer as IUVCDrawer).OnUACStartEvent(this, audio.device, audioClip);
+					}
 				}
 			}
 		}
@@ -1020,7 +1032,10 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					(drawer as IUVCDrawer).OnUACStopEvent(this, audio.device);
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(this, audio.device))
+					{   // IsUACEnabledがtrueを返したIUVCDrawerだけOnUACStopEventを呼び出す
+						(drawer as IUVCDrawer).OnUACStopEvent(this, audio.device);
+					}
 				}
 			}
 		}

@@ -31,7 +31,7 @@ namespace Serenegiant.UVC
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 接続されたUVC機器情報
 		 */
-		bool CanDraw(UVCManager manager, UVCDevice device);
+		bool IsUVCEnabled(UVCManager manager, UVCDevice device);
 		/**
 		 * UVC機器からの映像取得を開始した
 		 * @param manager 呼び出し元のUVCManager
@@ -46,6 +46,12 @@ namespace Serenegiant.UVC
 		 */
 		void OnUVCStopEvent(UVCManager manager, UVCDevice device);
 
+		/**
+		 * IUVCDrawerが指定したUAC機器の音声を取得できるかどうかを取得
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 接続されたUAC機器情報
+		 */
+		bool IsUACEnabled(UVCManager manager, UVCDevice device);
 		/**
 		 * UAC機器からの音声取得を開始した
 		 * @param manager 呼び出し元のUVCManager
