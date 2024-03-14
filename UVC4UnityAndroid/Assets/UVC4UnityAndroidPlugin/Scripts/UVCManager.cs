@@ -474,6 +474,7 @@ namespace Serenegiant.UVC
 			internal readonly UVCDevice device;
 			private UACInfo info = new UACInfo();
 			private int samplesPerFrame = 0;
+			private Int16[] buffer;	// 今のところPCM16にしか対応しない, OnPCM16Readないではなくここで保持するともしかするとメモリーブロックが不連続になったり移動したりするかもしれないけど
 			private volatile AudioClip audioClip;
 			private volatile Int32 activeId;
 
@@ -511,6 +512,7 @@ namespace Serenegiant.UVC
 							// PCM16のはず
 							activeId = device.id;
 							samplesPerFrame = info.packetBytes / (info.resolution / 8);
+							buffer = new Int16[samplesPerFrame];
 							audioClip = AudioClip.Create(device.name, Int32.MaxValue, info.channels, info.samplingFreq, true, OnPCM16Read);
 							return audioClip;
 						}
@@ -564,7 +566,7 @@ namespace Serenegiant.UVC
 				}
 				var result = -1;
 				Int64 ptsUs = 0;
-				var buffer = new Int16[samplesPerFrame];
+				//var buffer = new Int16[samplesPerFrame];	// 高速化のためにStartでアロケーションするように変更した
 				Int32 dataBytes = 0;
 				Int32 totalSamples = 0;
 				for (int i = 0; (i < maxReadCnt) && (totalSamples < numSamples); i++)
@@ -572,7 +574,7 @@ namespace Serenegiant.UVC
 					result = GetUACFrame(device.id, buffer, ref dataBytes, ref ptsUs);
 					if ((result == 0) && (dataBytes >= 2))
 					{
-						var samples = dataBytes / 2;
+						var samples = Math.Min(dataBytes / 2, samplesPerFrame);
 						for (int j = 0; j < samples; j++)
 						{
 							data[j + totalSamples] = buffer[j] / (float)short.MaxValue;
