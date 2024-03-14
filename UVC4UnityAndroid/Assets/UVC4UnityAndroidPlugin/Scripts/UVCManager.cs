@@ -1,4 +1,4 @@
-﻿#define ENABLE_LOG
+﻿//#define ENABLE_LOG
 /*
  * Copyright (c) 2014 - 2022 t_saki@serenegiant.com 
  */
@@ -7,6 +7,7 @@ using AOT;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
@@ -163,7 +164,7 @@ namespace Serenegiant.UVC
          * シーンレンダリングの前にUVC機器映像のテクスチャへのレンダリング要求を行うかどうか
          */
         public bool RenderBeforeSceneRendering = false;
-   
+
 		/**
 		 * UVC関係のイベンドハンドラー
 		 */
@@ -178,7 +179,7 @@ namespace Serenegiant.UVC
 			internal readonly UVCDevice device;
 			internal Texture previewTexture;
             internal int frameType;
-			internal Int32 activeId;
+			internal volatile Int32 activeId;
 			private Int32 currentWidth;
 			private Int32 currentHeight;
             private bool isRenderBeforeSceneRendering;
@@ -466,13 +467,144 @@ namespace Serenegiant.UVC
 		} // CameraInfo
 
 		/**
+		 * UAC機器からの音声取得に関するオブジェクトを保持するためのホルダークラス
+		 */
+		public class AudioInfo
+		{
+			internal readonly UVCDevice device;
+			private UACInfo info = new UACInfo();
+			private int samplesPerFrame = 0;
+			private volatile AudioClip audioClip;
+			private volatile Int32 activeId;
+
+			internal AudioInfo(UVCDevice device)
+			{
+				this.device = device;
+			}
+
+
+			/**
+			 * 音声取得中かどうか
+			 */
+			public bool IsStreaming
+			{
+				get { return (activeId != 0) && (audioClip != null); }
+			}
+
+			/**
+			 * 音声取得開始する
+			 * すでに音声取得中なら何もしない
+			 * @param manager
+			 */
+			internal AudioClip Start(UVCManager manager)
+			{
+				var result = StartUAC(device.id);
+				if (result == 0)
+				{
+					if (GetUACInfo(device.id, ref info) == 0)
+					{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+						Console.WriteLine($"{TAG}Start:info={info}");
+#endif
+						try
+						{
+							// PCM16のはず
+							activeId = device.id;
+							samplesPerFrame = info.packetBytes / (info.resolution / 8);
+							audioClip = AudioClip.Create(device.name, Int32.MaxValue, info.channels, info.samplingFreq, true, OnPCM16Read);
+							return audioClip;
+						}
+						catch (Exception e)
+						{
+							activeId = 0;
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+							Console.WriteLine($"Failed to create audio clip,err={e}");
+#endif
+							throw e;
+						}
+					}
+					else
+					{
+						manager.StopAudio(device);
+						throw new Exception($"Failed to get streaming info,err={result}");
+					}
+				}
+				else
+				{
+					throw new Exception($"Failed to start uac streaming,err={result}");
+				}
+			}
+
+			/**
+			 * 音声取得停止する
+			 * @param manager
+			 */
+			internal void Stop(UVCManager manager)
+			{
+				activeId = 0;
+				audioClip = null;
+				manager.StopAudio(device);
+			}
+
+			private int readCnt = 0;
+
+			/**
+			 * AudioClipからのコールバック
+			 * @param data
+			 */
+			private void OnPCM16Read(float[] data)
+			{
+				if (!IsStreaming) return;
+
+				var numSamples = data.Length;					// 今回読み取る最大サンプル数
+				var maxReadCnt = numSamples / samplesPerFrame;	// 最大読み込み回数
+				if (maxReadCnt == 0)
+				{
+					maxReadCnt = 1;
+				}
+				var result = -1;
+				Int64 ptsUs = 0;
+				var buffer = new Int16[samplesPerFrame];
+				Int32 dataBytes = 0;
+				Int32 totalSamples = 0;
+				for (int i = 0; (i < maxReadCnt) && (totalSamples < numSamples); i++)
+				{
+					result = GetUACFrame(device.id, buffer, ref dataBytes, ref ptsUs);
+					if ((result == 0) && (dataBytes >= 2))
+					{
+						var samples = dataBytes / 2;
+						for (int j = 0; j < samples; j++)
+						{
+							data[j + totalSamples] = buffer[j] / (float)short.MaxValue;
+						}
+						totalSamples += samples;
+					}
+					else
+					{
+						break;
+					}
+				}
+				if (totalSamples < numSamples)
+				{
+					Array.Resize<float>(ref data, totalSamples);
+				}
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				if ((readCnt++ % 100) == 0)
+				{
+					Console.WriteLine($"{TAG}OnPCM16Read:len={numSamples},total={totalSamples},r={result},bytes={dataBytes},pts={ptsUs}");
+				}
+#endif
+			}
+		} // AudioInfo
+
+		/**
 		 * メインスレッド上で実行するためのSynchronizationContextインスタンス
 		 */
 		private SynchronizationContext mainContext;
 		/**
 		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
 		 */
-		private PluginCallbackManager.PluginCallback callback;
+		private PluginCallbackManager.OnDeviceChangedFunc callback;
 		/**
 		 * 端末に接続されたUVC機器リスト
 		 */
@@ -483,11 +615,17 @@ namespace Serenegiant.UVC
 		 */
 		private Dictionary<Int32, CameraInfo> cameraInfos = new Dictionary<int, CameraInfo>();
 
-        //--------------------------------------------------------------------------------
-        // UnityEngineからの呼び出し
-        //--------------------------------------------------------------------------------
-        // Start is called before the first frame update
-        IEnumerator Start()
+		/**
+		 * 音声取得中のUVC機器のマップ
+		 * 機器識別用のid - AudioInfoペアを保持する
+		 */
+		private Dictionary<Int32, AudioInfo> audioInFos = new Dictionary<int, AudioInfo>();
+
+		//--------------------------------------------------------------------------------
+		// UnityEngineからの呼び出し
+		//--------------------------------------------------------------------------------
+		// Start is called before the first frame update
+		IEnumerator Start()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Start:");
@@ -547,7 +685,8 @@ namespace Serenegiant.UVC
                 {
                     attachedDevices.Add(device);
                     StartPreview(device);
-                }
+					StartAudio(device);
+				}
             }
             else
             {
@@ -559,34 +698,22 @@ namespace Serenegiant.UVC
                 {
                     HandleOnDetachEvent(found);
                     StopPreview(found);
+					StopAudio(found);
+					RemoveCamera(found);
+					RemoveAudio(found);
                     attachedDevices.Remove(found);
                 }
             }
         }
 
-        //--------------------------------------------------------------------------------
-        // UAC機器から音声データを受け取ったときのプラグインからのコールバック関数
-        //--------------------------------------------------------------------------------
-        public void OnUACFrame(Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs)
-        {
-            // FIXME 未実装
-        }
-    
-        //================================================================================
-        /**
+		//================================================================================
+		/**
 		 * 接続中のUVC機器一覧を取得
 		 * @return 接続中のUVC機器一覧List
 		 */
-        public List<CameraInfo> GetAttachedDevices()
+		public List<CameraInfo> GetAttachedDevices()
 		{
-			var result = new List<CameraInfo>(cameraInfos.Count);
-
-			foreach (var info in cameraInfos.Values)
-			{
-				result.Add(info);
-			}
-
-			return result;
+			return new List<CameraInfo>(cameraInfos.Values);
 		}
 
 //		/**
@@ -596,7 +723,7 @@ namespace Serenegiant.UVC
 //		 */
 //		public SupportedFormats GetSupportedVideoSize(CameraInfo camera)
 //		{
-//			var info = (camera != null) ? Get(camera.DeviceName) : null;
+//			var info = (camera != null) ? GetCamera(camera.device) : null;
 //			if ((info != null) && info.IsOpen)
 //			{
 //				return GetSupportedVideoSize(info.DeviceName);
@@ -615,7 +742,7 @@ namespace Serenegiant.UVC
 //		 */
 //		public bool SetVideoSize(CameraInfo camera, SupportedFormats.Size size)
 //		{
-//			var info = (camera != null) ? Get(camera.DeviceName) : null;
+//			var info = (camera != null) ? GetCamera(camera.device) : null;
 //			var width = size != null ? size.Width : DefaultWidth;
 //			var height = size != null ? size.Height : DefaultHeight;
 //			if ((info != null) && info.IsPreviewing)
@@ -632,7 +759,7 @@ namespace Serenegiant.UVC
 
 		private void StartPreview(UVCDevice device)
 		{
-			var info = CreateIfNotExist(device);
+			var info = CreateCameraIfNotExist(device);
 			if ((info != null) && !info.IsPreviewing) {
 
 				int width = DefaultWidth;
@@ -707,7 +834,7 @@ namespace Serenegiant.UVC
 		}
 
 		private void StopPreview(UVCDevice device) {
-			var info = Get(device);
+			var info = GetCamera(device);
 			if ((info != null) && info.IsPreviewing)
 			{
 				mainContext.Post(__ =>
@@ -722,10 +849,53 @@ namespace Serenegiant.UVC
 		}
 
 
+		private void StartAudio(UVCDevice device)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}StartAudio:");
+#endif
+			if (device.isUAC)
+			{
+				var audio = CreateAudioIfNotExist(device);
+				if ((audio != null) && !audio.IsStreaming)
+				{
+					mainContext.Post(__ =>
+					{
+						var audioClip = audio.Start(this);
+						HandleOnStartAudioEvent(audio, audioClip);
+					}, null);
+
+				}
+			}
+			else
+			{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+				Console.WriteLine($"{TAG}StartAudio:Not a UAC device");
+#endif
+			}
+		}
+
+		private void StopAudio(UVCDevice device)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}StopAudio:");
+#endif
+			var audio = GetAudio(device);
+			if (audio != null && audio.IsStreaming)
+			{
+				mainContext.Post(__ =>
+				{
+					HandleOnStopAudioEvent(audio);
+					audio.Stop(this);
+				}, null);
+			}
+		}
+
 		private void StopAll() {
 			List<CameraInfo> values = new List<CameraInfo>(cameraInfos.Values);
 			foreach (var info in values)
 			{
+				StopAudio(info.device);
 				StopPreview(info.device);
 			}
 		}
@@ -783,18 +953,18 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像取得を開始した
 		 * @param args UVC機器の識別文字列
 		 */
-		void HandleOnStartPreviewEvent(CameraInfo info)
+		void HandleOnStartPreviewEvent(CameraInfo camera)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}HandleOnStartPreviewEvent:({info})");
+			Console.WriteLine($"{TAG}HandleOnStartPreviewEvent:({camera})");
 #endif
-			if ((info != null) && info.IsPreviewing && (UVCDrawers != null))
+			if ((camera != null) && camera.IsPreviewing && (UVCDrawers != null))
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, camera.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStartEvent(this, info.device, info.previewTexture);
+						(drawer as IUVCDrawer).OnUVCStartEvent(this, camera.device, camera.previewTexture);
 					}
 				}
 			} else {
@@ -808,19 +978,47 @@ namespace Serenegiant.UVC
 		 * UVC機器からの映像取得を終了した
 		 * @param args UVC機器の識別文字列
 		 */
-		void HandleOnStopPreviewEvent(CameraInfo info)
+		void HandleOnStopPreviewEvent(CameraInfo camera)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-			Console.WriteLine($"{TAG}HandleOnStopPreviewEvent:({info})");
+			Console.WriteLine($"{TAG}HandleOnStopPreviewEvent:({camera})");
 #endif
 			if (UVCDrawers != null)
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, info.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).CanDraw(this, camera.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStopEvent(this, info.device);
+						(drawer as IUVCDrawer).OnUVCStopEvent(this, camera.device);
 					}
+				}
+			}
+		}
+
+		void HandleOnStartAudioEvent(AudioInfo audio, AudioClip audioClip)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}HandleOnStartAudioEvent:({audio})");
+#endif
+			if ((audio != null) && audio.IsStreaming && (UVCDrawers != null))
+			{
+				foreach (var drawer in UVCDrawers)
+				{
+					(drawer as IUVCDrawer).OnUACStartEvent(this, audio.device, audioClip);
+				}
+			}
+		}
+
+		void HandleOnStopAudioEvent(AudioInfo audio)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}HandleOnStopAudioEvent:({audio})");
+#endif
+			if (UVCDrawers != null)
+			{
+				foreach (var drawer in UVCDrawers)
+				{
+					(drawer as IUVCDrawer).OnUACStopEvent(this, audio.device);
 				}
 			}
 		}
@@ -833,7 +1031,7 @@ namespace Serenegiant.UVC
 		 * @param CameraInfoを返す
 		 */
 		/*NonNull*/
-		private CameraInfo CreateIfNotExist(UVCDevice device)
+		private CameraInfo CreateCameraIfNotExist(UVCDevice device)
 		{
 			if (!cameraInfos.ContainsKey(device.id))
 			{
@@ -844,15 +1042,67 @@ namespace Serenegiant.UVC
 
 		/**
 		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
-		 * @param deviceName UVC機器識別文字列
+		 * @param device
 		 * @param 登録してあればCameraInfoを返す、登録されていなければnull
 		 */
 		/*Nullable*/
-		private CameraInfo Get(UVCDevice device)
+		private CameraInfo GetCamera(UVCDevice device)
 		{
 			return cameraInfos.ContainsKey(device.id) ? cameraInfos[device.id] : null;
 		}
 
+		/**
+		 * 指定したUVCDeviceに対応するCameraInfoを削除する
+		 * @param device
+		 * @param 対応するAudioInfoまたはnull
+		 */
+		private CameraInfo RemoveCamera(UVCDevice device)
+		{
+			var result = GetCamera(device);
+			cameraInfos.Remove(device.id);
+
+			return result;
+		}
+
+		/**
+		 * 指定したUVC識別文字列に対応するCameraInfoを取得する
+		 * まだ登録させていなければ新規作成する
+		 * @param deviceName UVC機器識別文字列
+		 * @param CameraInfoを返す
+		 */
+		/*NonNull*/
+		private AudioInfo CreateAudioIfNotExist(UVCDevice device)
+		{
+			if (!audioInFos.ContainsKey(device.id))
+			{
+				audioInFos[device.id] = new AudioInfo(device);
+			}
+			return audioInFos[device.id];
+		}
+
+		/**
+		 * 指定したUVCDeviceに対応するAudioInfoを取得する
+		 * @param device
+		 * @param 登録してあればAudioInfoを返す、登録されていなければnull
+		 */
+		/*Nullable*/
+		private AudioInfo GetAudio(UVCDevice device)
+		{
+			return audioInFos.ContainsKey(device.id) ? audioInFos[device.id] : null;
+		}
+
+		/**
+		 * 指定したUVCDeviceに対応するAudioInfoを削除する
+		 * @param device
+		 * @param 対応するAudioInfoまたはnull
+		 */
+		private AudioInfo RemoveAudio(UVCDevice device)
+		{
+			var result = GetAudio(device);
+			audioInFos.Remove(device.id);
+	
+			return result;
+		}
 
 		//--------------------------------------------------------------------------------
 		/**
@@ -1013,35 +1263,31 @@ namespace Serenegiant.UVC
 		 * 対応するUVCコントロール/プロセッシング機能情報を取得
 		 */
         [DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
-        private static extern Int32 GetUACInfo(Int32 deviceId, UInt64 ctrl, ref UACInfo info);
-    }   // UVCManager
+        private static extern Int32 GetUACInfo(Int32 deviceId, ref UACInfo info);
+		/**
+		 * UACからの音声データを取得(呼び出し元スレッドを最大で500ミリ秒ブロックする)
+		 */
+		[DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
+		private static extern Int32 GetUACFrame(Int32 deviceId, short[] data, ref Int32 dataLen, ref Int64 ptsUs);
+	}   // UVCManager
 
-    /**
+	/**
      * IL2Cppだとc/c++からのコールバックにつかうデリゲーターをマーシャリングできないので
      * staticなクラス・関数で処理をしないといけない。
      * だだしそれだと呼び出し元のオブジェクトの関数を呼び出せないのでマネージャークラスを作成
      * とりあえずはUVCManagerだけを受け付けるのでインターフェースにはしていない
      */
-    public static class PluginCallbackManager
+	public static class PluginCallbackManager
     {
         //コールバック関数の型を宣言
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void OnDeviceChangedFunc(Int32 id, IntPtr devicePtr, bool attached);
-        //コールバック関数の型を宣言
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate void OnUACFrameFunc(Int32 id, Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs);
 
-        // Addでコールバック関数を2つ返したいので構造体に
-        public class PluginCallback {
-            public OnDeviceChangedFunc onDeviceChanged;
-            public OnUACFrameFunc onUACFrame;
-        }
-    
         /**
 		 * プラグインのnative側登録関数
 		 */
         [DllImport("unityuvcplugin")]
-        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc deviceChanged, OnUACFrameFunc uacFrame);
+        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc deviceChanged);
         /**
 		 * プラグインのnative側登録解除関数
 		 */
@@ -1053,15 +1299,13 @@ namespace Serenegiant.UVC
         /**
          * 指定したUVCManagerを接続機器変化コールバックに追加
          */
-        public static PluginCallback Add(UVCManager manager)
+        public static OnDeviceChangedFunc Add(UVCManager manager)
         {
             Int32 id = manager.GetHashCode();
-            PluginCallback callback = new PluginCallback();
-            callback.onDeviceChanged = new OnDeviceChangedFunc(OnDeviceChanged);
-            callback.onUACFrame = new OnUACFrameFunc(OnUACFrame);
+			OnDeviceChangedFunc onDeviceChanged = new OnDeviceChangedFunc(OnDeviceChanged);
             sManagers.Add(id, manager);
-            Register(id, callback.onDeviceChanged, callback.onUACFrame);
-            return callback;
+            Register(id, onDeviceChanged);
+            return onDeviceChanged;
         }
 
         /**
@@ -1084,15 +1328,6 @@ namespace Serenegiant.UVC
             }
         }
 
-        [MonoPInvokeCallback(typeof(OnUACFrameFunc))]
-        public static void OnUACFrame(Int32 id, Int32 deviceId, IntPtr dataPtr, Int32 dataLen, Int64 ptsUs)
-        {
-            var manager = sManagers.ContainsKey(id) ? sManagers[id] : null;
-            if (manager != null)
-            {
-                manager.OnUACFrame(deviceId, dataPtr, dataLen, ptsUs);
-            }
-        }
     } // PluginCallbackManager
 
 

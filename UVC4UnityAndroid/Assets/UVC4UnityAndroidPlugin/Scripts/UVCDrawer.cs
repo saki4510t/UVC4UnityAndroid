@@ -37,7 +37,12 @@ namespace Serenegiant.UVC
 		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
 		 */
 		public List<GameObject> RenderTargets;
-
+		/**
+		 * UVC機器のUAC機能で取得した音声を再生するために使用するAudioSourceを保持するGameObject
+		 * 設定していない場合はこのスクリプトを割当てたのと同じGameObjecを使う。
+		 */
+		public GameObject AudioTarget;
+	
 		//--------------------------------------------------------------------------------
 		private const string TAG = "UVCDrawer#";
 
@@ -69,7 +74,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}Start:");
 #endif
-			UpdateTarget();
+			UpdateRenderTarget();
 
 		}
 
@@ -191,11 +196,38 @@ namespace Serenegiant.UVC
 			HandleOnStopPreview();
 		}
 
+		/**
+		 * UAC機器からの音声取得を開始した
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 接続されたUVC機器情報
+		 * @param audioClip UAC機器からの音声を受け取るAudioClipオブジェクト
+		 */
+		public void OnUACStartEvent(UVCManager manager, UVCDevice device, AudioClip audioClip)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnUACStartEvent:{device}");
+#endif
+			HandleOnStartAudio(audioClip);
+		}
+
+		/**
+		 * UAC機器からの音声取得を終了した
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 接続されたUVC機器情報
+		 */
+		public void OnUACStopEvent(UVCManager manager, UVCDevice device)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}OnUACStopEvent:{device}");
+#endif
+			HandleOnStopAudio();
+		}
+
 		//================================================================================
 		/**
 		 * 描画先を更新
 		 */
-		private void UpdateTarget()
+		private void UpdateRenderTarget()
 		{
 			bool found = false;
 			if ((RenderTargets != null) && (RenderTargets.Count > 0))
@@ -214,7 +246,7 @@ namespace Serenegiant.UVC
 							found = true;
 						}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-						Console.WriteLine($"{TAG}UpdateTarget:material={material}");
+						Console.WriteLine($"{TAG}UpdateRenderTarget:material={material}");
 #endif
 					}
 					i++;
@@ -372,6 +404,64 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}HandleOnStopPreview:finished");
 #endif
+		}
+
+		/**
+		 * UACの音声再生を行うAudioSourceを取得する
+		 */
+		private AudioSource GetAudioSource()
+		{
+			AudioSource result = null;
+			if (AudioTarget != null)
+			{
+				result = AudioTarget.GetComponent<AudioSource>();
+			}
+			if (result == null)
+			{
+				result = GetComponent<AudioSource>();
+			}
+
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			if (result == null)
+			{
+				Console.WriteLine($"{TAG}GetAudioSource:audio source not found");
+			}
+#endif
+			return result;
+		}
+
+		/**
+		 * 音声取得開始した時のUnity側の処理
+		 * @param audioClip
+		 */
+		private void HandleOnStartAudio(AudioClip audioClip)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}HandleOnStartAudio:");
+#endif
+			var audioSource = GetAudioSource();
+			if (audioSource != null)
+			{
+				audioSource.Stop();
+				audioSource.clip = audioClip;
+				audioSource.Play();
+			}
+		}
+
+		/**
+		 * 音声取得終了した時のUnity側の処理
+		 */
+		private void HandleOnStopAudio()
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+			Console.WriteLine($"{TAG}HandleOnStopAudio:");
+#endif
+			var audioSource = GetAudioSource();
+			if (audioSource != null)
+			{
+				audioSource.Stop();
+				audioSource.clip = null;
+			}
 		}
 
 	} // class UVCDrawer

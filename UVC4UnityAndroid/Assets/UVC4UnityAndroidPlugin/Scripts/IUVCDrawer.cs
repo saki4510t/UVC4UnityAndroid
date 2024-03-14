@@ -46,6 +46,19 @@ namespace Serenegiant.UVC
 		 */
 		void OnUVCStopEvent(UVCManager manager, UVCDevice device);
 
+		/**
+		 * UAC機器からの音声取得を開始した
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 接続されたUVC機器情報
+		 * @param audioClip UAC機器からの音声を受け取るAudioClipオブジェクト
+		 */
+		void OnUACStartEvent(UVCManager manager, UVCDevice device, AudioClip audioClip);
+		/**
+		 * UAC機器からの音声取得を終了した
+		 * @param manager 呼び出し元のUVCManager
+		 * @param device 接続されたUVC機器情報
+		 */
+		void OnUACStopEvent(UVCManager manager, UVCDevice device);
 	}   // interface IUVCDrawer
 
 }	// namespace Serenegiant.UVC

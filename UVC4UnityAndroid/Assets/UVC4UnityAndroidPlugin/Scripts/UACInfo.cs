@@ -10,10 +10,11 @@ namespace Serenegiant.UVC
         public Int32 channels;
         public Int32 resolution;
         public Int32 samplingFreq;
+		public Int32 packetBytes;
 
 		public override string ToString()
 		{
-			return $"{base.ToString()}(channels={channels},resolution={resolution},samplingFreq={samplingFreq})";
+			return $"{base.ToString()}(channels={channels},resolution={resolution},freq={samplingFreq},bytes={packetBytes})";
 		}
 	}
 }

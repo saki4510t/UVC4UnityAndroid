@@ -18,6 +18,7 @@ namespace Serenegiant.UVC
 	[Serializable]
 	public class UVCDevice
 	{
+		private readonly IntPtr ptr;
 		public readonly Int32 id;
 		public readonly int vid;
 		public readonly int pid;
@@ -28,6 +29,7 @@ namespace Serenegiant.UVC
 		public readonly string name;
 
 		public UVCDevice(IntPtr devicePtr) {
+			ptr = devicePtr;
 			id = GetId(devicePtr);
 			vid = GetVendorId(devicePtr);
 			pid = GetProductId(devicePtr);
@@ -87,13 +89,35 @@ namespace Serenegiant.UVC
             get { return (vid == 1482) && (pid == 10005); }
         }
 
-        //--------------------------------------------------------------------------------
-        // プラグインのインターフェース関数
-        //--------------------------------------------------------------------------------
-        /**
+		/**
+		 * UACに対応しているかどうか
+		 * XXX UACに対応していると応答するUVC機器でも実際にはUACに未対応なバギーな機器も存在するので注意！
+		 */
+		public bool isUAC
+		{
+			get { return Match(1, 1, 0xff) && Match(1, 2, 0xff); }
+		}
+
+		/**
+		 * デバイスまたはインターフェースが指定した条件に一致するかどうかを確認
+		 * @param bClass 0xffなら常にマッチする(ワイルドカード)
+		 * @param bSubClass 0xffなら常にマッチする(ワイルドカード)
+		 * @param bProtocol 0xffなら常にマッチする(ワイルドカード)
+		 * @returtn 1: 一致した, 0: 一致しなかった
+		 */
+		public bool Match(byte bClass, byte bSubClass, byte bProtocol)
+		{
+			var result = InternalMatch(ptr, bClass, bSubClass, bProtocol);
+			return result != 0;
+		}
+
+		//--------------------------------------------------------------------------------
+		// プラグインのインターフェース関数
+		//--------------------------------------------------------------------------------
+		/**
 		 * 機器idを取得(これだけはpublicにする)
 		 */
-        [DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_id")]
+		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_id")]
 		public static extern Int32 GetId(IntPtr devicePtr);
 
 		/**
@@ -133,6 +157,17 @@ namespace Serenegiant.UVC
 		[return: MarshalAs(UnmanagedType.LPStr)]
 		private static extern string GetName(IntPtr devicePtr);
 
+
+		/**
+		 * デバイスまたはインターフェースが指定した条件に一致するかどうかを確認
+		 * @param device
+		 * @param bClass 0xffなら常にマッチする(ワイルドカード)
+		 * @param bSubClass 0xffなら常にマッチする(ワイルドカード)
+		 * @param bProtocol 0xffなら常にマッチする(ワイルドカード)
+		 * @returtn 1: 一致した, 0: 一致しなかった
+		 */
+		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_match")]
+		private static extern Int32 InternalMatch(IntPtr devicePtr, byte bClass, byte bSubClass, byte bProtocol);
 	} // UVCDevice
 
 } // namespace Serenegiant.UVC
