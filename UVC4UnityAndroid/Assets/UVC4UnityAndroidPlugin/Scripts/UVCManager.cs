@@ -837,7 +837,7 @@ namespace Serenegiant.UVC
 					tex.Apply();
 					info.previewTexture = tex;
 					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
-					Start(device.id, nativeTexPtr);
+					Start(device.id, nativeTexPtr, tex.width, tex.height);
 					HandleOnStartPreviewEvent(info);
 					info.StartRender(this, RenderBeforeSceneRendering);
 				}, null);
@@ -1230,7 +1230,7 @@ namespace Serenegiant.UVC
 		 * 映像取得開始
 		 */
         [DllImport("unityuvcplugin", EntryPoint ="Start")]
-		private static extern Int32 Start(Int32 deviceId, IntPtr tex);
+		private static extern Int32 Start(Int32 deviceId, IntPtr tex, Int32 width, Int32 height);
 		/**
 		 * 映像取得終了
 		 */
