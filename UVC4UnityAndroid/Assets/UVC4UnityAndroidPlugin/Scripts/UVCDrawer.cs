@@ -124,41 +124,6 @@ namespace Serenegiant.UVC
 #endif
 		}
 
-//		/**
-//		 * 解像度選択
-//		 * IOnUVCSelectSizeHandlerの実装
-//		 * @param manager 呼び出し元のUVCManager
-//		 * @param device 対象となるUVC機器の情報
-//		 * @param formats 対応している解像度についての情報
-//		 */
-//		public SupportedFormats.Size OnUVCSelectSize(UVCManager manager, UVCDevice device, SupportedFormats formats)
-//		{
-//#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//			Console.WriteLine($"{TAG}OnUVCSelectSize:{device}");
-//#endif
-//			if (device.IsTHETA_V || device.IsTHETA_Z1)
-//			{
-//#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA V/Z1");
-//#endif
-//				return FindSize(formats, 3840, 1920);
-//			}
-//			else if (device.IsTHETA_S)
-//			{
-//#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//				Console.WriteLine($"{TAG}OnUVCSelectSize:THETA S");
-//#endif
-//				return FindSize(formats, 1920, 1080);
-//			}
-//			else
-//			{
-//#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//				Console.WriteLine($"{TAG}OnUVCSelectSize:other UVC device,{device}");
-//#endif
-//				return formats.Find(DefaultWidth, DefaultHeight);
-//			}
-//		}
-
 		/**
 		 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
 		 * IUVCDrawerの実装

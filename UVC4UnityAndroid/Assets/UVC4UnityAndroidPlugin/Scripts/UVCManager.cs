@@ -727,46 +727,6 @@ namespace Serenegiant.UVC
 			return new List<CameraInfo>(cameraInfos.Values);
 		}
 
-//		/**
-//		 * 対応解像度を取得
-//		 * @param camera 対応解像度を取得するUVC機器を指定
-//		 * @return 対応解像度 既にカメラが取り外されている/closeしているのであればnull
-//		 */
-//		public SupportedFormats GetSupportedVideoSize(CameraInfo camera)
-//		{
-//			var info = (camera != null) ? GetCamera(camera.device) : null;
-//			if ((info != null) && info.IsOpen)
-//			{
-//				return GetSupportedVideoSize(info.DeviceName);
-//			}
-//			else
-//			{
-//				return null;
-//			}
-//		}
-
-//		/**
-//		 * 解像度を変更
-//		 * @param 解像度を変更するUVC機器を指定
-//		 * @param 変更する解像度を指定, nullならデフォルトに戻す
-//		 * @param 解像度が変更されたかどうか
-//		 */
-//		public bool SetVideoSize(CameraInfo camera, SupportedFormats.Size size)
-//		{
-//			var info = (camera != null) ? GetCamera(camera.device) : null;
-//			var width = size != null ? size.Width : DefaultWidth;
-//			var height = size != null ? size.Height : DefaultHeight;
-//			if ((info != null) && info.IsPreviewing)
-//			{
-//				if ((width != info.CurrentWidth) || (height != info.CurrentHeight))
-//				{   // 解像度が変更になるとき
-//					StopPreview(info.DeviceName);
-//					StartPreview(info.DeviceName, width, height);
-//					return true;
-//				}
-//			}
-//			return false;
-//		}
 
 		private void StartPreview(UVCDevice device)
 		{
