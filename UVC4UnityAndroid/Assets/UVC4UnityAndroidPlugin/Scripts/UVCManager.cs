@@ -776,6 +776,7 @@ namespace Serenegiant.UVC
 				int width = DefaultWidth;
 				int height = DefaultHeight;
 
+				var supportedVideoSize = UVCVideoSize.GetSupportedSize(device.id);
 //				var supportedVideoSize = GetSupportedVideoSize(deviceName);
 //				if (supportedVideoSize == null)
 //				{
