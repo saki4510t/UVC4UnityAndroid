@@ -24,11 +24,6 @@ namespace Serenegiant.UVC
         private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
 
         //--------------------------------------------------------------------------------
-        private const int FRAME_TYPE_MJPEG = 0x000007;
-        private const int FRAME_TYPE_H264 = 0x000014;
-        private const int FRAME_TYPE_H264_FRAME = 0x030011;
-
-        //--------------------------------------------------------------------------------
         // Camera Terminal DescriptorのbmControlsフィールドのビットマスク
         private const UInt64 CTRL_SCANNING		= 0x00000001;	// D0:  Scanning Mode
         private const UInt64 CTRL_AE			= 0x00000002;	// D1:  Auto-Exposure Mode
@@ -145,13 +140,13 @@ namespace Serenegiant.UVC
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(幅)
 		*/
-        public Int32 DefaultWidth = 1280;
+        public UInt32 DefaultWidth = 1280;
 		/**
 		 * IUVCSelectorがセットされていないとき
 		 * またはIUVCSelectorが解像度選択時にnullを
 		 * 返したときのデフォルトの解像度(高さ)
 		 */
-		public Int32 DefaultHeight = 720;
+		public UInt32 DefaultHeight = 720;
 		/**
 		 * UVC機器とのネゴシエーション時に
 		 * H.264を優先してネゴシエーションするかどうか
@@ -181,18 +176,19 @@ namespace Serenegiant.UVC
 		public class CameraInfo
 		{
 			internal readonly UVCDevice device;
+			internal readonly UVCVideoSize[] SupportedSize;
 			internal Texture previewTexture;
-            internal int frameType;
 			internal volatile Int32 activeId;
-			private Int32 currentWidth;
-			private Int32 currentHeight;
-            private bool isRenderBeforeSceneRendering;
+			private bool isRenderBeforeSceneRendering;
             private bool isRendering;
 			private Dictionary<UInt64, UVCCtrlInfo> ctrlInfos = new Dictionary<UInt64, UVCCtrlInfo>();
+			public UVCVideoSize CurrentSize { get; private set; } = UVCVideoSize.INVALID;
+
 
 			internal CameraInfo(UVCDevice device)
 			{
 				this.device = device;
+				SupportedSize = UVCVideoSize.GetSupportedSize(device.id);
 			}
 
 			/**
@@ -234,35 +230,54 @@ namespace Serenegiant.UVC
 				get { return (activeId != 0) && (previewTexture != null); }
 			}
 
-			/**
-			 * 現在の解像度(幅)
-			 * プレビュー中でなければ0
-			 */
-			public Int32 CurrentWidth
-			{
-				get { return currentWidth; }
-			}
-
-			/**
-			 * 現在の解像度(高さ)
-			 * プレビュー中でなければ0
-			 */
-			public Int32 CurrentHeight
-			{
-				get { return currentHeight; }
-			}
 
 			/**
 			 * 現在の解像度を変更
 			 * @param width
 			 * @param height
 			 */
-			internal void SetSize(Int32 width, Int32 height)
+			internal void SetSize(UVCVideoSize size)
 			{
-				currentWidth = width;
-				currentHeight = height;
+				CurrentSize = size;
 			}
 
+			/**
+			 * 指定した条件に最も近い解像度設定を取得する
+			 * @param preferH264
+			 * @param width
+			 * @param height
+			 */
+			public UVCVideoSize FindNearest(bool preferH264, UInt32 width, UInt32 height)
+			{
+				if (SupportedSize.Length == 0)
+				{	// これにヒットするのは機器側がおかしい
+					throw new IndexOutOfRangeException();
+				}
+
+				UInt32[] frameTypes = {
+					preferH264 ? UVCVideoSize.FRAME_TYPE_H264 : UVCVideoSize.FRAME_TYPE_MJPEG,
+					preferH264 ? UVCVideoSize.FRAME_TYPE_H264_FRAME : UVCVideoSize.FRAME_TYPE_H264,
+					preferH264 ? UVCVideoSize.FRAME_TYPE_MJPEG : UVCVideoSize.FRAME_TYPE_UNKNOWN,
+					UVCVideoSize.FRAME_TYPE_UNKNOWN,	// ←これは任意のフレームタイプと一致
+				};
+
+				var found = UVCVideoSize.INVALID;
+				foreach (var frameType in frameTypes)
+				{
+					found = UVCVideoSize.FindNearest(SupportedSize, frameType, width, height);
+					if (found.IsValid || (frameType == UVCVideoSize.FRAME_TYPE_UNKNOWN))
+					{	// 解像度設定が見つかるかフレームタイプ配列の最後ならbreak
+						break;
+					}
+				}
+				if (!found.IsValid)
+				{	// 見つからなければ先頭(=デフォルトの解像度設定のはず)を選択
+					found = SupportedSize[0];
+				}
+
+				return found;
+			}
+		
 			/**
 			 * サポートしているUVCコントロール/プロセッシング機能の情報を更新する
 			 */
@@ -395,7 +410,7 @@ namespace Serenegiant.UVC
 
 			public override string ToString()
 			{
-				return $"{base.ToString()}({currentWidth}x{currentHeight},id={Id},activeId={activeId},IsPreviewing={IsPreviewing})";
+				return $"{base.ToString()}(id={Id},activeId={activeId},IsPreviewing={IsPreviewing},sz={CurrentSize})";
 			}
 
             /**
@@ -603,6 +618,7 @@ namespace Serenegiant.UVC
 				}
 #endif
 			}
+
 		} // AudioInfo
 
 		/**
@@ -692,7 +708,7 @@ namespace Serenegiant.UVC
                 if (HandleOnAttachEvent(device))
                 {
                     attachedDevices.Add(device);
-                    StartPreview(device);
+                    StartPreview(device, UVCVideoSize.INVALID);
 					if (UACEnabled)
 					{	// UVCManagerのUAC機能が有効な場合
 						StartAudio(device);
@@ -728,83 +744,86 @@ namespace Serenegiant.UVC
 		}
 
 
-		private void StartPreview(UVCDevice device)
+		/**
+		 * 解像度を変更
+		 * @param 解像度を変更するUVC機器を指定
+		 * @param 変更する解像度を指定
+		 * @param 解像度が変更されたかどうか
+		 */
+		public bool SetVideoSize(UVCDevice device, UVCVideoSize size)
+		{
+			var info = GetCamera(device);
+			if (info != null)
+			{
+				if (size.IsValid && info.IsPreviewing && !size.IsSameValue(info.CurrentSize))
+				{   // 解像度が変更になるとき
+					StopPreview(device);
+					StartPreview(device, size);
+					return true;
+				}
+				info.SetSize(size);
+			}
+			return false;
+		}
+
+		/**
+		 * UVC機器からの映像取得を開始
+		 * @param device
+		 * @param size
+		 */
+		private void StartPreview(UVCDevice device, UVCVideoSize size)
 		{
 			var info = CreateCameraIfNotExist(device);
 			if ((info != null) && !info.IsPreviewing) {
-
-				int width = DefaultWidth;
-				int height = DefaultHeight;
-
-				var supportedVideoSize = UVCVideoSize.GetSupportedSize(device.id);
-//				var supportedVideoSize = GetSupportedVideoSize(deviceName);
-//				if (supportedVideoSize == null)
-//				{
-//					throw new ArgumentException("fauled to get supported video size");
-//				}
-
-//				// 解像度の選択処理
-//				if ((UVCDrawers != null) && (UVCDrawers.Length > 0))
-//				{
-//					foreach (var drawer in UVCDrawers)
-//					{
-//						if ((drawer is IUVCDrawer) && ((drawer as IUVCDrawer).IsUVCEnabled(this, info.device)))
-//						{
-//							var size = (drawer as IUVCDrawer).OnUVCSelectSize(this, info.device, supportedVideoSize);
-//#if (!NDEBUG && DEBUG && ENABLE_LOG)
-//							Console.WriteLine($"{TAG}StartPreview:selected={size}");
-//#endif
-//							if (size != null)
-//							{   // 一番最初に見つかった描画可能なIUVCDrawersがnull以外を返せばそれを使う
-//								width = size.Width;
-//								height = size.Height;
-//								break;
-//							}
-//						}
-//					}
-//				}
-
-				// FIXME 対応解像度の確認処理
+				if (!size.IsValid)
+				{	// 無効な解像度設定の時はCameraInfoから取得してみる
+					size = info.CurrentSize;
+				}
+				if (!size.IsValid)
+				{	// CameraInfoからの解像度設定も無効なら対応解像度から探す
+					size = info.FindNearest(PreferH264, DefaultWidth, DefaultHeight);
+				}
+				if (!size.IsValid)
+				{	// ここには来ないはずだけど念のためにチェック
+					throw new ArgumentException("Video size not found");
+				}
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-				Console.WriteLine($"{TAG}StartPreview:({width}x{height}),id={device.id}");
+				Console.WriteLine($"{TAG}StartPreview:id={device.id},sz={size}");
 #endif
-				int[] frameTypes = {
-                    PreferH264 ? FRAME_TYPE_H264 : FRAME_TYPE_MJPEG,
-                    PreferH264 ? FRAME_TYPE_MJPEG : FRAME_TYPE_H264,
-                };
-                foreach (var frameType in frameTypes)
+				if (Resize(device.id, size.FrameType, size.Width, size.Height) == 0)
                 {
-                    if (Resize(device.id, frameType, width, height) == 0)
-                    {
-                        info.frameType = frameType;
-                        break;
-                    }
-                }
-                    
-				info.SetSize(width, height);
-				info.activeId = device.id;
-				info.UpdateCtrls();
-				mainContext.Post(__ =>
-				{   // テクスチャの生成はメインスレッドで行わないといけない
+					info.SetSize(size);
+					info.activeId = device.id;
+					info.UpdateCtrls();
+					mainContext.Post(__ =>
+					{   // テクスチャの生成はメインスレッドで行わないといけない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-					Console.WriteLine($"{TAG}映像受け取り用テクスチャ生成:({width}x{height})");
+						Console.WriteLine($"{TAG}映像受け取り用テクスチャ生成:({size.Width}x{size.Height})");
 #endif
-					Texture2D tex = new Texture2D(
-							width, height,
+						var tex = new Texture2D(
+							Convert.ToInt32(size.Width), Convert.ToInt32(size.Height),
 							TextureFormat.ARGB32,
 							false, /* mipmap */
 							true /* linear */);
-					tex.filterMode = FilterMode.Point;
-					tex.Apply();
-					info.previewTexture = tex;
-					var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
-					Start(device.id, nativeTexPtr, tex.width, tex.height);
-					HandleOnStartPreviewEvent(info);
-					info.StartRender(this, RenderBeforeSceneRendering);
-				}, null);
+						tex.filterMode = FilterMode.Point;
+						tex.Apply();
+						info.previewTexture = tex;
+						var nativeTexPtr = info.previewTexture.GetNativeTexturePtr();
+						Start(device.id, nativeTexPtr, tex.width, tex.height);
+						HandleOnStartPreviewEvent(info);
+						info.StartRender(this, RenderBeforeSceneRendering);
+					}, null);
+				}
+				else
+				{   // ここには来ないはずだけど念のためにチェック
+					throw new ArgumentException("Wrong video size");
+				}
 			}
 		}
 
+		/**
+		 * UVC機器からの映像取得を終了
+		 */
 		private void StopPreview(UVCDevice device) {
 			var info = GetCamera(device);
 			if ((info != null) && info.IsPreviewing)
@@ -814,13 +833,17 @@ namespace Serenegiant.UVC
 					HandleOnStopPreviewEvent(info);
 					Stop(device.id);
 					info.StopRender(this);
-					info.SetSize(0, 0);
+					info.SetSize(UVCVideoSize.INVALID);
 					info.activeId = 0;
 				}, null);
 			}
 		}
 
 
+		/**
+		 * UAC機器からの音声取得を開始
+		 * @param device
+		 */
 		private void StartAudio(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -847,6 +870,10 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		/**
+		 * UAC機器からの音声取得を終了
+		 * @param device
+		 */
 		private void StopAudio(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -863,6 +890,9 @@ namespace Serenegiant.UVC
 			}
 		}
 
+		/**
+		 * 接続中の全てのUVC機器/UAC機器からの映像取得と音声取得を終了
+		 */
 		private void StopAll() {
 			List<CameraInfo> values = new List<CameraInfo>(cameraInfos.Values);
 			foreach (var info in values)
@@ -1201,7 +1231,7 @@ namespace Serenegiant.UVC
 		 * 映像サイズ設定
 		 */
 		[DllImport("unityuvcplugin")]
-		private static extern Int32 Resize(Int32 deviceId, Int32 frameType, Int32 width, Int32 height);
+		private static extern Int32 Resize(Int32 deviceId, UInt32 frameType, UInt32 width, UInt32 height);
         /**
 		 * 対応するUVCコントロール機能マスクを取得
 		 */
@@ -1247,6 +1277,7 @@ namespace Serenegiant.UVC
 		 */
 		[DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
 		private static extern Int32 GetUACFrame(Int32 deviceId, short[] data, ref Int32 dataLen, ref Int64 ptsUs);
+
 	}   // UVCManager
 
 	/**
