@@ -3,7 +3,7 @@
 
 Plugin project and samples to access UVC devices on Unity Android.
 
-Copyright (c) 2014-2024 saki t_saki@serenegiant.com
+Copyright (c) 2014-2025 saki t_saki@serenegiant.com
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -89,14 +89,18 @@ Now this project does not depend on `System.Text.Json` and related packages.
 * r0.2.2 on 3 September. 2022
    * Improve isses of shaders of OpenGL|ES
 * r0.3.0 on 14 March, 2024
-   * Migrate Unity 2022.3.10f1(LTS)
+   * Migrate to Unity 2022.3.10f1(LTS)
    * Experimentally add support UAC
    * Experimentally add support UVC controls
    * Update dependancies.
 * r0.4.0 on 17 December, 2024
-   * Migrate Unity 2022.3.51f1(LTS)
+   * Migrate to Unity 2022.3.51f1(LTS)
    * Experimentally add support Vulkan as a Graphics API
    * Inprove selecting video settings of UVC device.
    * Remove dependancies to `System.Text.Json` and related packages.
    * Update dependancies.
+* r0.5.0 on 23 Oct. 2025
+   * Migrate to Unity 6000.0.60f1(LTS)
+   * Improve crash when UVC device detached while streaming
+   * Support 16HB alignment
 
