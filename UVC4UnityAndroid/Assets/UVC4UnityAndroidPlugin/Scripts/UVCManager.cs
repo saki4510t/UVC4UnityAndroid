@@ -21,7 +21,7 @@ namespace Serenegiant.UVC
     public class UVCManager : MonoBehaviour
     {
         private const string TAG = "UVCManager#";
-        private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetectorFragment";
+        private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetector";
 
         //--------------------------------------------------------------------------------
         // Camera Terminal DescriptorのbmControlsフィールドのビットマスク

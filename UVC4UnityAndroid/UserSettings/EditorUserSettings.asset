@@ -5,6 +5,9 @@ EditorUserSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 4
   m_ConfigSettings:
+    GraphicsSettingsInspector_UserSettings:
+      value: 18134705175a055722080a3115371d4a0d55006876786860616b0471b8b16561baa960bfb16c6d696055b969526c5422be481902e60e06021f0bdb1b1df3240a01c036c417cd5d46893b09c7c1099ccadb94c9
+      flags: 0
     RecentlyUsedSceneGuid-0:
       value: 5602000207575e085d565b7547275e44404f402e787a25607e704d61b6e1366c
       flags: 0
@@ -54,3 +57,4 @@ EditorUserSettings:
   m_VCAllowAsyncUpdate: 0
   m_VCScanLocalPackagesOnConnect: 1
   m_ArtifactGarbageCollection: 1
+  m_CompressAssetsOnImport: 1

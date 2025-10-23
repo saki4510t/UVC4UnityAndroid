@@ -24,168 +24,240 @@
 }
 
 -keep class * implements android.os.Parcelable {
-  public static final android.os.Parcelable$Creator *;
+    public static final android.os.Parcelable$Creator *;
+    *;
 }
 
+## keep classes and class members that implement java.io.Serializable from being removed or renamed
+## Fixes "Class class com.twinpeek.android.model.User does not have an id field" execption
+-keep class * implements java.io.Serializable {
+    *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::camera
+-keep public class com.serenegiant.camera.exception.UnsupportedControlException { *; }
+
+-keep public class com.serenegiant.camera.CameraCtrlCompat {
+	public *;
+}
+
+-keep public class com.serenegiant.camera.CameraState {
+	public *;
+	protected *;
+}
+
+-keep public class com.serenegiant.camera.FuncMaxMinDef { *; }
+-keep public interface com.serenegiant.camera.ICamera { *; }
+-keep public interface com.serenegiant.camera.ICameraControl { *; }
+-keep public interface com.serenegiant.camera.ICameraControlEx { *; }
+
+-keep public class com.serenegiant.camera.ICameraControlKtxKt {
+    public *;
+}
+
+-keep public interface com.serenegiant.camera.ICameraCtrlCompat { *; }
+-keep public interface com.serenegiant.camera.IFrameCallback { *; }
+
+-keep public enum com.serenegiant.camera.RawFrameType {
+    public *;
+}
+
+-keep class com.serenegiant.camera.Size {
+	public *;
+}
+
+-keep class com.serenegiant.camera.SizeUtils {
+	public *;
+}
+
+-keep class com.serenegiant.camera.VideoSizeSelector {
+	public *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::media
+-keep public class com.serenegiant.media.Encoder {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.media.FakePipelineVideoEncoder {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.media.PreviewDecoder {
+    native <methods>;
+	public *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::pipeline
+-keep public class com.serenegiant.pipeline.BufferedPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.ConvertPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.DistributePipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.FrameCallbackPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.FrameSavePipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.GLPreviewPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.GLRendererPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.IPipeline {*;}
+-dontnote com.serenegiant.pipeline.IPipeline
+
+-keep public class com.serenegiant.pipeline.IPipelineSource {*;}
+-dontnote com.serenegiant.pipeline.IPipelineSource
+
+-keep public class com.serenegiant.pipeline.MP4FrameSavePipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.NativeCallback {*;}
+-dontnote com.serenegiant.pipeline.NativeCallback
+
+-keep public class com.serenegiant.pipeline.NativeCallbackPipeline {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.PipelineSource {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.SurfaceH264PipelineSource {
+    native <methods>;
+	public *;
+	protected *;
+}
+
+-keep public class com.serenegiant.pipeline.TranscodeH264 {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.TranscodeH264PipelineSource {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.pipeline.VkPreviewPipeline {
+    native <methods>;
+	public *;
+}
+
+
+#--------------------------------------------------------------------------------
+# aandusb::usb
+-keep public class com.serenegiant.usb.DeviceDetector {
+    native <methods>;
+	public *;
+}
+
+-keep public class com.serenegiant.usb.DeviceDetectorFragment {
+    native <methods>;
+	public *;
+}
+
+-keep public interface com.serenegiant.usb.IUSBCamera { *; }
+
+-keep public class com.serenegiant.usb.NativeLibLoader {
+    public *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::usb::i360
+-keep public class com.serenegiant.usb.i360.I360Pipeline {
+    native <methods>;
+	public *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::usb::ptp
+-keep public class com.serenegiant.usb.ptp.PTPController {
+    native <methods>;
+	public *;
+}
+
+#--------------------------------------------------------------------------------
+# aandusb::usb::uac
 -keep public class com.serenegiant.usb.uac.UACClient {
     native <methods>;
 	public *;
 	protected *;
-	private *;
 }
 
--keep public class com.serenegiant.media.Encoder {
+#--------------------------------------------------------------------------------
+# aandusb::usb::upc
+-keep public class com.serenegiant.usb.upc.UPCPipeline {
     native <methods>;
 	public *;
-	protected *;
-	private *;
 }
 
--keep public class com.serenegiant.media.VideoEncoder {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
+#--------------------------------------------------------------------------------
+# aandusb::usb::uac
+-keep public enum com.serenegiant.usb.uvc.CameraConfig {
+    public *;
 }
 
--keep public class com.serenegiant.media.VideoMuxer {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
+-keep public enum com.serenegiant.usb.uvc.CameraConfig.** {
+    public *;
 }
-
--keep public class com.serenegiant.usb.uvc.Utils {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public interface com.serenegiant.camera.ICamera { *; }
--keep public interface com.serenegiant.camera.ICameraControl { *; }
--keep public interface com.serenegiant.camera.IFrameCallback { *; }
 
 -keep public interface com.serenegiant.usb.uvc.IButtonCallback { *; }
 -keep public interface com.serenegiant.usb.uvc.IStatusCallback { *; }
--keep public interface com.serenegiant.usb.uvc.IUVCCamera { *; }
 
--keep public class com.serenegiant.usb.uvc.IPipeline {*;}
--dontnote com.serenegiant.usb.uvc.IPipeline
-
--keep public class com.serenegiant.usb.uvc.ConvertPipeline {
+-keep public class com.serenegiant.usb.uvc.PtsCalcPipeline {
     native <methods>;
 	public *;
-	protected *;
-	private *;
 }
 
--keep public class com.serenegiant.usb.uvc.DistributePipeline {
-    native <methods>;
+-keep public class com.serenegiant.usb.uvc.Utils {
+	native <methods>;
 	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.FrameCallbackPipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.FrameSavePipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.NativeCallbackPipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.PreviewPipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.SimpleBufferedPipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
 }
 
 -keep public class com.serenegiant.usb.uvc.UVCPipeline {
     native <methods>;
 	public *;
-	protected *;
-	private *;
 }
 
--keep public class com.serenegiant.usb.uvc.PipelineSource {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.usb.uvc.PtsCalcPipeline {
-    native <methods>;
-	public *;
-	protected *;
-	private *;
-}
-
--keep public class com.serenegiant.camera.FuncMaxMinDef {
-	public *;
-	protected *;
-	private *;
-}
-
-##---------------Begin: proguard configuration for Gson  ----------
-# Gson uses generic type information stored in a class file when working with fields. Proguard
-# removes such information by default, so configure it to keep all of it.
--keepattributes Signature
-
-# For using GSON @Expose annotation
--keepattributes *Annotation*
-
-# Gson specific classes
--keep class sun.misc.Unsafe
--keep class sun.misc.Unsafe.**
--dontnote sun.misc.Unsafe
-#-keep class com.google.gson.stream.** { *; }
-
--keep class com.serenegiant.camera.Size
--keep class com.serenegiant.camera.Size { *; }
-
--keep public class com.serenegiant.aandusb.R
+#--------------------------------------------------------------------------------
+# aandusb resources
 -keep public class com.serenegiant.aandusb.R.**
 -keep public class com.serenegiant.aandusb.R.*$*
 -keep public class com.serenegiant.aandusb.R.$**
--keep public class com.serenegiant.usb.R
 -keep public class com.serenegiant.usb.R.**
 -keep public class com.serenegiant.usb.R.*$*
 -keep public class com.serenegiant.usb.R.$**
 
--keep public class com.serenegiant.uvcplugin.DeviceDetector {
-    native <methods>;
-	public *;
-}
-
--keep public class com.serenegiant.uvcplugin.UVCHolder {
-    native <methods>;
-	public *;
-}
-
--keep public class com.serenegiant.androidutils.AndroidUtils {
-    native <methods>;
-	public *;
-}
+#--------------------------------------------------------------------------------
+-dontwarn java.lang.invoke.StringConcatFactory
