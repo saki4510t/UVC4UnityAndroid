@@ -103,4 +103,7 @@ Now this project does not depend on `System.Text.Json` and related packages.
    * Migrate to Unity 6000.0.60f1(LTS)
    * Improve crash when UVC device detached while streaming
    * Support 16HB alignment
-
+* r0.6.0 on 15 Jan. 2026
+   * Include plugin sources as Android Library project plugin to use NDK came from Unity.
+   * Improve crash when UVC device detached while streaming.
+   * Improve rendering performance of UVC video frames.
