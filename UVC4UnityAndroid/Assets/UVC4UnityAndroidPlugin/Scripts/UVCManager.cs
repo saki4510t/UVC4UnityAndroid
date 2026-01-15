@@ -29,30 +29,16 @@ namespace Serenegiant.UVC
         private const UInt64 CTRL_AE			= 0x00000002;	// D1:  Auto-Exposure Mode
         private const UInt64 CTRL_AE_PRIORITY	= 0x00000004;	// D2:  Auto-Exposure Priority
         private const UInt64 CTRL_AE_ABS		= 0x00000008;	// D3:  Exposure Time (Absolute)
-        private const UInt64 CTRL_AE_REL		= 0x00000010;	// D4:  Exposure Time (Relative)
         private const UInt64 CTRL_FOCUS_ABS		= 0x00000020;	// D5:  Focus (Absolute)
-        private const UInt64 CTRL_FOCUS_REL		= 0x00000040;	// D6:  Focus (Relative)
         private const UInt64 CTRL_IRIS_ABS		= 0x00000080;	// D7:  Iris (Absolute)
-        private const UInt64 CTRL_IRIS_REL		= 0x00000100;	// D8:  Iris (Relative)
         private const UInt64 CTRL_ZOOM_ABS		= 0x00000200;	// D9:  Zoom (Absolute)
-        private const UInt64 CTRL_ZOOM_REL		= 0x00000400;	// D10: Zoom (Relative)
         private const UInt64 CTRL_PANTILT_ABS	= 0x00000800;	// D11: PanTilt (Absolute)
         private const UInt64 CTRL_PAN_ABS		= 0x01000800;	// D11: PanTilt (Absolute)
         private const UInt64 CTRL_TILT_ABS		= 0x02000800;	// D11: PanTilt (Absolute)
-        private const UInt64 CTRL_PANTILT_REL	= 0x00001000;	// D12: PanTilt (Relative)
-        private const UInt64 CTRL_PAN_REL		= 0x01001000;	// D12: PanTilt (Relative)
-        private const UInt64 CTRL_TILT_REL		= 0x02001000;	// D12: PanTilt (Relative)
         private const UInt64 CTRL_ROLL_ABS		= 0x00002000;	// D13: Roll (Absolute)
-        private const UInt64 CTRL_ROLL_REL		= 0x00004000;	// D14: Roll (Relative)
         private const UInt64 CTRL_D15			= 0x00008000;	// D15: Reserved
         private const UInt64 CTRL_D16			= 0x00010000;	// D16: Reserved
         private const UInt64 CTRL_FOCUS_AUTO	= 0x00020000;	// D17: Focus, Auto
-        private const UInt64 CTRL_PRIVACY		= 0x00040000;	// D18: Privacy
-        private const UInt64 CTRL_FOCUS_SIMPLE	= 0x00080000;	// D19: Focus, Simple
-        private const UInt64 CTRL_WINDOW		= 0x00100000;	// D20: Window
-        private const UInt64 CTRL_ROI			= 0x00200000;	// D21: ROI
-        private const UInt64 CTRL_D22			= 0x00400000;	// D22: Reserved
-        private const UInt64 CTRL_D23			= 0x00800000;	// D23: Reserved
 
         // Processing Unit DescriptorのbmControlsフィールドのビットマスク
         private const UInt64 PU_BRIGHTNESS		= 0x00000001;	// D0: Brightness
@@ -69,16 +55,7 @@ namespace Serenegiant.UVC
         private const UInt64 PU_HUE_AUTO		= 0x00000800;	// D11: Hue, Auto
         private const UInt64 PU_WB_TEMP_AUTO	= 0x00001000;	// D12: White Balance Temperature, Auto
         private const UInt64 PU_WB_COMPO_AUTO	= 0x00002000;	// D13: White Balance Component, Auto
-        private const UInt64 PU_DIGITAL_MULT	= 0x00004000;	// D14: Digital Multiplier
-        private const UInt64 PU_DIGITAL_LIMIT	= 0x00008000;	// D15: Digital Multiplier Limit
-        private const UInt64 PU_AVIDEO_STD		= 0x00010000;	// D16: Analog Video Standard
-        private const UInt64 PU_AVIDEO_LOCK		= 0x00020000;	// D17: Analog Video Lock Status
         private const UInt64 PU_CONTRAST_AUTO	= 0x00040000;	// D18: Contrast, Auto
-        private const UInt64 PU_D19				= 0x00080000;	// D19: Reserved
-        private const UInt64 PU_D20				= 0x00100000;	// D20: Reserved
-        private const UInt64 PU_D21				= 0x00200000;	// D21: Reserved
-        private const UInt64 PU_D22				= 0x00400000;	// D22: Reserved
-        private const UInt64 PU_D23				= 0x00800000;   // D23: Reserved
 
         // プロセッシングユニットのコントロールタイプを識別するために最上位ビットを立てる
         private const UInt64 PU_MASK = 0x80000000;
@@ -89,26 +66,13 @@ namespace Serenegiant.UVC
             CTRL_AE,
             CTRL_AE_PRIORITY,
             CTRL_AE_ABS,
-            //CTRL_AE_REL,
             CTRL_FOCUS_ABS,
-            //CTRL_FOCUS_REL,
             CTRL_IRIS_ABS,
-            //CTRL_IRIS_REL,
             CTRL_ZOOM_ABS,
-            //CTRL_ZOOM_REL,
-            //CTRL_PANTILT_ABS,
             CTRL_PAN_ABS,
             CTRL_TILT_ABS,
-            //CTRL_PANTILT_REL,
-            //CTRL_PAN_REL,
-            //CTRL_TILT_REL,
             CTRL_ROLL_ABS,
-            //CTRL_ROLL_REL,
             CTRL_FOCUS_AUTO,
-            //CTRL_PRIVACY,
-            //CTRL_FOCUS_SIMPLE,
-            //CTRL_WINDOW,
-            //CTRL_ROI,
         };
         private static readonly UInt64[] SUPPORTED_PROCS =
         {
@@ -126,10 +90,6 @@ namespace Serenegiant.UVC
             PU_HUE_AUTO,
             PU_WB_TEMP_AUTO,
             PU_WB_COMPO_AUTO,
-            PU_DIGITAL_MULT,
-            PU_DIGITAL_LIMIT,
-            PU_AVIDEO_STD,
-            PU_AVIDEO_LOCK,
             PU_CONTRAST_AUTO,
 
         };
@@ -693,15 +653,15 @@ namespace Serenegiant.UVC
 		//--------------------------------------------------------------------------------
 		// UVC機器接続状態が変化したときのプラグインからのコールバック関数
 		//--------------------------------------------------------------------------------
-        public void OnDeviceChanged(IntPtr devicePtr, bool attached)
+        public void OnDeviceChanged(Int32 deviceId, bool attached)
         {
-            var id = UVCDevice.GetId(devicePtr);
+            var id = deviceId;
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
             Console.WriteLine($"{TAG}OnDeviceChangedInternal:id={id},attached={attached}");
 #endif
             if (attached)
             {
-                UVCDevice device = new UVCDevice(devicePtr);
+                UVCDevice device = new UVCDevice(deviceId);
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
                 Console.WriteLine($"{TAG}OnDeviceChangedInternal:device={device.ToString()}");
 #endif
@@ -1290,7 +1250,7 @@ namespace Serenegiant.UVC
     {
         //コールバック関数の型を宣言
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate void OnDeviceChangedFunc(Int32 id, IntPtr devicePtr, bool attached);
+        public delegate void OnDeviceChangedFunc(Int32 id, Int32 deviceId, bool attached);
 
         /**
 		 * プラグインのnative側登録関数
@@ -1328,12 +1288,12 @@ namespace Serenegiant.UVC
         }
 
         [MonoPInvokeCallback(typeof(OnDeviceChangedFunc))]
-        public static void OnDeviceChanged(Int32 id, IntPtr devicePtr, bool attached)
+        public static void OnDeviceChanged(Int32 id, Int32 deviceId, bool attached)
         {
             var manager = sManagers.ContainsKey(id) ? sManagers[id] : null;
             if (manager != null)
             {
-                manager.OnDeviceChanged(devicePtr, attached);
+                manager.OnDeviceChanged(deviceId, attached);
             }
         }
 

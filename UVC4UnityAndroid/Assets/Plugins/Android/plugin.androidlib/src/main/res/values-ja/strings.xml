@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * aAndUsb
+ * Copyright (c) 2014-2026 saki t_saki@serenegiant.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+-->
+<resources>
+	<string name="permission_title">アクセス許可について</string>
+
+	<string name="permission_format">%s のアクセス許可が必要です。</string>
+	<string name="may_not_work">アクセス許可が無い場合正常に動作しない可能性があります。</string>
+
+	<string name="permission_network_request">ネットワークへのアクセス許可が必要です。</string>
+	<string name="permission_audio_recording_request">録音許可が必要です。</string>
+	<string name="permission_camera_request_android9_uvc">Android9以降ではUVC機器へアクセスするにはカメラへのアクセス許可が必要です。</string>
+	<string name="permission_ext_storage_request">静止画/動画を保存するには外部ストレージへの書き込み許可が必要です。</string>
+	<string name="permission_location_request">位置情報を保存するために位置情報へのアクセス許可が必要です。</string>
+</resources>

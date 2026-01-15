@@ -18,7 +18,6 @@ namespace Serenegiant.UVC
 	[Serializable]
 	public class UVCDevice
 	{
-		private readonly IntPtr ptr;
 		public readonly Int32 id;
 		public readonly int vid;
 		public readonly int pid;
@@ -28,15 +27,14 @@ namespace Serenegiant.UVC
 
 		public readonly string name;
 
-		public UVCDevice(IntPtr devicePtr) {
-			ptr = devicePtr;
-			id = GetId(devicePtr);
-			vid = GetVendorId(devicePtr);
-			pid = GetProductId(devicePtr);
-			name = GetName(devicePtr);
-			deviceClass = GetDeviceClass(devicePtr);
-			deviceSubClass = GetDeviceSubClass(devicePtr);
-			deviceProtocol = GetDeviceProtocol(devicePtr);
+		public UVCDevice(Int32 deviceId) {
+			id = deviceId;
+			vid = GetVendorId(deviceId);
+			pid = GetProductId(deviceId);
+			name = GetName(deviceId);
+			deviceClass = GetDeviceClass(deviceId);
+			deviceSubClass = GetDeviceSubClass(deviceId);
+			deviceProtocol = GetDeviceProtocol(deviceId);
 		}
 
 		public override string ToString()
@@ -107,7 +105,7 @@ namespace Serenegiant.UVC
 		 */
 		public bool Match(byte bClass, byte bSubClass, byte bProtocol)
 		{
-			var result = InternalMatch(ptr, bClass, bSubClass, bProtocol);
+			var result = InternalMatch(id, bClass, bSubClass, bProtocol);
 			return result != 0;
 		}
 
@@ -118,44 +116,44 @@ namespace Serenegiant.UVC
 		 * 機器idを取得(これだけはpublicにする)
 		 */
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_id")]
-		public static extern Int32 GetId(IntPtr devicePtr);
+		public static extern Int32 GetId(Int32 deviceId);
 
 		/**
 			* デバイスクラスを取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_class")]
-		private static extern Byte GetDeviceClass(IntPtr devicePtr);
+		private static extern Byte GetDeviceClass(Int32 deviceId);
 
 		/**
 			* デバイスサブクラスを取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_sub_class")]
-		private static extern Byte GetDeviceSubClass(IntPtr devicePtr);
+		private static extern Byte GetDeviceSubClass(Int32 deviceId);
 
 		/**
 			* デバイスプロトコルを取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_protocol")]
-		private static extern Byte GetDeviceProtocol(IntPtr devicePtr);
+		private static extern Byte GetDeviceProtocol(Int32 deviceId);
 
 		/**
 			* ベンダーIDを取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_vendor_id")]
-		private static extern UInt16 GetVendorId(IntPtr devicePtr);
+		private static extern UInt16 GetVendorId(Int32 deviceId);
 
 		/**
 			* プロダクトIDを取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_product_id")]
-		private static extern UInt16 GetProductId(IntPtr devicePtr);
+		private static extern UInt16 GetProductId(Int32 deviceId);
 
 		/**
 			* 機器名を取得
 			*/
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_name")]
 		[return: MarshalAs(UnmanagedType.LPStr)]
-		private static extern string GetName(IntPtr devicePtr);
+		private static extern string GetName(Int32 deviceId);
 
 
 		/**
@@ -167,7 +165,7 @@ namespace Serenegiant.UVC
 		 * @returtn 1: 一致した, 0: 一致しなかった
 		 */
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_match")]
-		private static extern Int32 InternalMatch(IntPtr devicePtr, byte bClass, byte bSubClass, byte bProtocol);
+		private static extern Int32 InternalMatch(Int32 deviceId, byte bClass, byte bSubClass, byte bProtocol);
 	} // UVCDevice
 
 } // namespace Serenegiant.UVC

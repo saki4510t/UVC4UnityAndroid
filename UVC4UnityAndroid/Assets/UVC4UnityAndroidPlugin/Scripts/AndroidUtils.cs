@@ -31,7 +31,7 @@ namespace Serenegiant
 		}
 
 		private const string TAG = "AndroidUtils#";
-		private const string FQCN_PLUGIN = "com.serenegiant.androidutils.AndroidUtils";
+		private const string FQCN_PLUGIN = "com.serenegiant.unity.utils.AndroidUtils";
 
 		//--------------------------------------------------------------------------------
 		/**
