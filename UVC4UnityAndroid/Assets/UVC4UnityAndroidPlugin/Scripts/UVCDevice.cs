@@ -91,7 +91,7 @@ namespace Serenegiant.UVC
 		 * UACに対応しているかどうか
 		 * XXX UACに対応していると応答するUVC機器でも実際にはUACに未対応なバギーな機器も存在するので注意！
 		 */
-		public bool isUAC
+		public bool IsUAC
 		{
 			get { return Match(1, 1, 0xff) && Match(1, 2, 0xff); }
 		}

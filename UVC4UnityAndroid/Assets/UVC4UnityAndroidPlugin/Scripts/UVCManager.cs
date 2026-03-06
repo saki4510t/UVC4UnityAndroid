@@ -809,7 +809,7 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}StartAudio:");
 #endif
-			if (device.isUAC)
+			if (device.IsUAC)
 			{
 				var audio = CreateAudioIfNotExist(device);
 				if ((audio != null) && !audio.IsStreaming)

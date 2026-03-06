@@ -173,7 +173,7 @@ namespace Serenegiant.UVC
 		 */
 		public bool IsUACEnabled(UVCManager manager, UVCDevice device)
 		{
-			return UACEnabled && device.isUAC;
+			return UACEnabled && device.IsUAC;
 		}
 
 		/**
