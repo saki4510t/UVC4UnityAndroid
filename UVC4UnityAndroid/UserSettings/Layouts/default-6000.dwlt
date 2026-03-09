@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1835.3334
     height: 1017.3334
   m_ShowMode: 4
-  m_Title: Hierarchy
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -100,7 +100,7 @@ MonoBehaviour:
   m_MinSize: {x: 400, y: 112}
   m_MaxSize: {x: 32384, y: 16192}
   vertical: 0
-  controlID: 119
+  controlID: 25
   draggingID: 0
 --- !u!114 &5
 MonoBehaviour:
@@ -246,8 +246,8 @@ MonoBehaviour:
     y: 0
     width: 569.3333
     height: 494.66666
-  m_MinSize: {x: 201, y: 226}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
@@ -272,8 +272,8 @@ MonoBehaviour:
     y: 494.66666
     width: 569.3333
     height: 466.66666
-  m_MinSize: {x: 201, y: 226}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 16}
   m_Panes:
   - {fileID: 16}
@@ -602,11 +602,11 @@ MonoBehaviour:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs:
-      - m_Data: 27922
+      - m_Data: 27924
       m_LastClickedID:
-        m_Data: 27922
+        m_Data: 27924
       m_ExpandedIDs:
-      - m_Data: -1298
+      - m_Data: -1318
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -734,7 +734,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/UVC4UnityAndroidPlugin/Scripts
+    - Assets/UVC4UnityAndroidPlugin/Samples/Scenes
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -744,7 +744,7 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 96
   m_LastFolders:
-  - Assets/UVC4UnityAndroidPlugin/Scripts
+  - Assets/UVC4UnityAndroidPlugin/Samples/Scenes
   m_LastFoldersGridSize: 96
   m_LastProjectPath: C:\Users\t_sak\Documents\Unity Projects\UVC4UnityAndroid\UVC4UnityAndroid
   m_LockTracker:
@@ -753,12 +753,11 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
-    - m_Data: 28152
+    - m_Data: 28040
     m_LastClickedID:
-      m_Data: 28152
+      m_Data: 28040
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 28006
     - m_Data: 28008
     - m_Data: 28010
     - m_Data: 28012
@@ -774,6 +773,8 @@ MonoBehaviour:
     - m_Data: 28032
     - m_Data: 28034
     - m_Data: 28036
+    - m_Data: 28038
+    - m_Data: 28040
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -806,7 +807,6 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 28006
     - m_Data: 28008
     - m_Data: 28010
     - m_Data: 28012
@@ -822,6 +822,8 @@ MonoBehaviour:
     - m_Data: 28032
     - m_Data: 28034
     - m_Data: 28036
+    - m_Data: 28038
+    - m_Data: 28040
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -849,8 +851,8 @@ MonoBehaviour:
       m_ResourceFile: 
   m_ListAreaState:
     m_SelectedInstanceIDs:
-    - m_Data: 27922
-    m_LastClickedInstanceID: 27922
+    - m_Data: 27924
+    m_LastClickedInstanceID: 27924
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:

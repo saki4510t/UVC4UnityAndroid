@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2014 - 2026 t_saki@serenegiant.com 
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;

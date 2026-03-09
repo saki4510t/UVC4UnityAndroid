@@ -1,4 +1,7 @@
-﻿using System;
+﻿/*
+ * Copyright (c) 2014 - 2026 t_saki@serenegiant.com 
+ */
+using System;
 using System.Runtime.InteropServices;
 
 namespace Serenegiant.UVC

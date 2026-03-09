@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿/*
+ * Copyright (c) 2014 - 2026 t_saki@serenegiant.com 
+ */
+using UnityEngine;
 using UnityEditor;
 
 [CustomPropertyDrawer(typeof(ComponentRestrictionAttribute))]
