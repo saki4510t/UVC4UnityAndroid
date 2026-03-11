@@ -322,7 +322,7 @@ namespace Serenegiant.UVC
 						return value;
 					} else
 					{
-						throw new Exception($"Failed to get control value,type={type},err={r}");
+						throw new Exception($"Failed to get control value,type={type:X},err={r}");
 					}
 				} else
 				{
@@ -355,12 +355,12 @@ namespace Serenegiant.UVC
 						}
 						else
 						{
-							throw new Exception($"Failed to get control value,type={type},err={r}");
+							throw new Exception($"Failed to get control value,type={type:X},err={r}");
 						}
 					}
 					else
 					{
-						throw new Exception($"Failed to set control value,type={type},err={r}");
+						throw new Exception($"Failed to set control value,type={type:X},err={r}");
 					}
 				}
 				else
