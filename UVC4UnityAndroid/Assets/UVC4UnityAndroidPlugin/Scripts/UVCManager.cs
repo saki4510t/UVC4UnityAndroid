@@ -154,7 +154,8 @@ namespace Serenegiant.UVC
 			/**
 			 * 機器idを取得
 			 */
-			public Int32 Id{
+			public Int32 Id
+			{
 				get { return device.id;  }
 			}
 	
