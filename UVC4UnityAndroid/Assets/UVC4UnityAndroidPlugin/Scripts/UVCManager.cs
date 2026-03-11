@@ -242,7 +242,7 @@ namespace Serenegiant.UVC
 			/**
 			 * サポートしているUVCコントロール/プロセッシング機能の情報を更新する
 			 */
-			public void UpdateCtrls()
+			internal void UpdateCtrls()
 			{
 				ctrlInfos.Clear();
 				var ctrls = GetCtrlSupports(Id);
