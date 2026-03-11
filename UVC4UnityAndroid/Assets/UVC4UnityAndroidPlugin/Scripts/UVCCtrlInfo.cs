@@ -6,6 +6,11 @@ using System.Runtime.InteropServices;
 
 namespace Serenegiant.UVC
 {
+	/**
+	 * UVC機器のコントロールユニット・プロセッシングユニットで対応しているコントロールタイプの設定値情報を保持する構造体
+	 * nativeプラグインから値を取得する際に使用する
+	 * FIXME nativeプラグインから値を受け取る構造体とUnity用のクラスを分けたほうがいいかも
+	 */
 	[StructLayout(LayoutKind.Sequential, Pack = 4)]
 	public struct UVCCtrlInfo
     {
@@ -22,5 +27,6 @@ namespace Serenegiant.UVC
 		{
 			return $"{base.ToString()}(type={type},min={min},max={max},def={def},current={current})";
 		}
-	}
-}
+	} // UVCCtrlInfo
+
+} // namespace Serenegiant.UVC

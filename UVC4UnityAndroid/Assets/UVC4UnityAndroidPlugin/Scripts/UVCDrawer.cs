@@ -11,7 +11,9 @@ using UnityEngine.UI;
 
 namespace Serenegiant.UVC
 {
-
+	/**
+	 * UVC機器からの映像や音声取得処理をUnityのGameObjectやSkyBox/Renderer/RawImage、AudioSource等と関係つけるためのヘルパー
+	 */
 	public class UVCDrawer : MonoBehaviour, IUVCDrawer
 	{
 		/**

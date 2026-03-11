@@ -6,6 +6,11 @@ using System.Runtime.InteropServices;
 
 namespace Serenegiant.UVC
 {
+	/**
+	 * UACに対応している場合にUACの情報を保持するための構造体
+	 * nativeプラグインから値を取得する際に使用する
+	 * FIXME nativeプラグインから値を受け取る構造体とUnity用のクラスを分けたほうがいいかも
+	 */
 	[StructLayout(LayoutKind.Sequential, Pack = 4)]
 	public struct UACInfo
     {
@@ -19,5 +24,6 @@ namespace Serenegiant.UVC
 		{
 			return $"{base.ToString()}(channels={channels},resolution={resolution},freq={samplingFreq},bytes={packetBytes})";
 		}
-	}
-}
+	} // UACInfo
+
+} // namespace Serenegiant.UVC

@@ -181,7 +181,7 @@ namespace Serenegiant.UVC
 			public Int32 NumFrameIntervals;
 			public IntPtr Fps;
 			public Int32 NumFps;
-		}
+		} // UVCVideoSizeFromCpp
 	} // UVCVideoSize
 
-}
+} // namespace Serenegiant.UVC

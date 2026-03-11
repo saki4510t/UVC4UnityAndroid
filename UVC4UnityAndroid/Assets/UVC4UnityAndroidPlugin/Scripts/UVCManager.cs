@@ -17,7 +17,11 @@ using UnityEngine.Android;
 
 namespace Serenegiant.UVC
 {
-    [RequireComponent(typeof(AndroidUtils))]
+	/**
+	 * nativeプラグインを使ってUVC機器検出・映像取得・音声取得等を行うためのヘルパークラス
+	 * FIXME 検出したUVC機器に応じてシーンを切り替えやすいようにDI/シングルトンパターンでアクセスするように変更する
+	 */
+	[RequireComponent(typeof(AndroidUtils))]
     public class UVCManager : MonoBehaviour
     {
         private const string TAG = "UVCManager#";
@@ -60,8 +64,12 @@ namespace Serenegiant.UVC
         // プロセッシングユニットのコントロールタイプを識別するために最上位ビットを立てる
         private const UInt64 PU_MASK = 0x80000000;
 
-        //--------------------------------------------------------------------------------
-        private static readonly UInt64[] SUPPORTED_CTRLS = {
+		//--------------------------------------------------------------------------------
+		/**
+		 * プラグインで対応しているコントロールユニットのコントロールタイプ一覧
+		 * 実際に接続されたUVC機器がここに含まれるコントロールタイプのすべてをサポートしているわけではない
+		 */
+		private static readonly UInt64[] SUPPORTED_CTRLS = {
             CTRL_SCANNING,
             CTRL_AE,
             CTRL_AE_PRIORITY,
@@ -74,7 +82,11 @@ namespace Serenegiant.UVC
             CTRL_ROLL_ABS,
             CTRL_FOCUS_AUTO,
         };
-        private static readonly UInt64[] SUPPORTED_PROCS =
+		/**
+		 * プラグインで対応しているプロセッシングユニットのコントロールタイプ一覧
+		 * 実際に接続されたUVC機器がここに含まれるコントロールタイプのすべてをサポートしているわけではない
+		 */
+		private static readonly UInt64[] SUPPORTED_PROCS =
         {
             PU_BRIGHTNESS,
             PU_CONTRAST,
@@ -126,6 +138,8 @@ namespace Serenegiant.UVC
 
 		/**
 		 * UVC関係のイベンドハンドラー
+		 * FIXME 今はインスペクタで割り当てることができるようにしているのを
+		 *       UVCDrawers側でライフサイクルの応じてadd/removeできるように変更する…かも
 		 */
 		[SerializeField, ComponentRestriction(typeof(IUVCDrawer))]
 		public Component[] UVCDrawers;
@@ -238,7 +252,7 @@ namespace Serenegiant.UVC
 
 				return found;
 			}
-		
+
 			/**
 			 * サポートしているUVCコントロール/プロセッシング機能の情報を更新する
 			 */
@@ -697,6 +711,7 @@ namespace Serenegiant.UVC
 		//================================================================================
 		/**
 		 * 接続中のUVC機器一覧を取得
+		 * FIXME これいらないかも?CameraInfoではなくてUVCDeviceの一覧を返すほうがいいかも?
 		 * @return 接続中のUVC機器一覧List
 		 */
 		public List<CameraInfo> GetAttachedDevices()
@@ -735,7 +750,8 @@ namespace Serenegiant.UVC
 		private void StartPreview(UVCDevice device, UVCVideoSize size)
 		{
 			var info = CreateCameraIfNotExist(device);
-			if ((info != null) && !info.IsPreviewing) {
+			if ((info != null) && !info.IsPreviewing)
+			{
 				if (!size.IsValid)
 				{	// 無効な解像度設定の時はCameraInfoから取得してみる
 					size = info.CurrentSize;
@@ -755,7 +771,7 @@ namespace Serenegiant.UVC
                 {
 					info.SetSize(size);
 					info.activeId = device.id;
-					info.UpdateCtrls();
+					info.UpdateCtrls();	// FIXME これはCameraInfo生成時に１回だけ呼べばいい
 					mainContext.Post(__ =>
 					{   // テクスチャの生成はメインスレッドで行わないといけない
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
@@ -1077,6 +1093,7 @@ namespace Serenegiant.UVC
 		/**
 		 * プラグインを初期化
 		 * パーミッションの確認を行って取得できれば実際のプラグイン初期化処理#InitPluginを呼び出す
+		 * FIXME ここでのパーミッション確認・取得処理はこのクラスでの初期化処理よりも前に実行できるように移動させる
 		 */
 		private IEnumerator Initialize()
 		{
@@ -1124,6 +1141,8 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:");
 #endif
+			// FIXME 今はUVCManager側でUVCDrawersの検索・登録を行っているのを
+			//       シーンを切り替えやすいようにUVCDrawers側から動的に行うように変更する...かも
 			// IUVCDrawersが割り当てられているかどうかをチェック
 			var hasDrawer = false;
 			if ((UVCDrawers != null) && (UVCDrawers.Length > 0))

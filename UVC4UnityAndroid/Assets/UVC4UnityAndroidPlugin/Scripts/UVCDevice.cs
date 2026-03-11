@@ -14,7 +14,9 @@ using System.Runtime.InteropServices;
 
 namespace Serenegiant.UVC
 {
-
+	/**
+	 * 検出したUVC機器の情報を管理するためのクラス
+	 */
 	[Serializable]
 	public class UVCDevice
 	{
