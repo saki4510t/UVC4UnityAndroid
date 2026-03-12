@@ -895,7 +895,7 @@ namespace Serenegiant.UVC
 					if (drawer is IUVCDrawer)
 					{
 						hasDrawer = true;
-						if ((drawer as IUVCDrawer).OnUVCAttachEvent(this, device))
+						if ((drawer as IUVCDrawer).OnUVCAttachEvent(device))
 						{   // どれか1つのIUVCDrawerがtrueを返せばtrue(接続されたUVC機器を使用する)を返す
 							return true;
 						}
@@ -918,7 +918,7 @@ namespace Serenegiant.UVC
 				{
 					if (drawer is IUVCDrawer)
 					{
-						(drawer as IUVCDrawer).OnUVCDetachEvent(this, device);
+						(drawer as IUVCDrawer).OnUVCDetachEvent(device);
 					}
 				}
 			}
@@ -937,9 +937,9 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(this, camera.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(camera.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStartEvent(this, camera.device, camera.previewTexture);
+						(drawer as IUVCDrawer).OnUVCStartEvent(camera.device, camera.previewTexture);
 					}
 				}
 			} else {
@@ -962,9 +962,9 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(this, camera.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUVCEnabled(camera.device))
 					{
-						(drawer as IUVCDrawer).OnUVCStopEvent(this, camera.device);
+						(drawer as IUVCDrawer).OnUVCStopEvent(camera.device);
 					}
 				}
 			}
@@ -979,9 +979,9 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(this, audio.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(audio.device))
 					{   // IsUACEnabledがtrueを返したIUVCDrawerだけOnUACStartEventを呼び出す
-						(drawer as IUVCDrawer).OnUACStartEvent(this, audio.device, audioClip);
+						(drawer as IUVCDrawer).OnUACStartEvent(audio.device, audioClip);
 					}
 				}
 			}
@@ -996,9 +996,9 @@ namespace Serenegiant.UVC
 			{
 				foreach (var drawer in UVCDrawers)
 				{
-					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(this, audio.device))
+					if ((drawer is IUVCDrawer) && (drawer as IUVCDrawer).IsUACEnabled(audio.device))
 					{   // IsUACEnabledがtrueを返したIUVCDrawerだけOnUACStopEventを呼び出す
-						(drawer as IUVCDrawer).OnUACStopEvent(this, audio.device);
+						(drawer as IUVCDrawer).OnUACStopEvent(audio.device);
 					}
 				}
 			}

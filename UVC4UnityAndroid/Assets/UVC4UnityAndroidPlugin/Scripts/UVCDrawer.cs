@@ -90,11 +90,10 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器が接続された
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 * @return true: UVC機器を使用する, false: UVC機器を使用しない
 		 */
-		public bool OnUVCAttachEvent(UVCManager manager, UVCDevice device)
+		public bool OnUVCAttachEvent(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCAttachEvent:{device}");
@@ -112,10 +111,9 @@ namespace Serenegiant.UVC
 		/**
 		 * UVC機器が取り外された
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */
-		public void OnUVCDetachEvent(UVCManager manager, UVCDevice device)
+		public void OnUVCDetachEvent(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCDetachEvent:{device}");
@@ -125,10 +123,9 @@ namespace Serenegiant.UVC
 		/**
 		 * IUVCDrawerが指定したUVC機器の映像を描画できるかどうかを取得
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */
-		public bool IsUVCEnabled(UVCManager manager, UVCDevice device)
+		public bool IsUVCEnabled(UVCDevice device)
 		{
 			return UVCFilter.Match(device, UVCFilters);
 		}
@@ -136,11 +133,10 @@ namespace Serenegiant.UVC
 		/**
 		 * 映像取得を開始した
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 * @param tex UVC機器からの映像を受け取るTextureインスタンス
 		 */
-		public void OnUVCStartEvent(UVCManager manager, UVCDevice device, Texture tex)
+		public void OnUVCStartEvent(UVCDevice device, Texture tex)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCStartEvent:{device}");
@@ -151,10 +147,9 @@ namespace Serenegiant.UVC
 		/**
 		 * 映像取得を終了した
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */
-		public void OnUVCStopEvent(UVCManager manager, UVCDevice device)
+		public void OnUVCStopEvent(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUVCStopEvent:{device}");
@@ -166,21 +161,19 @@ namespace Serenegiant.UVC
 		 * IUVCDrawerが指定したUAC機器kからの音声を取得を有効にするかどうか取得
 		 * XXX とりあえずUACに対応した機器であればtrueを返す, 必要に応じて書き換えること
 		 * IUVCDrawerの実装
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUAC機器の情報
 		 */
-		public bool IsUACEnabled(UVCManager manager, UVCDevice device)
+		public bool IsUACEnabled(UVCDevice device)
 		{
 			return UACEnabled && device.IsUAC;
 		}
 
 		/**
 		 * UAC機器からの音声取得を開始した
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 接続されたUVC機器情報
 		 * @param audioClip UAC機器からの音声を受け取るAudioClipオブジェクト
 		 */
-		public void OnUACStartEvent(UVCManager manager, UVCDevice device, AudioClip audioClip)
+		public void OnUACStartEvent(UVCDevice device, AudioClip audioClip)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUACStartEvent:{device}");
@@ -190,10 +183,9 @@ namespace Serenegiant.UVC
 
 		/**
 		 * UAC機器からの音声取得を終了した
-		 * @param manager 呼び出し元のUVCManager
 		 * @param device 接続されたUVC機器情報
 		 */
-		public void OnUACStopEvent(UVCManager manager, UVCDevice device)
+		public void OnUACStopEvent(UVCDevice device)
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}OnUACStopEvent:{device}");
