@@ -17,15 +17,11 @@ namespace Serenegiant.UVC
 	public class UVCDrawer : MonoBehaviour, IUVCDrawer
 	{
 		/**
-		 * IUVCSelectorがセットされていないとき
-		 * またはIUVCSelectorが解像度選択時にnullを
-		 * 返したときのデフォルトの解像度(幅)
+		 * デフォルトの解像度(幅)
 		 */
 		public int DefaultWidth = 1280;
 		/**
-		 * IUVCSelectorがセットされていないとき
-		 * またはIUVCSelectorが解像度選択時にnullを
-		 * 返したときのデフォルトの解像度(高さ)
+		 * デフォルトの解像度(高さ)
 		 */
 		public int DefaultHeight = 720;
 		/**
@@ -83,17 +79,17 @@ namespace Serenegiant.UVC
 
 		}
 
-//		// Update is called once per frame
-//		void Update()
-//		{
-//
-//		}
+		//		// Update is called once per frame
+		//		void Update()
+		//		{
+		//
+		//		}
 
 		//================================================================================
 
 		/**
 		 * UVC機器が接続された
-		 * IOnUVCAttachHandlerの実装
+		 * IUVCDrawerの実装
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 * @return true: UVC機器を使用する, false: UVC機器を使用しない
@@ -115,7 +111,7 @@ namespace Serenegiant.UVC
 
 		/**
 		 * UVC機器が取り外された
-		 * IOnUVCDetachEventHandlerの実装
+		 * IUVCDrawerの実装
 		 * @param manager 呼び出し元のUVCManager
 		 * @param device 対象となるUVC機器の情報
 		 */

@@ -108,15 +108,11 @@ namespace Serenegiant.UVC
     
         //--------------------------------------------------------------------------------
         /**
-		 * IUVCSelectorがセットされていないとき
-		 * またはIUVCSelectorが解像度選択時にnullを
-		 * 返したときのデフォルトの解像度(幅)
-		*/
+		 * デフォルトの解像度(幅)
+		 */
         public UInt32 DefaultWidth = 1280;
 		/**
-		 * IUVCSelectorがセットされていないとき
-		 * またはIUVCSelectorが解像度選択時にnullを
-		 * 返したときのデフォルトの解像度(高さ)
+		 * デフォルトの解像度(高さ)
 		 */
 		public UInt32 DefaultHeight = 720;
 		/**
