@@ -8,24 +8,6 @@ using UnityEngine;
 namespace Serenegiant.UVC
 {
 	/**
-	 * UVC機器の接続・切断イベント用インターフェース
-	 */
-	public interface IUVCDetectHandler
-	{
-		/**
-		 * UVC機器が接続された
-		 * @param device 接続されたUVC機器情報
-		 * @return true: UVC機器を使う, false: UVC機器を使わない
-		 */
-		bool OnUVCAttachEvent(UVCDevice device);
-		/**
-		 * UVC機器が取り外された
-		 * @param device 接続されたUVC機器情報
-		 */
-		void OnUVCDetachEvent(UVCDevice device);
-	}
-
-	/**
 	 * UVC関係のイベントハンドリングインターフェース
 	 */
 	public interface IUVCDrawer : IUVCDetectHandler

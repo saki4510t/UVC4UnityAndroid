@@ -3,17 +3,12 @@
  * Copyright (c) 2014 - 2026 t_saki@serenegiant.com 
  */
 
-using AOT;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
-#if UNITY_ANDROID && UNITY_2018_3_OR_NEWER
-using UnityEngine.Android;
-#endif
 
 namespace Serenegiant.UVC
 {
@@ -22,10 +17,9 @@ namespace Serenegiant.UVC
 	 * FIXME 検出したUVC機器に応じてシーンを切り替えやすいようにDI/シングルトンパターンでアクセスするように変更する
 	 */
 	[RequireComponent(typeof(AndroidUtils))]
-    public class UVCManager : MonoBehaviour
-    {
+    public class UVCManager : MonoBehaviour, IUVCDetectHandler
+	{
         private const string TAG = "UVCManager#";
-        private const string FQCN_DETECTOR = "com.serenegiant.usb.DeviceDetector";
 
         //--------------------------------------------------------------------------------
         // Camera Terminal DescriptorのbmControlsフィールドのビットマスク
@@ -597,13 +591,9 @@ namespace Serenegiant.UVC
 		 */
 		private SynchronizationContext mainContext;
 		/**
-		 * 端末に接続されたUVC機器の状態が変化した時のイベントコールバックを受け取るデリゲーター
+		 * UVC機器の接続・切断イベントのハンドリングを行うUVCDetectorインスタンス
 		 */
-		private PluginCallbackManager.OnDeviceChangedFunc callback;
-		/**
-		 * 端末に接続されたUVC機器リスト
-		 */
-		private List<UVCDevice> attachedDevices = new List<UVCDevice>();
+		private UVCDetector uvcDetector;
 		/**
 		 * 映像取得中のUVC機器のマップ
 		 * 機器識別用のid - CameraInfoペアを保持する
@@ -626,7 +616,9 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}Start:");
 #endif
 			mainContext = SynchronizationContext.Current;
-            callback = PluginCallbackManager.Add(this);
+			UpdateDrawers();
+			uvcDetector = new UVCDetector();
+			uvcDetector.Register(this);
 	
 			yield return Initialize();
 		}
@@ -658,51 +650,53 @@ namespace Serenegiant.UVC
 			Console.WriteLine($"{TAG}OnDestroy:");
 #endif
 			StopAll();
-            PluginCallbackManager.Remove(this);
+			uvcDetector.Unregister(this);
+			uvcDetector.Release();
 		}
 
 		//--------------------------------------------------------------------------------
 		// UVC機器接続状態が変化したときのプラグインからのコールバック関数
 		//--------------------------------------------------------------------------------
-        public void OnDeviceChanged(Int32 deviceId, bool attached)
-        {
-            var id = deviceId;
+		/**
+		 * UVC機器が接続されたときの処理
+		 * IUVCDetectHandlerの実装
+		 * @param device 接続されたUVC機器情報
+		 * @return true: UVC機器を使う, false: UVC機器を使わない
+		 */
+		public bool OnUVCAttachEvent(UVCDevice device)
+		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
-            Console.WriteLine($"{TAG}OnDeviceChangedInternal:id={id},attached={attached}");
+            Console.WriteLine($"{TAG}OnUVCAttachEvent:id={device.id}");
 #endif
-            if (attached)
-            {
-                UVCDevice device = new UVCDevice(deviceId);
-#if (!NDEBUG && DEBUG && ENABLE_LOG)
-                Console.WriteLine($"{TAG}OnDeviceChangedInternal:device={device.ToString()}");
-#endif
-                if (HandleOnAttachEvent(device))
-                {
-                    attachedDevices.Add(device);
-                    StartPreview(device, UVCVideoSize.INVALID);
-					if (UACEnabled)
-					{	// UVCManagerのUAC機能が有効な場合
-						StartAudio(device);
-					}
+			if (HandleOnAttachEvent(device))
+			{
+				StartPreview(device, UVCVideoSize.INVALID);
+				if (UACEnabled)
+				{   // UVCManagerのUAC機能が有効な場合
+					StartAudio(device);
 				}
-            }
-            else
-            {
-                var found = attachedDevices.Find(item =>
-                {
-                    return item != null && item.id == id;
-                });
-                if (found != null)
-                {
-                    HandleOnDetachEvent(found);
-                    StopPreview(found);
-					StopAudio(found);
-					RemoveCamera(found);
-					RemoveAudio(found);
-                    attachedDevices.Remove(found);
-                }
-            }
-        }
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * UVC機器が取り外されたときの処理
+		 * IUVCDetectHandlerの実装
+		 * @param device 取り外されたUVC機器情報
+		 */
+		public void OnUVCDetachEvent(UVCDevice device)
+		{
+#if (!NDEBUG && DEBUG && ENABLE_LOG)
+            Console.WriteLine($"{TAG}OnUVCDetachEvent:id={device.id}");
+#endif
+			HandleOnDetachEvent(device);
+			StopPreview(device);
+			StopAudio(device);
+			RemoveCamera(device);
+			RemoveAudio(device);
+		}
 
 		//================================================================================
 		/**
@@ -714,7 +708,6 @@ namespace Serenegiant.UVC
 		{
 			return new List<CameraInfo>(cameraInfos.Values);
 		}
-
 
 		/**
 		 * 解像度を変更
@@ -811,7 +804,6 @@ namespace Serenegiant.UVC
 				}, null);
 			}
 		}
-
 
 		/**
 		 * UAC機器からの音声取得を開始
@@ -1106,7 +1098,6 @@ namespace Serenegiant.UVC
 					switch (result)
 					{
 						case AndroidUtils.PermissionGrantResult.PERMISSION_GRANT:
-							InitPlugin();
 							break;
 						case AndroidUtils.PermissionGrantResult.PERMISSION_DENY:
 							if (AndroidUtils.ShouldShowRequestPermissionRationale(AndroidUtils.PERMISSION_CAMERA))
@@ -1120,19 +1111,14 @@ namespace Serenegiant.UVC
 					}
 				});
 			}
-			else
-			{
-				InitPlugin();
-			}
 
 			yield break;
 		}
 
 		/**
-		 * プラグインを初期化
-		 * uvc-plugin-unityへの処理要求
+		 * UVCDrawer一覧を更新
 		 */
-		private void InitPlugin()
+		private void UpdateDrawers()
 		{
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:");
@@ -1172,12 +1158,6 @@ namespace Serenegiant.UVC
 #if (!NDEBUG && DEBUG && ENABLE_LOG)
 			Console.WriteLine($"{TAG}InitPlugin:num drawers={UVCDrawers.Length}");
 #endif
-			// aandusbのDeviceDetectorを読み込み要求
-			using (AndroidJavaClass clazz = new AndroidJavaClass(FQCN_DETECTOR))
-			{
-				clazz.CallStatic("initUVCDeviceDetector",
-					AndroidUtils.GetCurrentActivity());
-			}
 		}
 
         //--------------------------------------------------------------------------------
@@ -1255,65 +1235,5 @@ namespace Serenegiant.UVC
 		private static extern Int32 GetUACFrame(Int32 deviceId, short[] data, ref Int32 dataLen, ref Int64 ptsUs);
 
 	}   // UVCManager
-
-	/**
-     * IL2Cppだとc/c++からのコールバックにつかうデリゲーターをマーシャリングできないので
-     * staticなクラス・関数で処理をしないといけない。
-     * だだしそれだと呼び出し元のオブジェクトの関数を呼び出せないのでマネージャークラスを作成
-     * とりあえずはUVCManagerだけを受け付けるのでインターフェースにはしていない
-     */
-	public static class PluginCallbackManager
-    {
-        //コールバック関数の型を宣言
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate void OnDeviceChangedFunc(Int32 id, Int32 deviceId, bool attached);
-
-        /**
-		 * プラグインのnative側登録関数
-		 */
-        [DllImport("unityuvcplugin")]
-        private static extern IntPtr Register(Int32 id, OnDeviceChangedFunc deviceChanged);
-        /**
-		 * プラグインのnative側登録解除関数
-		 */
-        [DllImport("unityuvcplugin")]
-        private static extern IntPtr Unregister(Int32 id);
-
-        private static Dictionary<Int32, UVCManager> sManagers = new Dictionary<Int32, UVCManager>();
-  
-        /**
-         * 指定したUVCManagerを接続機器変化コールバックに追加
-         */
-        public static OnDeviceChangedFunc Add(UVCManager manager)
-        {
-            Int32 id = manager.GetHashCode();
-			OnDeviceChangedFunc onDeviceChanged = new OnDeviceChangedFunc(OnDeviceChanged);
-            sManagers.Add(id, manager);
-            Register(id, onDeviceChanged);
-            return onDeviceChanged;
-        }
-
-        /**
-         * 指定したUVCManagerを接続機器変化コールバックから削除
-         */
-        public static void Remove(UVCManager manager)
-        {
-            Int32 id = manager.GetHashCode();
-            Unregister(id);
-            sManagers.Remove(id);
-        }
-
-        [MonoPInvokeCallback(typeof(OnDeviceChangedFunc))]
-        public static void OnDeviceChanged(Int32 id, Int32 deviceId, bool attached)
-        {
-            var manager = sManagers.ContainsKey(id) ? sManagers[id] : null;
-            if (manager != null)
-            {
-                manager.OnDeviceChanged(deviceId, attached);
-            }
-        }
-
-    } // PluginCallbackManager
-
 
 }   // namespace Serenegiant.UVC
