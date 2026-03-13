@@ -43,7 +43,7 @@ namespace Serenegiant.UVC
 		}
 
 		/**
-		 * –³Œø‚È‰ğ‘œ“xİ’è‚ğ¶¬‚·‚éƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		 * ç„¡åŠ¹ãªè§£åƒåº¦è¨­å®šã‚’ç”Ÿæˆã™ã‚‹ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		 */
 		private UVCVideoSize()
 		{
@@ -57,7 +57,7 @@ namespace Serenegiant.UVC
 		}
 
 		/**
-		 * —LŒø‚È‰ğ‘œ“xİ’è‚©‚Ç‚¤‚©‚ğæ“¾‚·‚é
+		 * æœ‰åŠ¹ãªè§£åƒåº¦è¨­å®šã‹ã©ã†ã‹ã‚’å–å¾—ã™ã‚‹
 		 */
 		public bool IsValid
 		{
@@ -70,7 +70,7 @@ namespace Serenegiant.UVC
 		}
 
 		/**
-		 * Equals‚Æ‚Í•Ê‚ÉFrameType/FrameIndex/Width/Height‚ªˆê’v‚·‚ê‚Îtrue
+		 * Equalsã¨ã¯åˆ¥ã«FrameType/FrameIndex/Width/HeightãŒä¸€è‡´ã™ã‚Œã°true
 		 */
 		public bool IsSameValue(object obj)
 		{
@@ -80,7 +80,7 @@ namespace Serenegiant.UVC
 		}
 	
 		/**
-		 * ‘Î‰‚·‚é‰f‘œƒTƒCƒYİ’è”z—ñ‚ğæ“¾‚·‚é
+		 * å¯¾å¿œã™ã‚‹æ˜ åƒã‚µã‚¤ã‚ºè¨­å®šé…åˆ—ã‚’å–å¾—ã™ã‚‹
 		 * @param deviceId
 		 */
 		public static UVCVideoSize[] GetSupportedSize(Int32 deviceId)
@@ -88,7 +88,7 @@ namespace Serenegiant.UVC
 			var result = new UVCVideoSize[0];
 			Int32 numSupported = 0;
 			UVCVideoSizeFromCpp size = new UVCVideoSizeFromCpp();
-			// ‘Î‰‚µ‚Ä‚¢‚é‰f‘œƒTƒCƒYİ’è‚ÌŒÂ”‚ğæ“¾
+			// å¯¾å¿œã—ã¦ã„ã‚‹æ˜ åƒã‚µã‚¤ã‚ºè¨­å®šã®å€‹æ•°ã‚’å–å¾—
 			if (GetSupportedSize(deviceId, 0, ref numSupported, ref size) == 0)
 			{
 				result = new UVCVideoSize[numSupported];
@@ -99,7 +99,7 @@ namespace Serenegiant.UVC
 					{
 						result[i] = new UVCVideoSize(size);
 					} else
-					{   // null”ğ‚¯‚É–³Œø‚ÈUVCVideoSize‚ğ“ü‚ê‚Ä‚¨‚­
+					{   // nullé¿ã‘ã«ç„¡åŠ¹ãªUVCVideoSizeã‚’å…¥ã‚Œã¦ãŠã
 						result[i] = INVALID;
 					}
 				}
@@ -112,9 +112,9 @@ namespace Serenegiant.UVC
 		}
 
 		/**
-		 * Š®‘Sˆê’v‚Ü‚½‚ÍÅ‚à‹ß‚¢‰ğ‘œ“xİ’è‚ğ’T‚·
-		 * @param supporteds ‘Î‰‰ğ‘œ“xİ’è”z—ñ
-		 * @param frameType FRAME_TYPE_UNKNOWN‚È‚çƒƒCƒ‹ƒhƒJ[ƒh‚Æ‚µ‚Ä”CˆÓ‚ÌƒtƒŒ[ƒ€ƒ^ƒCƒv‚Æˆê’v‚·‚é
+		 * å®Œå…¨ä¸€è‡´ã¾ãŸã¯æœ€ã‚‚è¿‘ã„è§£åƒåº¦è¨­å®šã‚’æ¢ã™
+		 * @param supporteds å¯¾å¿œè§£åƒåº¦è¨­å®šé…åˆ—
+		 * @param frameType FRAME_TYPE_UNKNOWNãªã‚‰ãƒ¯ã‚¤ãƒ«ãƒ‰ã‚«ãƒ¼ãƒ‰ã¨ã—ã¦ä»»æ„ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒ—ã¨ä¸€è‡´ã™ã‚‹
 		 * @param width
 		 * @param height
 		 */
@@ -123,7 +123,7 @@ namespace Serenegiant.UVC
 			var found = INVALID;
 			if (frameType != FRAME_TYPE_UNKNOWN)
 			{
-				// Š®‘Sˆê’v‚ğ’T‚·
+				// å®Œå…¨ä¸€è‡´ã‚’æ¢ã™
 				foreach (var size in supporteds)
 				{
 					if ((size.FrameType == frameType) && (size.Width == width) && (size.Height == height))
@@ -134,7 +134,7 @@ namespace Serenegiant.UVC
 				}
 			}
 			if (!found.IsValid)
-			{   // ƒtƒŒ[ƒ€ƒ^ƒCƒv‚ªˆê’v‚·‚éÅ‚à‹ß‚¢‰ğ‘œ“xİ’è‚ğ’T‚·
+			{   // ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒ—ãŒä¸€è‡´ã™ã‚‹æœ€ã‚‚è¿‘ã„è§£åƒåº¦è¨­å®šã‚’æ¢ã™
 				var prev = UInt32.MaxValue;
 				foreach (var size in supporteds)
 				{
@@ -156,18 +156,18 @@ namespace Serenegiant.UVC
 		}
 
 		/**
-		 * ƒvƒ‰ƒOƒCƒ“‘¤‚©‚ç‰ğ‘œ“xİ’è‚ğ“Ç‚İ‚Ş
+		 * ãƒ—ãƒ©ã‚°ã‚¤ãƒ³å´ã‹ã‚‰è§£åƒåº¦è¨­å®šã‚’èª­ã¿è¾¼ã‚€
 		 * @param deviceId
-		 * @param index 0`numSupported‚Ì‰ğ‘œ“xƒCƒ“ƒfƒbƒNƒX
-		 * @param numSupported ‘Î‰‚·‚é‰ğ‘œ“xİ’è‚Ì‡ŒvŒÂ”‚ª‘ã“ü‚³‚ê‚é•Ï”
-		 * @param size w’è‚µ‚½index‚Ì‰ğ‘œ“xİ’è‚ª‘ã“ü‚³‚ê‚é•Ï”
+		 * @param index 0ï½numSupportedã®è§£åƒåº¦ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		 * @param numSupported å¯¾å¿œã™ã‚‹è§£åƒåº¦è¨­å®šã®åˆè¨ˆå€‹æ•°ãŒä»£å…¥ã•ã‚Œã‚‹å¤‰æ•°
+		 * @param size æŒ‡å®šã—ãŸindexã®è§£åƒåº¦è¨­å®šãŒä»£å…¥ã•ã‚Œã‚‹å¤‰æ•°
 		 */
 		[DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
 		private static extern Int32 GetSupportedSize(Int32 deviceId, Int32 index, ref Int32 numSupported, ref UVCVideoSizeFromCpp size);
 
 
 		/**
-		 * C++‚Ì‹¤—Lƒ‰ƒCƒuƒ‰ƒŠ‘¤‚©‚çUVC‚Ì‰f‘œƒTƒCƒYİ’è‚ğó‚¯æ‚é‚½‚ß‚Ì\‘¢‘Ì
+		 * C++ã®å…±æœ‰ãƒ©ã‚¤ãƒ–ãƒ©ãƒªå´ã‹ã‚‰UVCã®æ˜ åƒã‚µã‚¤ã‚ºè¨­å®šã‚’å—ã‘å–ã‚‹ãŸã‚ã®æ§‹é€ ä½“
 		 */
 		[StructLayout(LayoutKind.Sequential, Pack = 1)]
 		internal struct UVCVideoSizeFromCpp
