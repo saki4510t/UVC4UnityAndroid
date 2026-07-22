@@ -16,7 +16,8 @@ package com.serenegiant.unity.utils;
  *  limitations under the License.
  */
 
-import androidx.annotation.Keep;
+import android.os.Build;
+
 import androidx.annotation.NonNull;
 
 interface IAndroidUtils {

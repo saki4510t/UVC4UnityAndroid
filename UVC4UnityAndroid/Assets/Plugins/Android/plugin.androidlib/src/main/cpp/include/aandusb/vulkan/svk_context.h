@@ -66,7 +66,9 @@ private:
 	VkCommandPool m_vk_cmd_pool;
 	VkDescriptorPool m_vk_descriptor_pool;
 	std::unique_ptr<LayerAndExtensions> m_vk_layer_util;
+#if defined(__ANDROID__) && defined(VK_USE_PLATFORM_ANDROID_KHR)
 	std::shared_ptr<VkYCbCrSampler> m_vk_ycbcr_sampler;
+#endif
 
 	/**
 	 * 初期化処理の共通部分

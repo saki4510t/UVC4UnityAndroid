@@ -173,9 +173,11 @@ void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Unregister(int32_t callback_id) 
 	EXIT();
 }
 
+//--------------------------------------------------------------------------------
 /**
  * bcdUSBを取得
  * @return
+ * @deprecated use GetDeviceInfo instead
  */
 uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_bcd_usb(int32_t device_id) {
 	ENTER();
@@ -191,6 +193,7 @@ uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_bcd_usb(int32
 /**
  * デバイスクラスを取得
  * @return
+ * @deprecated use GetDeviceInfo instead
  */
 uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_class(int32_t device_id) {
 	ENTER();
@@ -206,6 +209,7 @@ uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_class(i
 /**
  * デバイスサブクラスを取得
  * @return
+ * @deprecated use GetDeviceInfo instead
  */
 uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_sub_class(int32_t device_id) {
 	ENTER();
@@ -221,6 +225,7 @@ uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_sub_cla
 /**
  * デバイスプロトコルを取得
  * @return
+ * @deprecated use GetDeviceInfo instead
  */
 uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_protocol(int32_t device_id) {
 	ENTER();
@@ -235,6 +240,7 @@ uint8_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_device_protoco
 
 /**
  * ベンダーIDを首都kする
+ * @deprecated use GetDeviceInfo instead
  */
 /*public*/
 uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_vendor_id(int32_t device_id) {
@@ -250,6 +256,7 @@ uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_vendor_id(int
 
 /**
  * プロダクトIDを取得する
+ * @deprecated use GetDeviceInfo instead
  */
 /*public*/
 uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_product_id(int32_t device_id) {
@@ -265,6 +272,7 @@ uint16_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_product_id(in
 
 /**
  * 機器名取得する
+ * @deprecated use GetDeviceInfo instead
  */
 /*public*/
 const char * UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_name(int32_t device_id) {
@@ -284,6 +292,23 @@ const char * UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API DeviceInfo_get_name(int3
 	}
 
 	RET(::strdup(name_string.c_str()));
+}
+
+/**
+ * 指定したUSB機能の機器情報を取得
+ * @param device_id
+ * @param info
+ * @return
+ */
+int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetDeviceInfo(int32_t device_id, usb_device_info_t *info) {
+	ENTER();
+
+	int32_t result = -1;
+	if (unity::g_unity_plugin) {
+		result = usb_get_device_info(unity::g_unity_plugin->manager(), device_id, info);
+	}
+
+	RETURN(result, int32_t);
 }
 
 /**
@@ -347,6 +372,7 @@ int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Config(
 	RETURN(result, int32_t);
 }
 
+//--------------------------------------------------------------------------------
 /**
  * 映像取得開始
  * レンダーコールバックを呼び出さないと実際には描画されない
@@ -396,7 +422,7 @@ int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Resize(
 
 	int32_t  result = -1;
 	if (unity::g_unity_plugin) {
-		result = unity::g_unity_plugin->resize(device_id, (raw_frame_t)frame_type, width, height);
+		result = unity::g_unity_plugin->resize(device_id, (uvc_raw_frame_t)frame_type, width, height);
 	}
 
 	RETURN(result, int32_t);
@@ -440,7 +466,7 @@ uint64_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetProcSupports(int32_t devi
  * @param value
  * @return
  */
-int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetCtrlInfo(int32_t device_id, control_info_t *value) {
+int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetCtrlInfo(int32_t device_id, uvc_control_info_t *value) {
 	ENTER();
 	
 	int32_t  result = -4;
@@ -497,7 +523,7 @@ int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetCtrlValue(int32_t device_i
  * @return 0: 成功, 負: エラーコード
  */
 int32_t UNITY_INTERFACE_API GetSupportedSize(
-	int32_t device_id, int32_t index, int32_t *num_supported, video_size_t *data) {
+	int32_t device_id, int32_t index, int32_t *num_supported, uvc_video_size_t *data) {
 
 	ENTER();
 
@@ -579,6 +605,7 @@ int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetUACFrame(int32_t device_id
 	
 	return result; // 	RETURN(result, int32_t);
 }
+
 //--------------------------------------------------------------------------------
 // UnitySetInterfaces
 // 先方参照宣言(Unityから呼び出されるグラフィックス関係のイベントコールバック関数)

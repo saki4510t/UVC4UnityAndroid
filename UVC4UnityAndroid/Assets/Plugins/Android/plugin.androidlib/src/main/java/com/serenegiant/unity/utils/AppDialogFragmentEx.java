@@ -1,6 +1,8 @@
 package com.serenegiant.unity.utils;
 /*
- * aAndUsb
+ * libcommon
+ * utility/helper classes for myself
+ *
  * Copyright (c) 2014-2026 saki t_saki@serenegiant.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,7 +87,7 @@ public abstract class AppDialogFragmentEx extends DialogFragment {
 		}
 		super.onStop();
 	}
-	
+
 	/**
 	 * Android6未満でのonResume, Android7以上でのonStartの処理
 	 * この中からonResumeやonStartを呼んでは行けない(無限ループになる)

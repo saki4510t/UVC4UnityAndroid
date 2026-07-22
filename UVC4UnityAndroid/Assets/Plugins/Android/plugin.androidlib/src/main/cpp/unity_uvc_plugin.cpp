@@ -202,7 +202,7 @@ int UnityUVCPlugin::set_config(
  */
 /*public*/
 int UnityUVCPlugin::resize(const int32_t &device_id,
-	const raw_frame_t &frame_type,
+	const uvc_raw_frame_t &frame_type,
 	const uint32_t &width, const uint32_t &height) {
 
 	ENTER();
@@ -361,7 +361,7 @@ uint64_t UnityUVCPlugin::get_proc_supports(const int &device_id) {
  * @return 0: 成功, 負: エラーコード
  */
 /*public*/
-int UnityUVCPlugin::get_control_info(const int &device_id, control_info_t &info) {
+int UnityUVCPlugin::get_control_info(const int &device_id, uvc_control_info_t &info) {
 	ENTER();
 
 	int result = -4;
@@ -451,7 +451,7 @@ int UnityUVCPlugin::get_control_value(const int &device_id, const uint64_t &type
 int UnityUVCPlugin::get_supported_size(
 	const int &device_id,
 	const int32_t &index, int32_t *num_supported,
-	video_size_t *data) {
+	uvc_video_size_t *data) {
 
 	ENTER();
 
@@ -759,7 +759,7 @@ void UnityUVCPlugin::remove(const int32_t &device_id) {
 
 /**
  * USB機器が接続されたときのコールバック関数
- * @param callback_args UVCMainへのポインタ
+ * @param callback_args UnityUVCPluginへのポインタ
  * @param device_id
  */
 /*private,static*/
@@ -776,7 +776,7 @@ void UnityUVCPlugin::on_device_attach(usb_manager_t*, void *callback_args, int32
 
 /**
  * USB機器が取り外されたときのコールバック関数
- * @param callback_args UVCMainへのポインタ
+ * @param callback_args UnityUVCPluginへのポインタ
  * @param device_id
  */
 void UnityUVCPlugin::on_device_detach(usb_manager_t*, void *callback_args, int32_t device_id) {

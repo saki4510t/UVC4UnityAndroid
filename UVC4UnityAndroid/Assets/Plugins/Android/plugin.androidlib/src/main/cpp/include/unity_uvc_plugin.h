@@ -42,12 +42,12 @@ namespace serenegiant::unity {
  * 接続検出したUVC機器に対応するUnityUVCHolderのスマートポインタを保持するハッシュマップ
  * キーはUVC機器識別用のID、値はstd::shared_ptr<UnityUVCHolder>
  */
-typedef std::unordered_map <int32_t, std::shared_ptr<UnityUVCHolder>> UVCHolderMap;
+using UVCHolderMap = std::unordered_map <int32_t, std::shared_ptr<UnityUVCHolder>>;
 /**
  * 接続検出したUVC機器に対応するUnityUACHolderのスマートポインタを保持するハッシュマップ
  * キーはUVC機器識別用のID、値はstd::shared_ptr<UnityUACHolder>
  */
-typedef std::unordered_map <int32_t, std::shared_ptr<UnityUACHolder>> UACHolderMap;
+using UACHolderMap = std::unordered_map <int32_t, std::shared_ptr<UnityUACHolder>>;
 /**
  * USBの機器接続状態が変化したときのunity側のコールバック関数定義
  * @param callback_id Unity側のコールバック識別ID
@@ -87,7 +87,7 @@ public:
 	 */
 	void call(int32_t device_id, bool attached) const;
 };
-typedef std::unique_ptr<UnityCallbackWrapper> UnityCallbackWrapperUp;
+using UnityCallbackWrapperUp = std::unique_ptr<UnityCallbackWrapper>;
 
 /**
  * Unityからのレンダリングインベントを処理するためのヘルパークラス
@@ -134,13 +134,13 @@ private:
 	void remove(const int32_t &device_id);
 	/**
 	 * USB機器が接続されたときのコールバック関数
-	 * @param callback_args UVCMainへのポインタ
+	 * @param callback_args UnityUVCPluginへのポインタ
 	 * @param device_id
 	 */
 	static void on_device_attach(usb_manager_t*, void *callback_args, int32_t device_id);
 	/**
 	 * USB機器が取り外されたときのコールバック関数
-	 * @param callback_args UVCMainへのポインタ
+	 * @param callback_args UnityUVCPluginへのポインタ
 	 * @param device_id
 	 */
 	static void on_device_detach(usb_manager_t*, void *callback_args, int32_t device_id);
@@ -197,7 +197,7 @@ public:
 	 * @return
 	 */
 	int resize(const int32_t &device_id,
-		const raw_frame_t &frame_type,
+		const uvc_raw_frame_t &frame_type,
 		const uint32_t &width, const uint32_t &height);
 
 	/**
@@ -247,7 +247,7 @@ public:
 	 * @param info
 	 * @return 0: 成功, 負: エラーコード
 	 */
-	int get_control_info(const int &device_id, control_info_t &info);
+	int get_control_info(const int &device_id, uvc_control_info_t &info);
 	/**
 	 * native側でUVC設定機能へアクセスするときのヘルパー関数
 	 * 主にUnityやFlutterからのアクセスを想定
@@ -275,7 +275,7 @@ public:
 	 * @param data 映像サイズ設定を書き込むためのunity_video_size_t構造体へのポインタ
 	 * @return 0: 成功, 負: エラーコード
 	 */
-	int get_supported_size(const int &device_id, const int32_t &index, int32_t *num_supported, video_size_t *data);
+	int get_supported_size(const int &device_id, const int32_t &index, int32_t *num_supported, uvc_video_size_t *data);
 
 	//--------------------------------------------------------------------------------
 	/**
@@ -310,7 +310,7 @@ public:
 	int get_uac_frame(const int32_t &device_id, uint8_t *data, uint32_t *data_len, int64_t *pts_us);
 };
 
-typedef std::unique_ptr<UnityUVCPlugin> UnityUVCPluginUp;
+using UnityUVCPluginUp = std::unique_ptr<UnityUVCPlugin>;
 
 }	// namespace serenegiant::unity
 

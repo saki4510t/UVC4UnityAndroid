@@ -62,8 +62,8 @@ private:
 	const int32_t m_device_id;
 	const int m_gl_version;
 	usb_manager_t *m_manager;
-	video_size_t m_current_size;
-	std::vector<const video_size_t> m_supported_size;
+	uvc_video_size_t m_current_size;
+	std::vector<const uvc_video_size_t> m_supported_size;
 	std::vector<uint64_t> m_supported_ctrls;
 	/**
 	 * 対応しているUVC設定機能一覧を更新する
@@ -83,7 +83,7 @@ public:
 	UnityUVCHolder(
 		usb_manager_t *manager, const int32_t &device_id,
 		const int &gl_version,
-		const raw_frame_t &frame_type,
+		const uvc_raw_frame_t &frame_type,
 		const uint32_t &width, const uint32_t &height);
 	/**
 	 * デストラクタ
@@ -98,7 +98,7 @@ public:
 	 * @return
 	 */
 	[[nodiscard]]
-	inline const std::vector<const video_size_t> &supported_size() const { return m_supported_size; };
+	inline const std::vector<const uvc_video_size_t> &supported_size() const { return m_supported_size; };
 
 	/**
 	 * 対応しているUVC設定機能一覧を取得する
@@ -108,7 +108,7 @@ public:
 	inline const std::vector<uint64_t> &supported_ctrls() const { return m_supported_ctrls; };
 
 	[[nodiscard]]
-	inline raw_frame_t frame_type() const { return (raw_frame_t)m_current_size.frame_type; };
+	inline uvc_raw_frame_t frame_type() const { return (uvc_raw_frame_t)m_current_size.frame_type; };
 
 	[[nodiscard]]
 	inline uint32_t width() const { return m_current_size.width; };
@@ -130,7 +130,7 @@ public:
 	 * @param info
 	 * @return 0: 成功, 負: エラーコード
 	 */
-	int get_control_info(control_info_t &info) const;
+	int get_control_info(uvc_control_info_t &info) const;
 
 	/**
 	 * UVC設定機能へ値を適用
@@ -166,14 +166,14 @@ public:
 	int set_mvp_matrix(const GLfloat *mvp_matrix);
 
 	int set_video_size(
-		const raw_frame_t &frame_type,
+		const uvc_raw_frame_t &frame_type,
 		const uint32_t &width, const uint32_t  &height);
 
-	const video_size_t &get_current_size();
+	const uvc_video_size_t &get_current_size();
 
 	int get_supported_size(
 		const int32_t &index, int32_t *num_supported,
-		video_size_t *data) const;
+		uvc_video_size_t *data) const;
 
 	virtual int start(void *tex, const int32_t &tex_width, const int32_t &tex_height);
 
@@ -187,8 +187,8 @@ public:
 	virtual void on_draw() = 0;
 };
 
-typedef std::shared_ptr<UnityUVCHolder> UnityUVCHolderSp;
-typedef std::unique_ptr<UnityUVCHolder> UnityUVCHolderUp;
+using UnityUVCHolderSp = std::shared_ptr<UnityUVCHolder>;
+using UnityUVCHolderUp = std::unique_ptr<UnityUVCHolder>;
 
 //================================================================================
 /**
@@ -230,13 +230,13 @@ public:
 	explicit UnityUVCHolderGLES(
 		usb_manager_t *manager, const int32_t &device_id,
 		const int &gl_version,
-		const raw_frame_t &frame_type = RAW_FRAME_MJPEG,
+		const uvc_raw_frame_t &frame_type = RAW_FRAME_MJPEG,
 		const uint32_t &width = 640, const uint32_t &height = 480);
 
 	/**
 	 * デストラクタ
 	 */
-	~UnityUVCHolderGLES() override;
+	~UnityUVCHolderGLES() noexcept override;
 
 	[[nodiscard]]
 	inline GLuint tex_id() const { return m_tex_id_unity; };
@@ -319,13 +319,13 @@ public:
 		const int &gl_version,
 		IUnityGraphicsVulkan *unity_graphics_vulkan,
 		const UnityVulkanInstance &unity_vulkan_instance,
-		const raw_frame_t &frame_type = RAW_FRAME_MJPEG,
+		const uvc_raw_frame_t &frame_type = RAW_FRAME_MJPEG,
 		const uint32_t &width = 640, const uint32_t &height = 480);
 
 	/**
 	 * デストラクタ
 	 */
-	~UnityUVCHolderVulkan() override;
+	~UnityUVCHolderVulkan() noexcept override;
 
 	[[nodiscard]]
 	inline void *tex_id() const { return m_tex_id_unity; };

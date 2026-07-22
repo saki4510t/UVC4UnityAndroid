@@ -57,21 +57,21 @@
 //--------------------------------------------------------------------------------
 #if MEAS_TIME
 #define MEAS_TIME_INIT	static nsecs_t _meas_time_ = 0;\
-	static nsecs_t _init_time_ = systemTime();\
+	static nsecs_t _init_time_ = systemTimeNs();\
 	static int _meas_count_ = 0;
-#define MEAS_TIME_START	const nsecs_t _meas_t_ = systemTime();
+#define MEAS_TIME_START	const nsecs_t _meas_t_ = systemTimeNs();
 #define MEAS_TIME_STOP \
-	_meas_time_ += (systemTime() - _meas_t_); \
+	_meas_time_ += (systemTimeNs() - _meas_t_); \
 	_meas_count_++; \
 	if (UNLIKELY((_meas_count_ % 100) == 0)) { \
 		const float d = _meas_time_ / (1000000.f * _meas_count_); \
-		const float fps = _meas_count_ * 1000000000.f / (systemTime() - _init_time_); \
+		const float fps = _meas_count_ * 1000000000.f / (systemTimeNs() - _init_time_); \
 		LOGI("draw time=%5.2f[msec]/fps=%5.2f", d, fps); \
 	}
 #define MEAS_RESET \
 	_meas_count_ = 0; \
 	_meas_time_ = 0; \
-	_init_time_ = systemTime();
+	_init_time_ = systemTimeNs();
 #else
 #define MEAS_TIME_INIT
 #define MEAS_TIME_START
@@ -91,7 +91,7 @@ namespace serenegiant::unity {
 UnityUVCHolder::UnityUVCHolder(
 	usb_manager_t *manager, const int32_t &device_id,
 	const int &gl_version,
-	const raw_frame_t &frame_type,
+	const uvc_raw_frame_t &frame_type,
 	const uint32_t &width, const uint32_t &height)
 :	m_manager(manager),
 	m_device_id(device_id),
@@ -108,7 +108,7 @@ UnityUVCHolder::UnityUVCHolder(
 	int32_t num_supported = 0;
 	auto r = uvc_get_supported_size(manager, m_device_id, 0, &num_supported, nullptr);
 	if (!r && num_supported) {
-		video_size_t size;
+		uvc_video_size_t size;
 		for (int32_t i = 0; i < num_supported; i++) {
 			r = uvc_get_supported_size(manager, m_device_id, i, &num_supported, &size);
 			if (!r) {
@@ -169,7 +169,7 @@ uint64_t UnityUVCHolder::get_proc_supports() {
  * @param info
  * @return 0: 成功, 負: エラーコード
  */
-int UnityUVCHolder::get_control_info(control_info_t &info) const {
+int UnityUVCHolder::get_control_info(uvc_control_info_t &info) const {
 	ENTER();
 	RETURN(uvc_get_control_info(m_manager, m_device_id, &info), int);
 }
@@ -219,7 +219,7 @@ int UnityUVCHolder::set_mvp_matrix(const GLfloat *mvp_matrix) {
 }
 
 int UnityUVCHolder::set_video_size(
-	const raw_frame_t &frame_type,
+	const uvc_raw_frame_t &frame_type,
 	const uint32_t &width, const uint32_t  &height) {
 
 	ENTER();
@@ -228,7 +228,7 @@ int UnityUVCHolder::set_video_size(
 	RETURN(r, int);
 }
 
-const video_size_t &UnityUVCHolder::get_current_size() {
+const uvc_video_size_t &UnityUVCHolder::get_current_size() {
 	ENTER();
 
 	const auto r = uvc_get_current_size(m_manager, m_device_id, &m_current_size);
@@ -241,7 +241,7 @@ const video_size_t &UnityUVCHolder::get_current_size() {
 
 int UnityUVCHolder::get_supported_size(
 	const int32_t &index, int32_t *num_supported,
-	video_size_t *data) const {
+	uvc_video_size_t *data) const {
 
 	ENTER();
 	const auto &supported = supported_size();
@@ -316,7 +316,7 @@ void UnityUVCHolder::update_supported_ctrls() {
 UnityUVCHolderGLES::UnityUVCHolderGLES(
 	usb_manager_t *manager, const int32_t &device_id,
 	const int &gl_version,
-	const raw_frame_t &frame_type,
+	const uvc_raw_frame_t &frame_type,
 	const uint32_t &width, const uint32_t &height)
 :	UnityUVCHolder(manager, device_id, gl_version, frame_type, width, height),
 	m_tex_id_unity(0),
@@ -335,7 +335,7 @@ UnityUVCHolderGLES::UnityUVCHolderGLES(
  * デストラクタ
  */
 /*public*/
-UnityUVCHolderGLES::~UnityUVCHolderGLES() {
+UnityUVCHolderGLES::~UnityUVCHolderGLES() noexcept {
 	ENTER();
 
 	internal_stop();
@@ -521,7 +521,7 @@ UnityUVCHolderVulkan::UnityUVCHolderVulkan(
 	const int &gl_version,
 	IUnityGraphicsVulkan *unity_graphics_vulkan,
 	const UnityVulkanInstance &unity_vulkan_instance,
-	const raw_frame_t &frame_type,
+	const uvc_raw_frame_t &frame_type,
 	const uint32_t &width, const uint32_t &height)
 :	UnityUVCHolder(manager, device_id, gl_version, frame_type, width, height),
 	m_unity_graphics_vulkan(unity_graphics_vulkan),
@@ -539,7 +539,7 @@ UnityUVCHolderVulkan::UnityUVCHolderVulkan(
  * デストラクタ
  */
 /*public*/
-UnityUVCHolderVulkan::~UnityUVCHolderVulkan() {
+UnityUVCHolderVulkan::~UnityUVCHolderVulkan() noexcept {
 	ENTER();
 
 	internal_stop();
@@ -631,7 +631,9 @@ void UnityUVCHolderVulkan::on_draw() {
 	UnityVulkanImage unity_vk_image {};
 	if (!m_unity_graphics_vulkan->AccessTexture(
 		tex_id(), UnityVulkanWholeImage,
-		VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,	// 転送先として最適化
+		VK_PIPELINE_STAGE_TRANSFER_BIT,			// 転送ステージを指定
+		VK_ACCESS_TRANSFER_WRITE_BIT,			// 転送の書き込み先
 		kUnityVulkanResourceAccess_PipelineBarrier, &unity_vk_image)) {
 		LOGD("Failed to get UnityVulkanImage from IUnityGraphicsVulkan::AccessTexture");
 		return;
@@ -673,32 +675,31 @@ void UnityUVCHolderVulkan::on_draw() {
 			AHardwareBuffer *buffer = nullptr;
 			auto status = AAImage_getHardwareBuffer(image, &buffer);	// API>=26
 			if (LIKELY((status == AMEDIA_OK) && buffer)) {
+				// SvkTexture内でAAHardwareBuffer_acquire/AAHardwareBuffer_releaseを呼ぶのでここでの呼び出しは不要
+				// AHardwareBuffer -> SVkTexture -> ワンタイムコマンドバッファ生成 -> vkCmdCopyImageでテクスチャへコピーする
+				if (LIKELY(m_vk_last_texture)) {
+					// 前回の映像が残っていれば解放して次のAHardwareBufferを割り当てる
+					m_vk_last_texture->release();
+					m_vk_last_texture->init(
+						buffer, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_ASPECT_COLOR_BIT, false, -1);
+					m_vk_last_texture->transition_layout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+				} else {
+					m_vk_last_texture= vulkan::SVkTexture::create_from_AHardwareBuffer(
+						m_svk_context, buffer,
+						VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+						VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+				}
 				if (m_last_image) {
 					// 1つ前のAImage*があれば解放する
 					AAImage_delete(m_last_image);
 				}
 				m_last_image = image;
-				if (m_vk_last_texture) {
-					// 前回の映像が残っていれば削除する
-					m_vk_last_texture.reset();
-				}
-				AAHardwareBuffer_acquire(buffer);	// API>=26
-				{
-					// AHardwareBuffer -> SVkTexture -> ワンタイムコマンドバッファ生成 -> vkCmdCopyImageでテクスチャへコピーする
-					AHardwareBuffer_Desc desc;
-					AAHardwareBuffer_describe(buffer, &desc);
-					m_vk_last_texture= vulkan::SVkTexture::create_from_AHardwareBuffer(
-						m_svk_context, buffer,
-						VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-					// 表示用にUnity側のテクスチャへコピーする
-					vkCmdCopyImage(recording_state.commandBuffer,
-						m_vk_last_texture->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-						unity_vk_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						1, &bltInfo);
-					rendered = true;
-				}
-				AAHardwareBuffer_release(buffer);			// API>=26
+				// 表示用にUnity側のテクスチャへコピーする
+				vkCmdCopyImage(recording_state.commandBuffer,
+					m_vk_last_texture->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					unity_vk_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					1, &bltInfo);
+				rendered = true;
 				// ここではimageを解放しない
 			} else {
 				m_reader->delete_image(image);

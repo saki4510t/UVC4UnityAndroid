@@ -13,6 +13,7 @@ namespace Serenegiant.UVC
 	public class UVCVideoSize
 	{
 		private const string TAG = "UVCVideoSize#";
+		private const int MAX_NUM_INTERVALS = 128;
 
 		public const UInt32 FRAME_TYPE_UNKNOWN		= 0x000000;
 		public const UInt32 FRAME_TYPE_MJPEG		= 0x000007;
@@ -26,7 +27,7 @@ namespace Serenegiant.UVC
 		public readonly UInt32 Width;
 		public readonly UInt32 Height;
 		public readonly Int32 FrameIntervalType;
-		public readonly int[] FrameIntervals;
+		public readonly UInt32[] FrameIntervals;
 		public readonly float[] Fps;
 
 		private UVCVideoSize(UVCVideoSizeFromCpp src)
@@ -36,10 +37,8 @@ namespace Serenegiant.UVC
 			Width = src.Width;
 			Height = src.Height;
 			FrameIntervalType = src.FrameIntervalType;
-			FrameIntervals = new int[src.NumFrameIntervals];
-			Marshal.Copy(src.FrameIntercals, FrameIntervals, 0, src.NumFrameIntervals);
-			Fps = new float[src.NumFps];
-			Marshal.Copy(src.Fps, Fps, 0, src.NumFps);
+			FrameIntervals = (UInt32[])(src.FrameIntervals.Clone());	// deep copy
+			Fps = (float[])(src.Fps.Clone());	// deep copy
 		}
 
 		/**
@@ -52,7 +51,7 @@ namespace Serenegiant.UVC
 			Width = 0;
 			Height = 0;
 			FrameIntervalType = 0;
-			FrameIntervals = new int[0];
+			FrameIntervals = new UInt32[0];
 			Fps = new float[0];
 		}
 
@@ -177,10 +176,13 @@ namespace Serenegiant.UVC
 			public UInt32 Width;
 			public UInt32 Height;
 			public Int32 FrameIntervalType;
-			public IntPtr FrameIntercals;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_NUM_INTERVALS)]
+			public UInt32[] FrameIntervals;
 			public Int32 NumFrameIntervals;
-			public IntPtr Fps;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_NUM_INTERVALS)]
+			public float[] Fps;
 			public Int32 NumFps;
+
 		} // UVCVideoSizeFromCpp
 	} // UVCVideoSize
 

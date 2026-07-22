@@ -29,8 +29,9 @@ import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
-import com.serenegiant.system.PermissionUtils;
-import com.serenegiant.utils.HandlerThreadHandler;
+import com.serenegiant.content.PermissionUtils;
+import com.serenegiant.system.HandlerThreadHandler;
+import com.serenegiant.system.UIThreadHelper;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -81,7 +82,7 @@ public class DeviceDetectorFragment extends Fragment {
 		synchronized (mSync) {
 			mAsyncHandler = HandlerThreadHandler.createHandler(TAG);
 		}
-		mUSBMonitor = new USBMonitor(context, mOnDeviceConnectListener);
+		mUSBMonitor = new USBMonitor(getActivity(), mOnDeviceConnectListener);
 		final Bundle args = getArguments();
 		if (args != null) {
 			final List<DeviceFilter> filters = args.getParcelableArrayList(ARGS_DEVICE_FILTERS);
@@ -223,7 +224,16 @@ public class DeviceDetectorFragment extends Fragment {
 				addDevice(device);
 			} else {
 				// パーミッションを保持していないとき
-				mUSBMonitor.requestPermission(device);
+				// システム側から表示されるUSBアクセス権限要求のボトムシートより
+				// アプリから要求して表示されるUSBアクセス権限要求ダイアログが上に
+				// 表示されるようにフォアグラウンドにしてからUSBアクセス権限を要求する
+				bringToForeground();
+				UIThreadHelper.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						mUSBMonitor.requestPermission(device);
+					}
+				}, 100);
 			}
 		}
 

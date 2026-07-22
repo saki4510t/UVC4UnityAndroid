@@ -1,6 +1,8 @@
 package com.serenegiant.unity.utils;
 /*
- * aAndUsb
+ * libcommon
+ * utility/helper classes for myself
+ *
  * Copyright (c) 2014-2026 saki t_saki@serenegiant.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -185,7 +187,7 @@ public class MessageDialogAppFragment extends AppDialogFragmentEx {
 		super.onCancel(dialog);
 		callOnMessageDialogResult(false);
 	}
-	
+
 	/**
 	 * コールバックリスナー呼び出しのためのヘルパーメソッド
 	 * @param result

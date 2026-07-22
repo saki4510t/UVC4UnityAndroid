@@ -78,8 +78,8 @@ public:
 	int get_uac_info(uac_info_t &info);
 };
 
-typedef std::shared_ptr<UnityUACHolder> UnityUACHolderSp;
-typedef std::unique_ptr<UnityUACHolder> UnityUACHolderUp;
+using UnityUACHolderSp = std::shared_ptr<UnityUACHolder>;
+using UnityUACHolderUp = std::unique_ptr<UnityUACHolder>;
 
 } // serenegiant::unity
 

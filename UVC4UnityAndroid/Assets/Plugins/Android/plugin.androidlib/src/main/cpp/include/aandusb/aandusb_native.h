@@ -30,20 +30,20 @@ extern "C" {
 //--------------------------------------------------------------------------------
 // native Cバインディング/型定義
 //--------------------------------------------------------------------------------
-typedef struct manager usb_manager_t;	// UsbManager
+using usb_manager_t = struct manager;	// UsbManager
 /**
  * USB機器が接続されたときのコールバック関数
  */
-typedef void (*on_device_attach_t)(usb_manager_t*, void *callback_args, int32_t device_id);
+using on_device_attach_t = void (*)(usb_manager_t*, void *callback_args, int32_t device_id);
 /**
  * USB機器が取り外されたときのコールバック関数
  */
-typedef void (*on_device_detach_t)(usb_manager_t*, void *callback_args, int32_t device_id);
+using on_device_detach_t = void (*)(usb_manager_t*, void *callback_args, int32_t device_id);
 
 /**
  * UVC機器との接続状態
  */
-typedef enum device_state {
+using device_state_t = enum device_state {
 	/**
 	 * プラグインが初期化されていない
 	 */
@@ -60,7 +60,24 @@ typedef enum device_state {
 	 * 指定した機器が接続されており映像取得中
 	 */
 	STREAMING = 2,
-} device_state_t;
+};
+
+/**
+ * 接続しているUSB機器情報
+ */
+using usb_device_info_t = struct usb_device_info {
+	uint16_t bcd_usb;
+	uint32_t vendor_id;
+	uint32_t product_id;
+	uint8_t device_class;
+	uint8_t device_subclass;
+	uint8_t device_protocol;
+	uint8_t reserved1;
+	uint8_t name[128];
+	uint8_t manufacturer_name[128];
+	uint8_t product_name[128];
+	uint8_t serial[128];
+} __attribute__((__packed__));
 
 //--------------------------------------------------------------------------------
 // native Cバインディング/USB
@@ -95,6 +112,7 @@ int32_t usb_match(usb_manager_t *manager, int32_t device_id, uint8_t bClass, uin
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return bcdUSBまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint16_t usb_get_bcd_usb(usb_manager_t *manager, int32_t device_id);
 
@@ -103,6 +121,7 @@ uint16_t usb_get_bcd_usb(usb_manager_t *manager, int32_t device_id);
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return デバイスクラスまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint8_t usb_get_device_class(usb_manager_t *manager, int32_t device_id);
 
@@ -111,6 +130,7 @@ uint8_t usb_get_device_class(usb_manager_t *manager, int32_t device_id);
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return デバイスサブクラスまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint8_t usb_get_device_sub_class(usb_manager_t *manager, int32_t device_id);
 
@@ -119,6 +139,7 @@ uint8_t usb_get_device_sub_class(usb_manager_t *manager, int32_t device_id);
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return デバイスプロトコルまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint8_t usb_get_device_protocol(usb_manager_t *manager, int32_t device_id);
 
@@ -127,6 +148,7 @@ uint8_t usb_get_device_protocol(usb_manager_t *manager, int32_t device_id);
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return ベンダーIDまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint16_t usb_get_vendor_id(usb_manager_t *manager, int32_t device_id);
 
@@ -135,6 +157,7 @@ uint16_t usb_get_vendor_id(usb_manager_t *manager, int32_t device_id);
  * @param manager USBデバイスマネージャーを示すポインター
  * @param device USB機器を指定するポインター
  * @return プロダクトIDまたは0(deviceで指定したUSB機器が存在しない場合)
+ * @deprecated use usb_get_device_info instead
  */
 uint16_t usb_get_product_id(usb_manager_t *manager, int32_t device_id);
 
@@ -145,16 +168,32 @@ uint16_t usb_get_product_id(usb_manager_t *manager, int32_t device_id);
  * @param buffer 機器名文字列を受け取るバッファ
  * @param buf_size 機器名文字列を受け取るバッファのサイズ, null以外なら機器名文字列の長さをセットする
  * @return 0: 正常終了, 負数: エラー
+ * @deprecated use usb_get_device_info instead
  */
 int usb_get_name(usb_manager_t *manager, int32_t device_id, char *, size_t *);
+
+/**
+ * 接続しているUSB機器情報をusb_device_info_t構造体として取得する
+ * @param manager
+ * @param device_id
+ * @param info
+ * @return
+ */
+int usb_get_device_info(usb_manager_t *manager, int32_t device_id, usb_device_info_t *info);
 
 //--------------------------------------------------------------------------------
 // native Cバインディング/UVC
 //--------------------------------------------------------------------------------
 /**
+ * フレームインターバル/フレームレートの最大数
+ * とりあえず128に制限
+ */
+#define MAX_NUM_INTERVALS (128)
+
+/**
  * UVC機器のコントロール機能の情報を取得するための構造体
  */
-typedef struct _control_info {
+using uvc_control_info_t = struct _uvc_control_info {
 public:
 	uint64_t type;			// UVCコントロールの種類(CTRL_XXXまたはPU_XXX)
 	int32_t initialized;	// 初期化済みかどうか
@@ -164,12 +203,12 @@ public:
 	int32_t res;			// 分解能
 	int32_t min;			// 最小値
 	int32_t max;			// 最大値
-} __attribute__((__packed__)) control_info_t;
+} __attribute__((__packed__));
 
 /**
  * 映像サイズ設定をやりとりするための構造体定義
  */
-typedef struct video_size {
+using uvc_video_size_t = struct uvc_video_size {
 public:
 	uint32_t frame_type;
 	/**
@@ -193,7 +232,7 @@ public:
 	/**
 	 * フレームインターバルデータ
 	 */
-	uint32_t *frame_intervals;
+	uint32_t frame_intervals[MAX_NUM_INTERVALS];
 	/**
 	 * フレームインターバルデータの個数
 	 */
@@ -201,12 +240,12 @@ public:
 	/**
 	 * フレームレート
 	 */
-	float *fps;
+	float fps[MAX_NUM_INTERVALS];
 	/**
 	 * フレームレートの個数
 	 */
 	int32_t num_fps;
-} __attribute__((__packed__)) video_size_t;
+} __attribute__((__packed__));
 
 /**
  * 映像フォーマット
@@ -215,7 +254,7 @@ public:
  * #uvc_get_frameにはUVC機器が対応していない映像フォーマットも指定できるが
  * その場合には内部で変換処理が実行される(ただしMJPEGやH264へは変換できない)
  */
-typedef enum raw_frame {
+using uvc_raw_frame_t = enum uvc_raw_frame {
 	RAW_FRAME_UNKNOWN				= 0,
 	RAW_FRAME_UNCOMPRESSED_YUYV		= 0x00010005,
 	RAW_FRAME_UNCOMPRESSED_NV21		= 0x00050005,
@@ -224,7 +263,7 @@ typedef enum raw_frame {
 	RAW_FRAME_UNCOMPRESSED_RGBX		= 0x00100005,
 	RAW_FRAME_MJPEG					= 0x00000007,	// #uvc_get_frameの変換先映像フォーマットとしては無効
 	RAW_FRAME_H264					= 0x00000014,	// #uvc_get_frameの変換先映像フォーマットとしては無効
-} raw_frame_t;
+};
 
 // Camera Terminal DescriptorのbmControlsフィールドのビットマスク
 #define	CTRL_SCANNING		(0x00000001)	// D0:  Scanning Mode
@@ -324,7 +363,7 @@ uint64_t uvc_get_proc_supports(usb_manager_t *manager, int32_t device_id);
  */
 int uvc_get_control_info(
 	usb_manager_t *manager, int32_t device_id,
-	control_info_t *info);
+	uvc_control_info_t *info);
 
 /**
  * native側でUVC設定機能へアクセスするときのヘルパー関数
@@ -358,7 +397,7 @@ int uvc_get_control_value(
  */
 int uvc_get_supported_size(
 	usb_manager_t *manager, int32_t device_id,
-	int32_t index, int32_t *num_supported, video_size_t *size);
+	int32_t index, int32_t *num_supported, uvc_video_size_t *size);
 
 /**
  * 現在選択されている映像サイズを取得
@@ -369,7 +408,7 @@ int uvc_get_supported_size(
  */
 int uvc_get_current_size(
 	usb_manager_t *manager, int32_t device_id,
-	video_size_t *size);
+	uvc_video_size_t *size);
 
 /**
  * UVC機器からの映像を取得する
@@ -420,16 +459,26 @@ int uvc_set_mvp_matrix(
 //--------------------------------------------------------------------------------
 // native Cバインディング/UAC
 //--------------------------------------------------------------------------------
-typedef struct _uac_info {
+using uac_info_t = struct _uac_info {
 	int32_t device_id;
 	int32_t channels;
 	int32_t resolution;
 	uint32_t sampling_freq;
 	int32_t packet_bytes;
-} __attribute__((__packed__)) uac_info_t;
+} __attribute__((__packed__));
+
+/**
+ * コールバック関数で音声データを受け取る場合のコールバック関数型
+ */
+using on_uac_data_callback_t = void (*)(
+	usb_manager_t*, int32_t device_id,
+	void *callback_args,
+	uint8_t *data, uint32_t data_len, int64_t pts_us);
 
 /**
  * 機器との接続状態を取得
+ * @param manager
+ * @param device_id UVC機器識別用のID
  * @return
  */
 device_state_t uac_get_device_state(usb_manager_t *manager, int32_t device_id);
@@ -437,13 +486,26 @@ device_state_t uac_get_device_state(usb_manager_t *manager, int32_t device_id);
 /**
  * 音声取得開始
  * uac_get_frameを呼び出さないと音声取得できない
+ * @param manager
  * @param device_id UVC機器識別用のID
  * @return
  */
-int uac_start(usb_manager_t *manager, int32_t device_id);
+#define uac_start(MANAGER, DEVICE_ID) uac_start_callback((MANAGER), (DEVICE_ID), 0, 0)
+
+/**
+ * 音声取得開始
+ * callbackがnullの場合はuac_get_frameを使って音声データ取得する
+ * @param manager
+ * @param device_id UVC機器識別用のID
+ * @return
+ */
+int uac_start_callback(
+	usb_manager_t *manager, int32_t device_id,
+	on_uac_data_callback_t callback, void *callback_args);
 
 /**
  * 音声取得終了
+ * @param manager
  * @param device_id UVC機器識別用のID
  * @return
  */
@@ -451,6 +513,7 @@ int uac_stop(usb_manager_t *manager, int32_t device_id);
 
 /**
  * 音声取得設定を取得
+ * @param manager
  * @param device_id UVC機器識別用のID
  * @param info
  * @return
@@ -461,6 +524,7 @@ int uac_get_info(
 
 /**
  * 音声フレームをフレームキューから読み取る
+ * @param manager
  * @param device_id UVC機器識別用のID
  * @param data nullptrなら*lenにフレームデータのバイト数をセットするだけで実際の読み取りは行わない
  * @param data_len 音声フレームのバイト数

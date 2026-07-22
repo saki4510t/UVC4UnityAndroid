@@ -182,6 +182,7 @@ public:
 #if defined(__ANDROID__)
 	/**
 	 * 既存のAHardwareBufferをラップしてテクスチャとしてアクセスできるようにする
+	 * XXX EglImageWrapperと同じ機能なのでどちらかに集約させるかも
 	 * @param graphicBuffer
 	 * @param tex_target
 	 * @param tex_unit
@@ -257,6 +258,12 @@ public:
 	 */
 	int setFilter(const GLint &min_filter, const GLint &max_filter);
 	/**
+	 * OESテクスチャかどうか
+	 * @return
+	 */
+	[[nodiscard]]
+	inline bool is_oes() const { return TEX_TARGET == GL_TEXTURE_EXTERNAL_OES; };
+	/**
 	 * テクスチャターゲットを取得
 	 * @return
 	 */
@@ -312,8 +319,8 @@ public:
 	 * @brief テクスチャの幅に対して実イメージが占める割合/実イメージの左下UV座標
 	 *		  デフォルトだとテクスチャサイズを2のべき乗に繰り上げるのでイメージサイズより
 	          テクスチャのほうが大きい可能性があるため左下UV座標を調整するためのヘルパー関数
-	 * 
-	 * @return GLfloat 
+	 *
+	 * @return GLfloat
 	 */
 	[[nodiscard]]
 	inline GLfloat getTexScaleX() const { return mImageWidth / (GLfloat)mTexWidth; };
@@ -321,8 +328,8 @@ public:
 	 * @brief テクスチャの高さに対して実イメージが占める割合/実イメージの左下UV座標
 	 *		  デフォルトだとテクスチャサイズを2のべき乗に繰り上げるのでイメージサイズより
 	          テクスチャのほうが大きい可能性があるため左下UV座標を調整するためのヘルパー関数
-	 * 
-	 * @return GLfloat 
+	 *
+	 * @return GLfloat
 	 */
 	[[nodiscard]]
 	inline GLfloat getTexScaleY() const { return mImageHeight / (GLfloat)mTexHeight; };

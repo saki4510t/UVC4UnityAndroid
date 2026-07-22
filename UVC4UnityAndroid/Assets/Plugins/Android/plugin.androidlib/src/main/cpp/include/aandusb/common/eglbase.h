@@ -63,9 +63,9 @@ void checkEglError(
  * EGLを使ってカレントスレッドにEGL/GLコンテキストを生成するクラス
  * EGL関係のヘルパー関数を含む
  */
-class EGLBase {
+class EglBase {
 friend class EglSync;
-friend class GLSurface;
+friend class EglSurface;
 public:
 	/**
 	 * コンストラクタ
@@ -75,8 +75,8 @@ public:
 	 * @param with_stencil_buffer ステンシルバッファを使用するかどうか
 	 * @param isRecordable RECORDABLEフラグを漬けて初期化するかどうか
 	 */
-	EGLBase(const int & client_version,
-		EGLBase *shared_context,
+	EglBase(const int & client_version,
+		EglBase *shared_context,
 		const bool &with_depth_buffer,
 		const bool &with_stencil_buffer,
 		const bool &isRecordable);
@@ -85,11 +85,11 @@ public:
 	 * @param client_version 2: OpenGL|ES2, 3:OpenGLES|3
 	 * @param shared_context 共有コンテキスト, Nullable
 	 */
-	explicit EGLBase(const int &client_version, EGLBase *shared_context = nullptr);
+	explicit EglBase(const int &client_version, EglBase *shared_context = nullptr);
 	/**
 	 * デストラクタ
 	 */
-	~EGLBase() noexcept;
+	~EglBase() noexcept;
 	/**
 	 * EGLレンダリングコンテキストを取得する
 	 * @return
@@ -229,10 +229,11 @@ private:
 	int makeCurrent(EGLSurface draw_surface, EGLSurface read_surface);
 	/**
 	 * ダブルバッファリングのバッファを入れ替える(Surfaceへの転送される)
+	 * @param wait_gl eglSwapBuffers呼び出しの前にeglWaitGLを呼び出すかどうか
 	 * @param surface
 	 * @return
 	 */
-	int swap(EGLSurface surface);
+	int swap(EGLSurface surface, const bool &wait_gl);
 	/**
 	 * 可能であればptsをセットする
 	 * @param pts_ns
@@ -254,10 +255,12 @@ private:
 };
 
 //================================================================================
-
-class GLSurface : virtual public IGLSurface {
+/**
+ * EGLのEGLSurfaceをラップするクラス
+ */
+class EglSurface : virtual public IGLSurface {
 private:
-	EGLBase *mEgl;
+	EglBase *mEgl;
 #if defined(__ANDROID__)
 	ANativeWindow *mWindow;
 #endif
@@ -272,8 +275,8 @@ public:
 	 * @param width
 	 * @param height
 	 */
-	GLSurface(EGLBase *egl, ANativeWindow *window,
-		const int32_t &width = 0, const int32_t &height = 0);
+	EglSurface(EglBase *egl, ANativeWindow *window,
+			   const int32_t &width = 0, const int32_t &height = 0);
 #endif
 	/**
 	 * オフスクリーンへOpenGL|ESで描画するためのEGLSurfaceを生成するコンストラクタ
@@ -281,11 +284,11 @@ public:
 	 * @param width
 	 * @param height
 	 */
-	GLSurface(EGLBase *egl, const int32_t &width, const int32_t &height);
+	EglSurface(EglBase *egl, const int32_t &width, const int32_t &height);
 	/**
 	 * デストラクタ
 	 */
-	~GLSurface() noexcept override;
+	~EglSurface() noexcept override;
 	/**
 	 * このオブジェクトが保持しているEGLSurfaceへアタッチして描画できるようにする
 	 * @return
@@ -298,9 +301,10 @@ public:
 	int unbind() override;
 	/**
 	 * ダブルバッファリングのバッファを入れ替える
+	 * @param wait_gl eglSwapBuffers呼び出しの前にeglWaitGLを呼び出すかどうか, デフォルトfalse
 	 * @return
 	 */
-	int swap();
+	int swap(const bool &wait_gl = false);
 	/**
 	 * 可能であればptsをセットする
 	 * @param pts_ns
@@ -329,9 +333,6 @@ public:
 	[[nodiscard]]
 	inline int32_t height() const override { return window_height; };
 };
-
-using GLSurfaceSp = std::shared_ptr<GLSurface>;
-using GLSurfaceUp = std::unique_ptr<GLSurface>;
 
 //================================================================================
 /**
@@ -367,11 +368,11 @@ using GLSurfaceUp = std::unique_ptr<GLSurface>;
  */
 class EglSync {
 private:
-	const EGLBase *m_egl;
+	const EglBase *m_egl;
 	EGLSyncKHR m_sync;
 protected:
 public:
-	explicit EglSync(const EGLBase *egl, int fence_fd = -1);
+	explicit EglSync(const EglBase *egl, int fence_fd = -1);
 	~EglSync() noexcept;
 
 	[[nodiscard]]
@@ -420,6 +421,7 @@ public:
 /**
  * AHardwareBufferとメモリーを共有するEGLImageKHRを生成してGL|ESのテクスチャとして
  * アクセスできるようにするためのヘルパークラス
+ * XXX AHardwareBufferを引数に取るGLTexture::wrapと内容的に同じなのでどちらかに集約させるかも
  */
 class EglImageWrapper : virtual public IGLSurface {
 private:
@@ -565,7 +567,7 @@ public:
 	 */
 	[[nodiscard]]
 	inline const GLfloat *tex_matrix() const { return m_tex_matrix; }
-	
+
 	/**
 	 * AHardwareBufferとメモリーを共有するEGLImageKHRを生成して
 	 * テクスチャとして利用できるようにする、
@@ -593,10 +595,10 @@ public:
 };
 #endif
 
-using EGLBaseSp = std::shared_ptr<EGLBase>;
-using EGLBaseUp = std::unique_ptr<EGLBase>;
-using GLSurfaceSp = std::shared_ptr<GLSurface>;
-using GLSurfaceUp = std::unique_ptr<GLSurface>;
+using EglBaseSp = std::shared_ptr<EglBase>;
+using EglBaseUp = std::unique_ptr<EglBase>;
+using EglSurfaceSp = std::shared_ptr<EglSurface>;
+using EglSurfaceUp = std::unique_ptr<EglSurface>;
 using EglSyncSp = std::shared_ptr<EglSync>;
 using EglSyncUp = std::unique_ptr<EglSync>;
 #if defined(__ANDROID__)

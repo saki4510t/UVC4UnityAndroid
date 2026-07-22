@@ -54,7 +54,9 @@ extern PFN_vkCreateSamplerYcbcrConversion vkCreateSamplerYcbcrConversion;
 extern PFN_vkDestroySamplerYcbcrConversion vkDestroySamplerYcbcrConversion;
 extern PFN_vkImportSemaphoreFdKHR vkImportSemaphoreFd;
 extern PFN_vkGetSemaphoreFdKHR vkGetSemaphoreFdKHR;
+#if defined(__ANDROID__) && defined(VK_USE_PLATFORM_ANDROID_KHR)
 extern PFN_vkGetAndroidHardwareBufferPropertiesANDROID vkGetAndroidHardwareBufferProperties;
+#endif
 //extern PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2;
 
 /*

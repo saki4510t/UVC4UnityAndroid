@@ -33,6 +33,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -41,10 +42,11 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 
+import com.serenegiant.content.PermissionUtils;
 import com.serenegiant.system.BuildCheck;
-import com.serenegiant.system.PermissionUtils;
 import com.serenegiant.unity.uvcplugin.R;
 import com.unity3d.player.UnityPlayer;
 

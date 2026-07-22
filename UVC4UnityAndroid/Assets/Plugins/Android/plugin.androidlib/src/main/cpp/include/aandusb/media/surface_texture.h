@@ -64,6 +64,8 @@ protected:
 public:
 	/**
 	 * インスタンス生成用のヘルパークラス
+	 * NDKでASurfaceTextureへ対応しているか動的リンク可能であればSurfaceTextureNDK(API>=28)を生成する
+	 * NDK側でASurfaceTextureを生成できなければJava側のSurfaceTextureのメソッドをリフレクションで呼び出してラップする
 	 * @param tex
 	 * @param width
 	 * @param height

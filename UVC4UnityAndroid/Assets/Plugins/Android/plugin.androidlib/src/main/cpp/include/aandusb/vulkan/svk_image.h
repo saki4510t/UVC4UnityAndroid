@@ -54,6 +54,7 @@ private:
 	VkDeviceMemory m_vk_memory;
 	VkImageView m_vk_image_view;
 	VkSemaphore m_vk_semaphore;
+	bool m_external_sampler;
 	std::shared_ptr<SVkSampler> m_vk_sampler;
 #if defined(__ANDROID__)
 	AHardwareBuffer *m_buffer;

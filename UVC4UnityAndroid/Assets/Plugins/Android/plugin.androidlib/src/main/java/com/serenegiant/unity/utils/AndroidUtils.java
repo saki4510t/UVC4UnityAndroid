@@ -31,7 +31,7 @@ import android.provider.Settings;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
-import com.serenegiant.system.PermissionUtils;
+import com.serenegiant.content.PermissionUtils;
 
 import java.util.Random;
 

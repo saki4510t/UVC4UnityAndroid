@@ -35,6 +35,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
 #デバッグ用に警告を出す設定
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wreorder")
 
+set(LIBS_PLATFORM
+    EGL
+    android
+    log
+)
+
 # OpenGL|ES3の静的/動的リンクサポート確認
 message("ANDROID_PLATFORM_LEVEL=${ANDROID_PLATFORM_LEVEL}")
 if (${ANDROID_PLATFORM_LEVEL} LESS 12)
@@ -53,12 +59,70 @@ else ()
     set(OPENGL_LIB GLESv3)
 endif (${ANDROID_PLATFORM_LEVEL} LESS 12)
 
-set(libs_platform
-    EGL
-    android
-    mediandk
-    log
-)
+# mediaNdkの静的/動的リンクサポート確認
+if (${ANDROID_PLATFORM_LEVEL} LESS 16)
+    # MediaCodecに対応していない
+    message(FATAL_ERROR "MEDIANDK is not supported before API level 16 \
+        (currently using ${ANDROID_PLATFORM_LEVEL}).")
+    return()
+elseif (${ANDROID_PLATFORM_LEVEL} LESS 21)
+    # MediaCodecのNDK対応ライブラリに動的リンクを試みる
+else ()
+    # MediaCodecのNDK対応している
+    set(LIBS_PLATFORM
+        ${LIBS_PLATFORM}
+        mediandk
+        OpenMAXAL
+    )
+endif (${ANDROID_PLATFORM_LEVEL} LESS 16)
+
+# image readerの静的/動的リンクサポート確認
+# API>=24以降で一部対応しているけど全ての機能を使うにはAPI>=26なので26未満は動的リンクにする
+if (${ANDROID_PLATFORM_LEVEL} LESS 26)
+    # image readerのNDK対応ライブラリに動的リンクを試みる
+else ()
+    # ImageReaderのNDK対応している
+    set(LIBS_PLATFORM
+        ${LIBS_PLATFORM}
+        mediandk
+    )
+endif (${ANDROID_PLATFORM_LEVEL} LESS 26)
+
+# surface textureの静的/動的リンクサポート確認
+if (${ANDROID_PLATFORM_LEVEL} LESS 28)
+    # NDKでのsurface texture対応はAPI28以降のlibandroid.soに
+    # 含まれているので追加のライブラリは不要
+else ()
+    # surface textureのNDK対応している
+endif (${ANDROID_PLATFORM_LEVEL} LESS 28)
+
+# image decoder API(AImageDecoder)の静的/動的リンクサポート確認
+if (${ANDROID_PLATFORM_LEVEL} LESS 30)
+    # image decoder(AImageDecoder)のNDK対応ライブラリに動的リンクを試みる
+    message("ENABLE DYNAMIC_IMAGE_DECODER_NDK")
+    add_definitions("-DDYNAMIC_IMAGE_DECODER_NDK")
+else ()
+    # image decoder(AImageDecoder)のNDK対応している
+    message("target platform supports image decoder(AImageDecoder)")
+    set(LIBS_PLATFORM
+        ${LIBS_PLATFORM}
+        jnigraphics
+    )
+endif (${ANDROID_PLATFORM_LEVEL} LESS 30)
+
+# hardware buffer(AHardwareBuffer)の静的/動的リンクサポート確認
+if (${ANDROID_PLATFORM_LEVEL} LESS 29)
+    # hardware buffer(AHardwareBuffer)のNDK対応ライブラリに動的リンクを試みる
+    message("ENABLE DYNAMIC_HARDWARE_BUFFER_NDK")
+    add_definitions("-DDYNAMIC_HARDWARE_BUFFER_NDK")
+else ()
+    # hardware buffer(AHardwareBuffer)のNDK対応している
+    message("target platform supports hardware buffer(AHardwareBuffer)")
+    set(LIBS_PLATFORM
+        ${LIBS_PLATFORM}
+        nativewindow
+    )
+endif (${ANDROID_PLATFORM_LEVEL} LESS 29)
 
 #VulkanのAndroid拡張を有効にする
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR")
@@ -119,7 +183,7 @@ target_link_options(unityuvcplugin PRIVATE
 # EGL GLESv3
 target_link_libraries(unityuvcplugin PRIVATE
     ${OPENGL_LIB}
-    ${libs_platform}
+    ${LIBS_PLATFORM}
     aandusb-native_static
     jpeg-turbo3x_static
     yuv1905_static
