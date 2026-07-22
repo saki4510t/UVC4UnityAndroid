@@ -20,6 +20,8 @@ namespace Serenegiant.UVC
 	[Serializable]
 	public class UVCDevice
 	{
+		private const int MAX_STRING_BYTES = 128;
+
 		public readonly Int32 id;
 		public readonly int vid;
 		public readonly int pid;
@@ -31,12 +33,26 @@ namespace Serenegiant.UVC
 
 		public UVCDevice(Int32 deviceId) {
 			id = deviceId;
-			vid = GetVendorId(deviceId);
-			pid = GetProductId(deviceId);
-			name = GetName(deviceId);
-			deviceClass = GetDeviceClass(deviceId);
-			deviceSubClass = GetDeviceSubClass(deviceId);
-			deviceProtocol = GetDeviceProtocol(deviceId);
+			DeviceInfoFromCpp info = new DeviceInfoFromCpp();
+			if (GetDeviceInfo(deviceId, ref info) == 0)
+			{
+				vid = (int)info.VendorId;
+				pid = (int)info.ProductId;
+				deviceClass = (int)info.DeviceClass;
+				deviceSubClass = (int)info.DeviceSubClass;
+				deviceProtocol = (int)info.DeviceProtocol;
+				name = System.Text.Encoding.UTF8.GetString(info.Name);
+			}
+			else
+			{
+				// FIXME しばらくは古い取得方法を残しておく
+				vid = GetVendorId(deviceId);
+				pid = GetProductId(deviceId);
+				name = GetName(deviceId);
+				deviceClass = GetDeviceClass(deviceId);
+				deviceSubClass = GetDeviceSubClass(deviceId);
+				deviceProtocol = GetDeviceProtocol(deviceId);
+			}
 		}
 
 		public override string ToString()
@@ -121,41 +137,53 @@ namespace Serenegiant.UVC
 		public static extern Int32 GetId(Int32 deviceId);
 
 		/**
-			* デバイスクラスを取得
-			*/
+		 * デバイスクラスを取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_class")]
 		private static extern Byte GetDeviceClass(Int32 deviceId);
 
 		/**
-			* デバイスサブクラスを取得
-			*/
+		 * デバイスサブクラスを取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_sub_class")]
 		private static extern Byte GetDeviceSubClass(Int32 deviceId);
 
 		/**
-			* デバイスプロトコルを取得
-			*/
+		 * デバイスプロトコルを取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_device_protocol")]
 		private static extern Byte GetDeviceProtocol(Int32 deviceId);
 
 		/**
-			* ベンダーIDを取得
-			*/
+		 * ベンダーIDを取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_vendor_id")]
 		private static extern UInt16 GetVendorId(Int32 deviceId);
 
 		/**
-			* プロダクトIDを取得
-			*/
+		 * プロダクトIDを取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_product_id")]
 		private static extern UInt16 GetProductId(Int32 deviceId);
 
 		/**
-			* 機器名を取得
-			*/
+		 * 機器名を取得
+		 */
+		[Obsolete("Deprecated: use GetDeviceInfo instead")]
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_get_name")]
 		[return: MarshalAs(UnmanagedType.LPStr)]
 		private static extern string GetName(Int32 deviceId);
+
+		/**
+		 * USB機器情報を一括で取得
+		 */
+		[DllImport("unityuvcplugin", CallingConvention = CallingConvention.StdCall)]
+		private static extern Int32 GetDeviceInfo(Int32 deviceId, ref DeviceInfoFromCpp info);
 
 
 		/**
@@ -168,6 +196,31 @@ namespace Serenegiant.UVC
 		 */
 		[DllImport("unityuvcplugin", EntryPoint = "DeviceInfo_match")]
 		private static extern Int32 InternalMatch(Int32 deviceId, byte bClass, byte bSubClass, byte bProtocol);
+
+		/**
+		 * C++の共有ライブラリ側からUSB機器情報を受け取るための構造体
+		 */
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
+		internal struct DeviceInfoFromCpp
+		{
+			public UInt16 BcdUsb;
+			public UInt32 VendorId;
+			public UInt32 ProductId;
+			public Byte DeviceClass;
+			public Byte DeviceSubClass;
+			public Byte DeviceProtocol;
+			public Byte Reserved1;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_STRING_BYTES)]
+			public Byte[] Name;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_STRING_BYTES)]
+			public Byte[] ManifactureName;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_STRING_BYTES)]
+			public Byte[] ProductName;
+			[MarshalAs(UnmanagedType.ByValArray, SizeConst = MAX_STRING_BYTES)]
+			public Byte[] Serial;
+
+		} // DeviceInfoFromCpp
+
 	} // UVCDevice
 
 } // namespace Serenegiant.UVC
